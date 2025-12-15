@@ -1,4 +1,5 @@
 import { Users, Layers, GitBranch, Target } from 'lucide-react';
+import ScrollReveal from './ScrollReveal';
 
 const steps = [
   {
@@ -32,28 +33,32 @@ export default function MissionProtocol() {
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="text-center mb-16">
-          <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
-            Mission Protocol
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            From recruitment to revenue-impacting insights in four tactical steps.
-          </p>
-        </div>
+        <ScrollReveal animation="fade-up">
+          <div className="text-center mb-16">
+            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4">
+              Mission Protocol
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+              From recruitment to revenue-impacting insights in four tactical steps.
+            </p>
+          </div>
+        </ScrollReveal>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {steps.map((step, index) => (
-            <div
-              key={step.title}
-              className="group text-center opacity-0 animate-fade-in-up"
-              style={{ animationDelay: `${0.2 + index * 0.15}s` }}
+            <ScrollReveal 
+              key={step.title} 
+              animation="fade-up" 
+              delay={index * 150}
             >
-              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-card border border-border flex items-center justify-center group-hover:border-primary/50 group-hover:shadow-lg transition-all duration-300">
-                <step.icon className="w-8 h-8 text-foreground group-hover:text-primary transition-colors" />
+              <div className="group text-center">
+                <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-card border border-border flex items-center justify-center group-hover:border-primary/50 group-hover:shadow-lg transition-all duration-300">
+                  <step.icon className="w-8 h-8 text-foreground group-hover:text-primary transition-colors" />
+                </div>
+                <h3 className="font-display text-xl font-semibold mb-2">{step.title}</h3>
+                <p className="text-sm text-muted-foreground">{step.description}</p>
               </div>
-              <h3 className="font-display text-xl font-semibold mb-2">{step.title}</h3>
-              <p className="text-sm text-muted-foreground">{step.description}</p>
-            </div>
+            </ScrollReveal>
           ))}
         </div>
       </div>
