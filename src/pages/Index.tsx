@@ -5,6 +5,7 @@ import TrustedBy from '@/components/TrustedBy';
 import MissionProtocol from '@/components/MissionProtocol';
 import Features from '@/components/Features';
 import Capabilities from '@/components/Capabilities';
+import Pricing from '@/components/Pricing';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import Background3D from '@/components/Background3D';
@@ -26,6 +27,7 @@ export default function Index() {
         <MissionProtocol />
         <Features />
         <Capabilities />
+        <Pricing />
         <CTA />
       </main>
 
