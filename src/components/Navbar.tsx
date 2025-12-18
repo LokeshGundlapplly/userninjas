@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, LogOut, User } from 'lucide-react';
+import { Menu, X, LogOut, User, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import NinjaLogo from './NinjaLogo';
@@ -49,6 +49,22 @@ export default function Navbar() {
               <div className="h-9 w-20 bg-muted animate-pulse rounded-md" />
             ) : user ? (
               <>
+                {role === 'tester' && (
+                  <Link to="/tester">
+                    <Button variant="ghost" size="sm">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                )}
+                {role === 'recruiter' && (
+                  <Link to="/recruiter">
+                    <Button variant="ghost" size="sm">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                )}
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <User className="h-4 w-4" />
                   <span className="capitalize">{role || 'User'}</span>
@@ -101,6 +117,22 @@ export default function Navbar() {
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
                 {user ? (
                   <>
+                    {role === 'tester' && (
+                      <Link to="/tester" onClick={() => setIsOpen(false)}>
+                        <Button variant="outline" className="w-full">
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          Dashboard
+                        </Button>
+                      </Link>
+                    )}
+                    {role === 'recruiter' && (
+                      <Link to="/recruiter" onClick={() => setIsOpen(false)}>
+                        <Button variant="outline" className="w-full">
+                          <LayoutDashboard className="h-4 w-4 mr-2" />
+                          Dashboard
+                        </Button>
+                      </Link>
+                    )}
                     <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
                       <User className="h-4 w-4" />
                       <span className="capitalize">Signed in as {role || 'User'}</span>
