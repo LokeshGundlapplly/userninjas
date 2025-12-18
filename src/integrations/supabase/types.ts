@@ -14,6 +14,47 @@ export type Database = {
   }
   public: {
     Tables: {
+      earnings: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          paid_at: string | null
+          status: string
+          submission_id: string | null
+          tester_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: string
+          submission_id?: string | null
+          tester_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: string
+          submission_id?: string | null
+          tester_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "earnings_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "test_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -41,6 +82,98 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      test_submissions: {
+        Row: {
+          created_at: string
+          feedback: string | null
+          id: string
+          rating: number | null
+          reviewed_at: string | null
+          status: string
+          submitted_at: string | null
+          test_id: string
+          tester_id: string
+        }
+        Insert: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          rating?: number | null
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          test_id: string
+          tester_id: string
+        }
+        Update: {
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          rating?: number | null
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          test_id?: string
+          tester_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_submissions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tests: {
+        Row: {
+          category: string | null
+          created_at: string
+          current_testers: number | null
+          description: string | null
+          estimated_duration: number
+          id: string
+          max_testers: number | null
+          recruiter_id: string
+          requirements: string | null
+          reward_amount: number
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string
+          current_testers?: number | null
+          description?: string | null
+          estimated_duration?: number
+          id?: string
+          max_testers?: number | null
+          recruiter_id: string
+          requirements?: string | null
+          reward_amount?: number
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          created_at?: string
+          current_testers?: number | null
+          description?: string | null
+          estimated_duration?: number
+          id?: string
+          max_testers?: number | null
+          recruiter_id?: string
+          requirements?: string | null
+          reward_amount?: number
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
