@@ -10,6 +10,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { 
   DollarSign, 
   Clock, 
@@ -18,7 +28,8 @@ import {
   AlertCircle,
   TrendingUp,
   Wallet,
-  FileText
+  FileText,
+  Send
 } from 'lucide-react';
 import ScrollReveal from '@/components/ScrollReveal';
 
@@ -64,6 +75,12 @@ export default function TesterDashboard() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Submission flow state
+  const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
+  const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -165,6 +182,58 @@ export default function TesterDashboard() {
         description: 'Failed to start the test.',
         variant: 'destructive',
       });
+    }
+  };
+
+  const openSubmitDialog = (submission: Submission) => {
+    setSelectedSubmission(submission);
+    setFeedbackText(submission.feedback || '');
+    setSubmitDialogOpen(true);
+  };
+
+  const submitTest = async () => {
+    if (!selectedSubmission) return;
+    
+    if (!feedbackText.trim()) {
+      toast({
+        title: 'Feedback required',
+        description: 'Please provide feedback about your testing experience.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('test_submissions')
+        .update({
+          status: 'submitted',
+          feedback: feedbackText.trim(),
+          submitted_at: new Date().toISOString(),
+        })
+        .eq('id', selectedSubmission.id);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Test submitted!',
+        description: 'Your test has been submitted for review.',
+      });
+      
+      setSubmitDialogOpen(false);
+      setSelectedSubmission(null);
+      setFeedbackText('');
+      fetchData();
+    } catch (error) {
+      console.error('Error submitting test:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to submit the test.',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -380,18 +449,36 @@ export default function TesterDashboard() {
                     {submissions.map((submission) => (
                       <Card key={submission.id} className="glass-card">
                         <CardContent className="pt-6">
-                          <div className="flex items-center justify-between">
-                            <div>
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="flex-1">
                               <h3 className="font-semibold">{submission.tests?.title || 'Test'}</h3>
                               <p className="text-sm text-muted-foreground">
                                 Started {new Date(submission.created_at).toLocaleDateString()}
+                                {submission.submitted_at && (
+                                  <> • Submitted {new Date(submission.submitted_at).toLocaleDateString()}</>
+                                )}
                               </p>
+                              {submission.feedback && submission.status !== 'in_progress' && (
+                                <p className="text-sm text-muted-foreground mt-2 italic">
+                                  "{submission.feedback.substring(0, 100)}{submission.feedback.length > 100 ? '...' : ''}"
+                                </p>
+                              )}
                             </div>
-                            <div className="flex items-center gap-4">
-                              <span className="font-semibold">
+                            <div className="flex items-center gap-3">
+                              <span className="font-semibold whitespace-nowrap">
                                 ${Number(submission.tests?.reward_amount || 0).toFixed(2)}
                               </span>
                               {getStatusBadge(submission.status)}
+                              {submission.status === 'in_progress' && (
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => openSubmitDialog(submission)}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Send className="h-4 w-4" />
+                                  Submit
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </CardContent>
@@ -461,6 +548,57 @@ export default function TesterDashboard() {
           </ScrollReveal>
         </div>
       </main>
+
+      {/* Submit Test Dialog */}
+      <Dialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Submit Test</DialogTitle>
+            <DialogDescription>
+              Submit your completed test for "{selectedSubmission?.tests?.title}". Please provide detailed feedback about your testing experience.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="feedback">Your Feedback</Label>
+              <Textarea
+                id="feedback"
+                placeholder="Describe your testing experience, any bugs found, usability issues, suggestions for improvement, etc."
+                value={feedbackText}
+                onChange={(e) => setFeedbackText(e.target.value)}
+                rows={6}
+                className="resize-none"
+              />
+              <p className="text-xs text-muted-foreground">
+                Provide detailed, constructive feedback to help improve the product.
+              </p>
+            </div>
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setSubmitDialogOpen(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={submitTest}
+              disabled={submitting || !feedbackText.trim()}
+              className="flex items-center gap-2"
+            >
+              {submitting ? (
+                <>Submitting...</>
+              ) : (
+                <>
+                  <Send className="h-4 w-4" />
+                  Submit Test
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }
