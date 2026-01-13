@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
@@ -29,7 +30,11 @@ import {
   TrendingUp,
   Wallet,
   FileText,
-  Send
+  Send,
+  Upload,
+  X,
+  Image,
+  Film
 } from 'lucide-react';
 import ScrollReveal from '@/components/ScrollReveal';
 
@@ -81,6 +86,11 @@ export default function TesterDashboard() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [feedbackText, setFeedbackText] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  
+  // File upload state
+  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -188,7 +198,83 @@ export default function TesterDashboard() {
   const openSubmitDialog = (submission: Submission) => {
     setSelectedSubmission(submission);
     setFeedbackText(submission.feedback || '');
+    setUploadedFiles([]);
     setSubmitDialogOpen(true);
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files) return;
+    
+    const validFiles: File[] = [];
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm', 'video/quicktime'];
+    
+    Array.from(files).forEach(file => {
+      if (file.size > maxSize) {
+        toast({
+          title: 'File too large',
+          description: `${file.name} exceeds 10MB limit.`,
+          variant: 'destructive',
+        });
+        return;
+      }
+      if (!allowedTypes.includes(file.type)) {
+        toast({
+          title: 'Invalid file type',
+          description: `${file.name} is not a supported format. Use images (JPG, PNG, GIF, WebP) or videos (MP4, WebM).`,
+          variant: 'destructive',
+        });
+        return;
+      }
+      validFiles.push(file);
+    });
+    
+    if (uploadedFiles.length + validFiles.length > 5) {
+      toast({
+        title: 'Too many files',
+        description: 'Maximum 5 files allowed per submission.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
+    setUploadedFiles(prev => [...prev, ...validFiles]);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const uploadFiles = async (): Promise<string[]> => {
+    if (uploadedFiles.length === 0 || !user) return [];
+    
+    const urls: string[] = [];
+    
+    for (const file of uploadedFiles) {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${selectedSubmission?.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error } = await supabase.storage
+        .from('submission-attachments')
+        .upload(fileName, file);
+      
+      if (error) {
+        console.error('Error uploading file:', error);
+        throw error;
+      }
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('submission-attachments')
+        .getPublicUrl(fileName);
+      
+      urls.push(publicUrl);
+    }
+    
+    return urls;
   };
 
   const submitTest = async () => {
@@ -205,12 +291,21 @@ export default function TesterDashboard() {
 
     setSubmitting(true);
     try {
+      // Upload files first
+      let attachmentUrls: string[] = [];
+      if (uploadedFiles.length > 0) {
+        setUploading(true);
+        attachmentUrls = await uploadFiles();
+        setUploading(false);
+      }
+      
       const { error } = await supabase
         .from('test_submissions')
         .update({
           status: 'submitted',
           feedback: feedbackText.trim(),
           submitted_at: new Date().toISOString(),
+          attachments: attachmentUrls,
         })
         .eq('id', selectedSubmission.id);
 
@@ -224,6 +319,7 @@ export default function TesterDashboard() {
       setSubmitDialogOpen(false);
       setSelectedSubmission(null);
       setFeedbackText('');
+      setUploadedFiles([]);
       fetchData();
     } catch (error) {
       console.error('Error submitting test:', error);
@@ -234,6 +330,7 @@ export default function TesterDashboard() {
       });
     } finally {
       setSubmitting(false);
+      setUploading(false);
     }
   };
 
@@ -551,7 +648,7 @@ export default function TesterDashboard() {
 
       {/* Submit Test Dialog */}
       <Dialog open={submitDialogOpen} onOpenChange={setSubmitDialogOpen}>
-        <DialogContent className="sm:max-w-[500px]">
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Submit Test</DialogTitle>
             <DialogDescription>
@@ -560,24 +657,89 @@ export default function TesterDashboard() {
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="feedback">Your Feedback</Label>
+              <Label htmlFor="feedback">Your Feedback *</Label>
               <Textarea
                 id="feedback"
                 placeholder="Describe your testing experience, any bugs found, usability issues, suggestions for improvement, etc."
                 value={feedbackText}
                 onChange={(e) => setFeedbackText(e.target.value)}
-                rows={6}
+                rows={5}
                 className="resize-none"
               />
               <p className="text-xs text-muted-foreground">
                 Provide detailed, constructive feedback to help improve the product.
               </p>
             </div>
+            
+            {/* File Upload Section */}
+            <div className="space-y-3">
+              <Label>Attachments (Optional)</Label>
+              <p className="text-xs text-muted-foreground">
+                Upload screenshots or screen recordings to support your feedback. Max 5 files, 10MB each.
+              </p>
+              
+              <Input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/gif,image/webp,video/mp4,video/webm,video/quicktime"
+                multiple
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadedFiles.length >= 5 || submitting}
+                className="w-full border-dashed"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {uploadedFiles.length >= 5 ? 'Max files reached' : 'Upload Screenshots or Videos'}
+              </Button>
+              
+              {/* Uploaded Files Preview */}
+              {uploadedFiles.length > 0 && (
+                <div className="space-y-2">
+                  {uploadedFiles.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-2 bg-muted/50 rounded-lg"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {file.type.startsWith('video/') ? (
+                          <Film className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                        ) : (
+                          <Image className="h-4 w-4 text-green-500 flex-shrink-0" />
+                        )}
+                        <span className="text-sm truncate">{file.name}</span>
+                        <span className="text-xs text-muted-foreground flex-shrink-0">
+                          ({(file.size / 1024 / 1024).toFixed(1)}MB)
+                        </span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                        disabled={submitting}
+                        className="flex-shrink-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
           <DialogFooter className="flex-col sm:flex-row gap-2">
             <Button
               variant="outline"
-              onClick={() => setSubmitDialogOpen(false)}
+              onClick={() => {
+                setSubmitDialogOpen(false);
+                setUploadedFiles([]);
+              }}
               disabled={submitting}
             >
               Cancel
@@ -588,7 +750,7 @@ export default function TesterDashboard() {
               className="flex items-center gap-2"
             >
               {submitting ? (
-                <>Submitting...</>
+                <>{uploading ? 'Uploading files...' : 'Submitting...'}</>
               ) : (
                 <>
                   <Send className="h-4 w-4" />

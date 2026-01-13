@@ -68,6 +68,7 @@ interface Submission {
   rating: number | null;
   submitted_at: string | null;
   created_at: string;
+  attachments: string[] | null;
   tests: {
     title: string;
     reward_amount: number;
@@ -868,6 +869,38 @@ export default function RecruiterDashboard() {
                               <p className="text-sm">
                                 <strong>Feedback:</strong> {submission.feedback}
                               </p>
+                            </div>
+                          )}
+                          {submission.attachments && submission.attachments.length > 0 && (
+                            <div className="mt-4">
+                              <p className="text-sm font-semibold mb-2">Attachments:</p>
+                              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                {submission.attachments.map((url, index) => {
+                                  const isVideo = url.match(/\.(mp4|webm|mov)$/i);
+                                  return (
+                                    <a
+                                      key={index}
+                                      href={url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="block aspect-video bg-muted rounded-lg overflow-hidden hover:ring-2 ring-primary transition-all"
+                                    >
+                                      {isVideo ? (
+                                        <video
+                                          src={url}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      ) : (
+                                        <img
+                                          src={url}
+                                          alt={`Attachment ${index + 1}`}
+                                          className="w-full h-full object-cover"
+                                        />
+                                      )}
+                                    </a>
+                                  );
+                                })}
+                              </div>
                             </div>
                           )}
                         </CardContent>
