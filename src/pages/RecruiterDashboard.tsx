@@ -308,7 +308,7 @@ export default function RecruiterDashboard() {
     }
   };
 
-  const handleReviewSubmission = async (submissionId: string, newStatus: 'approved' | 'rejected') => {
+  const handleReviewSubmission = async (submissionId: string, newStatus: 'approved' | 'rejected', submission: Submission) => {
     try {
       const { error } = await supabase
         .from('test_submissions')
@@ -320,9 +320,29 @@ export default function RecruiterDashboard() {
 
       if (error) throw error;
 
+      // Send email notification
+      try {
+        const { error: fnError } = await supabase.functions.invoke('send-review-notification', {
+          body: {
+            submissionId,
+            testerId: submission.tester_id,
+            testTitle: submission.tests?.title || 'Test',
+            status: newStatus,
+            reviewerFeedback: submission.feedback,
+            rewardAmount: newStatus === 'approved' ? Number(submission.tests?.reward_amount || 0) : undefined,
+          },
+        });
+        
+        if (fnError) {
+          console.error('Error sending notification:', fnError);
+        }
+      } catch (notificationError) {
+        console.error('Failed to send email notification:', notificationError);
+      }
+
       toast({
         title: `Submission ${newStatus}`,
-        description: `The submission has been ${newStatus}.`,
+        description: `The submission has been ${newStatus}. Tester has been notified via email.`,
       });
       fetchData();
     } catch (error) {
@@ -825,7 +845,7 @@ export default function RecruiterDashboard() {
                                     size="sm"
                                     variant="outline"
                                     className="text-green-500 border-green-500 hover:bg-green-500 hover:text-white"
-                                    onClick={() => handleReviewSubmission(submission.id, 'approved')}
+                                    onClick={() => handleReviewSubmission(submission.id, 'approved', submission)}
                                   >
                                     <CheckCircle className="h-4 w-4 mr-1" />
                                     Approve
@@ -834,7 +854,7 @@ export default function RecruiterDashboard() {
                                     size="sm"
                                     variant="outline"
                                     className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                    onClick={() => handleReviewSubmission(submission.id, 'rejected')}
+                                    onClick={() => handleReviewSubmission(submission.id, 'rejected', submission)}
                                   >
                                     <XCircle className="h-4 w-4 mr-1" />
                                     Reject
