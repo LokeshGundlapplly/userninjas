@@ -87,6 +87,7 @@ export type Database = {
       }
       test_submissions: {
         Row: {
+          attachments: string[] | null
           created_at: string
           feedback: string | null
           id: string
@@ -98,6 +99,7 @@ export type Database = {
           tester_id: string
         }
         Insert: {
+          attachments?: string[] | null
           created_at?: string
           feedback?: string | null
           id?: string
@@ -109,6 +111,7 @@ export type Database = {
           tester_id: string
         }
         Update: {
+          attachments?: string[] | null
           created_at?: string
           feedback?: string | null
           id?: string
