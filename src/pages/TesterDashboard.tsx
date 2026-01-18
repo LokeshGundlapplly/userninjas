@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -402,9 +402,14 @@ export default function TesterDashboard() {
       <main className="min-h-screen pt-20 px-4">
         <div className="container mx-auto max-w-6xl py-8">
           <ScrollReveal animation="fade-up">
-            <h1 className="text-3xl font-display font-bold mb-8">
-              Welcome back, <span className="text-gradient">Tester</span>
-            </h1>
+            <div className="flex items-center justify-between mb-8">
+              <h1 className="text-3xl font-display font-bold">
+                Welcome back, <span className="text-gradient">Tester</span>
+              </h1>
+              <Button variant="outline" asChild>
+                <Link to="/tester/profile">View My Profile</Link>
+              </Button>
+            </div>
           </ScrollReveal>
 
           {/* Stats Overview */}
