@@ -41,8 +41,10 @@ import {
   Eye,
   Trash2,
   Edit,
-  TrendingUp
+  TrendingUp,
+  Star
 } from 'lucide-react';
+import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
 
 interface Test {
@@ -105,6 +107,9 @@ export default function RecruiterDashboard() {
     category: '',
     max_testers: '',
   });
+  
+  // Rating state for review
+  const [reviewRating, setReviewRating] = useState<{ [key: string]: number }>({});
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -310,12 +315,24 @@ export default function RecruiterDashboard() {
   };
 
   const handleReviewSubmission = async (submissionId: string, newStatus: 'approved' | 'rejected', submission: Submission) => {
+    const rating = reviewRating[submissionId] || 0;
+    
+    if (newStatus === 'approved' && rating === 0) {
+      toast({
+        title: 'Rating required',
+        description: 'Please provide a rating before approving.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     try {
       const { error } = await supabase
         .from('test_submissions')
         .update({
           status: newStatus,
           reviewed_at: new Date().toISOString(),
+          rating: newStatus === 'approved' ? rating : null,
         })
         .eq('id', submissionId);
 
@@ -841,25 +858,42 @@ export default function RecruiterDashboard() {
                                 {getStatusBadge(submission.status)}
                               </div>
                               {submission.status === 'submitted' && (
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-green-500 border-green-500 hover:bg-green-500 hover:text-white"
-                                    onClick={() => handleReviewSubmission(submission.id, 'approved', submission)}
-                                  >
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Approve
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="outline"
-                                    className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                    onClick={() => handleReviewSubmission(submission.id, 'rejected', submission)}
-                                  >
-                                    <XCircle className="h-4 w-4 mr-1" />
-                                    Reject
-                                  </Button>
+                                <div className="flex flex-col gap-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-sm text-muted-foreground">Rate:</span>
+                                    <StarRating
+                                      rating={reviewRating[submission.id] || 0}
+                                      interactive
+                                      onRatingChange={(rating) => 
+                                        setReviewRating(prev => ({ ...prev, [submission.id]: rating }))
+                                      }
+                                    />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-green-500 border-green-500 hover:bg-green-500 hover:text-white"
+                                      onClick={() => handleReviewSubmission(submission.id, 'approved', submission)}
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-1" />
+                                      Approve
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
+                                      onClick={() => handleReviewSubmission(submission.id, 'rejected', submission)}
+                                    >
+                                      <XCircle className="h-4 w-4 mr-1" />
+                                      Reject
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                              {submission.status === 'approved' && submission.rating && (
+                                <div className="flex items-center gap-1">
+                                  <StarRating rating={submission.rating} size="sm" />
                                 </div>
                               )}
                             </div>
