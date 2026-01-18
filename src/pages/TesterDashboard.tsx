@@ -34,8 +34,10 @@ import {
   Upload,
   X,
   Image,
-  Film
+  Film,
+  Star
 } from 'lucide-react';
+import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
 
 interface Test {
@@ -55,6 +57,7 @@ interface Submission {
   test_id: string;
   status: string;
   feedback: string | null;
+  rating: number | null;
   submitted_at: string | null;
   created_at: string;
   tests: {
@@ -339,6 +342,12 @@ export default function TesterDashboard() {
   const paidEarnings = earnings.filter(e => e.status === 'paid').reduce((sum, e) => sum + Number(e.amount), 0);
   const completedTests = submissions.filter(s => s.status === 'approved').length;
   const inProgressTests = submissions.filter(s => s.status === 'in_progress').length;
+  
+  // Calculate average rating for reputation
+  const ratedSubmissions = submissions.filter(s => s.rating !== null && s.rating > 0);
+  const averageRating = ratedSubmissions.length > 0 
+    ? ratedSubmissions.reduce((sum, s) => sum + (s.rating || 0), 0) / ratedSubmissions.length 
+    : 0;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -400,7 +409,7 @@ export default function TesterDashboard() {
 
           {/* Stats Overview */}
           <ScrollReveal animation="fade-up" delay={0.1}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
               <Card className="glass-card">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -452,6 +461,27 @@ export default function TesterDashboard() {
                     </div>
                     <div className="p-3 bg-blue-500/10 rounded-full">
                       <PlayCircle className="h-6 w-6 text-blue-500" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="glass-card">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Reputation</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <StarRating rating={Math.round(averageRating)} size="sm" />
+                        {ratedSubmissions.length > 0 && (
+                          <span className="text-sm text-muted-foreground">
+                            ({averageRating.toFixed(1)})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="p-3 bg-yellow-500/10 rounded-full">
+                      <Star className="h-6 w-6 text-yellow-500" />
                     </div>
                   </div>
                 </CardContent>
