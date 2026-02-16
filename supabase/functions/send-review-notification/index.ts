@@ -26,7 +26,28 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Verify authentication
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: "Missing authorization header" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Create a client with the caller's JWT to verify identity
+    const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
+    const { data: { user }, error: userError } = await userClient.auth.getUser();
+    if (userError || !user) {
+      return new Response(
+        JSON.stringify({ error: "Invalid or expired token" }),
+        { status: 401, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     const {
       submissionId,
@@ -36,6 +57,50 @@ const handler = async (req: Request): Promise<Response> => {
       reviewerFeedback,
       rewardAmount,
     }: ReviewNotificationRequest = await req.json();
+
+    // Validate required fields
+    if (!submissionId || !testerId || !testTitle || !status) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    if (status !== "approved" && status !== "rejected") {
+      return new Response(
+        JSON.stringify({ error: "Invalid status" }),
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    // Use service role client to verify the caller is the recruiter who owns the test
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { data: submission, error: subError } = await supabase
+      .from("test_submissions")
+      .select("test_id")
+      .eq("id", submissionId)
+      .single();
+
+    if (subError || !submission) {
+      return new Response(
+        JSON.stringify({ error: "Submission not found" }),
+        { status: 404, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
+    const { data: test, error: testError } = await supabase
+      .from("tests")
+      .select("recruiter_id")
+      .eq("id", submission.test_id)
+      .single();
+
+    if (testError || !test || test.recruiter_id !== user.id) {
+      return new Response(
+        JSON.stringify({ error: "Forbidden: you do not own this test" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
 
     // Get tester's email from profiles
     const { data: profile, error: profileError } = await supabase
@@ -100,13 +165,13 @@ const handler = async (req: Request): Promise<Response> => {
 
     console.log("Email sent successfully:", emailResponse);
 
-    return new Response(JSON.stringify({ success: true, emailResponse }), {
+    return new Response(JSON.stringify({ success: true }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
   } catch (error: any) {
     console.error("Error in send-review-notification:", error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: "Internal server error" }), {
       status: 500,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
