@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Users, Briefcase, Mail, Lock, User } from 'lucide-react';
+import { Users, Briefcase, Mail, Lock, User, ArrowRight } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Background3D from '@/components/Background3D';
 
@@ -42,20 +42,14 @@ export default function Auth() {
     const newErrors: { email?: string; password?: string; name?: string } = {};
     
     const emailResult = emailSchema.safeParse(email);
-    if (!emailResult.success) {
-      newErrors.email = emailResult.error.errors[0].message;
-    }
+    if (!emailResult.success) newErrors.email = emailResult.error.errors[0].message;
     
     const passwordResult = passwordSchema.safeParse(password);
-    if (!passwordResult.success) {
-      newErrors.password = passwordResult.error.errors[0].message;
-    }
+    if (!passwordResult.success) newErrors.password = passwordResult.error.errors[0].message;
     
     if (isSignUp) {
       const nameResult = nameSchema.safeParse(fullName);
-      if (!nameResult.success) {
-        newErrors.name = nameResult.error.errors[0].message;
-      }
+      if (!nameResult.success) newErrors.name = nameResult.error.errors[0].message;
     }
     
     setErrors(newErrors);
@@ -64,57 +58,35 @@ export default function Auth() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!validateForm()) return;
     
     setIsLoading(true);
-    
     try {
       if (isSignUp) {
         const { error } = await signUp(email, password, fullName, selectedRole);
         if (error) {
-          if (error.message.includes('already registered')) {
-            toast({
-              title: 'Account exists',
-              description: 'This email is already registered. Please sign in instead.',
-              variant: 'destructive',
-            });
-          } else {
-            toast({
-              title: 'Sign up failed',
-              description: error.message,
-              variant: 'destructive',
-            });
-          }
-        } else {
           toast({
-            title: 'Account created!',
-            description: `Welcome to User Ninjas as a ${selectedRole}!`,
+            title: error.message.includes('already registered') ? 'Account exists' : 'Sign up failed',
+            description: error.message.includes('already registered') 
+              ? 'This email is already registered. Please sign in instead.'
+              : error.message,
+            variant: 'destructive',
           });
+        } else {
+          toast({ title: 'Account created!', description: `Welcome to User Ninjas as a ${selectedRole}!` });
           navigate('/');
         }
       } else {
         const { error } = await signIn(email, password);
         if (error) {
-          toast({
-            title: 'Sign in failed',
-            description: 'Invalid email or password. Please try again.',
-            variant: 'destructive',
-          });
+          toast({ title: 'Sign in failed', description: 'Invalid email or password.', variant: 'destructive' });
         } else {
-          toast({
-            title: 'Welcome back!',
-            description: 'You have successfully signed in.',
-          });
+          toast({ title: 'Welcome back!', description: 'You have successfully signed in.' });
           navigate('/');
         }
       }
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
-        variant: 'destructive',
-      });
+    } catch {
+      toast({ title: 'Error', description: 'An unexpected error occurred.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -130,120 +102,94 @@ export default function Auth() {
       <Background3D />
       <Navbar />
 
-      <main className="min-h-screen flex items-center justify-center px-4 pt-20">
-        <Card className="w-full max-w-md glass-card">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-display">
-              {isSignUp ? 'Create Account' : 'Welcome Back'}
-            </CardTitle>
-            <CardDescription>
-              {isSignUp 
-                ? 'Join User Ninjas as a tester or recruiter' 
-                : 'Sign in to your account'}
-            </CardDescription>
-          </CardHeader>
-          
-          <CardContent>
-            {isSignUp && (
-              <div className="mb-6">
-                <Label className="text-sm font-medium mb-3 block">I want to join as a:</Label>
-                <Tabs value={selectedRole} onValueChange={(v) => setSelectedRole(v as UserRole)}>
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="tester" className="flex items-center gap-2">
-                      <Users className="h-4 w-4" />
-                      Tester
-                    </TabsTrigger>
-                    <TabsTrigger value="recruiter" className="flex items-center gap-2">
-                      <Briefcase className="h-4 w-4" />
-                      Recruiter
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="tester" className="mt-3">
-                    <p className="text-sm text-muted-foreground">
-                      Earn money by testing apps and providing valuable feedback.
-                    </p>
-                  </TabsContent>
-                  <TabsContent value="recruiter" className="mt-3">
-                    <p className="text-sm text-muted-foreground">
-                      Find testers for your products and get actionable insights.
-                    </p>
-                  </TabsContent>
-                </Tabs>
-              </div>
-            )}
+      <main className="min-h-screen flex items-center justify-center px-4 pt-20 pb-10">
+        <div className="w-full max-w-md">
+          <div className="text-center mb-8">
+            <h1 className="font-display text-3xl font-bold tracking-tight mb-2">
+              {isSignUp ? 'Create your account' : 'Welcome back'}
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              {isSignUp ? 'Join User Ninjas as a tester or recruiter' : 'Sign in to continue to your dashboard'}
+            </p>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+          <Card className="border-border/60 shadow-lg">
+            <CardContent className="pt-6">
               {isSignUp && (
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="fullName"
-                      type="text"
-                      placeholder="John Doe"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      className="pl-10"
-                    />
+                <div className="mb-6">
+                  <Label className="text-sm font-medium mb-3 block">I want to join as:</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {([
+                      { role: 'tester' as UserRole, icon: Users, label: 'Tester', desc: 'Earn money testing apps' },
+                      { role: 'recruiter' as UserRole, icon: Briefcase, label: 'Recruiter', desc: 'Find testers for products' },
+                    ]).map(({ role, icon: Icon, label, desc }) => (
+                      <button
+                        key={role}
+                        type="button"
+                        onClick={() => setSelectedRole(role)}
+                        className={`p-4 rounded-xl border-2 text-left transition-all ${
+                          selectedRole === role 
+                            ? 'border-primary bg-primary/5' 
+                            : 'border-border/60 hover:border-border'
+                        }`}
+                      >
+                        <Icon className={`h-5 w-5 mb-2 ${selectedRole === role ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <p className="font-semibold text-sm">{label}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{desc}</p>
+                      </button>
+                    ))}
                   </div>
-                  {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                 </div>
               )}
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="pl-10"
-                  />
+
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {isSignUp && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="text-sm">Full Name</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input id="fullName" placeholder="Jane Doe" value={fullName} onChange={(e) => setFullName(e.target.value)} className="pl-10" />
+                    </div>
+                    {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                  </div>
+                )}
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-sm">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" />
+                  </div>
+                  {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                 </div>
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="pl-10"
-                  />
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password" className="text-sm">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input id="password" type="password" placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} className="pl-10" />
+                  </div>
+                  {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                 </div>
-                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-              </div>
+                
+                <Button type="submit" className="w-full bg-foreground text-background hover:bg-foreground/90 rounded-xl gap-2 h-11" disabled={isLoading}>
+                  {isLoading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
+                  {!isLoading && <ArrowRight className="h-4 w-4" />}
+                </Button>
+              </form>
               
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Please wait...' : isSignUp ? 'Create Account' : 'Sign In'}
-              </Button>
-            </form>
-            
-            <div className="mt-6 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsSignUp(!isSignUp);
-                  setErrors({});
-                }}
-                className="text-sm text-muted-foreground hover:text-primary transition-colors"
-              >
-                {isSignUp 
-                  ? 'Already have an account? Sign in' 
-                  : "Don't have an account? Sign up"}
-              </button>
-            </div>
-          </CardContent>
-        </Card>
+              <div className="mt-6 text-center">
+                <button
+                  type="button"
+                  onClick={() => { setIsSignUp(!isSignUp); setErrors({}); }}
+                  className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                >
+                  {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </main>
     </>
   );
