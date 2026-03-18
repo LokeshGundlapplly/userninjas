@@ -13,6 +13,7 @@ import About from "./pages/About";
 import TesterDashboard from "./pages/TesterDashboard";
 import TesterProfile from "./pages/TesterProfile";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -35,6 +36,7 @@ const App = () => (
               <Route path="/tester" element={<TesterDashboard />} />
               <Route path="/tester/profile" element={<TesterProfile />} />
               <Route path="/recruiter" element={<RecruiterDashboard />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

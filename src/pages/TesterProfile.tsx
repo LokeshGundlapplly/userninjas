@@ -233,7 +233,7 @@ export default function TesterProfile() {
           {/* Key Stats */}
           <ScrollReveal animation="fade-up" delay={0.1}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-yellow-500/10 rounded-full">
@@ -251,7 +251,7 @@ export default function TesterProfile() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-green-500/10 rounded-full">
@@ -266,7 +266,7 @@ export default function TesterProfile() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-primary/10 rounded-full">
@@ -281,7 +281,7 @@ export default function TesterProfile() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-purple-500/10 rounded-full">
@@ -309,7 +309,7 @@ export default function TesterProfile() {
             <div className="lg:col-span-2 space-y-6">
               {/* Rating Distribution */}
               <ScrollReveal animation="fade-up" delay={0.2}>
-                <Card className="glass-card">
+                <Card className="bg-card border border-border/60 shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Award className="h-5 w-5 text-yellow-500" />
@@ -340,7 +340,7 @@ export default function TesterProfile() {
 
               {/* Completed Tests History */}
               <ScrollReveal animation="fade-up" delay={0.3}>
-                <Card className="glass-card">
+                <Card className="bg-card border border-border/60 shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Target className="h-5 w-5 text-primary" />
@@ -397,7 +397,7 @@ export default function TesterProfile() {
             <div className="space-y-6">
               {/* Activity Summary */}
               <ScrollReveal animation="fade-up" delay={0.2}>
-                <Card className="glass-card">
+                <Card className="bg-card border border-border/60 shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TrendingUp className="h-5 w-5 text-primary" />
@@ -432,7 +432,7 @@ export default function TesterProfile() {
 
               {/* Category Expertise */}
               <ScrollReveal animation="fade-up" delay={0.3}>
-                <Card className="glass-card">
+                <Card className="bg-card border border-border/60 shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Target className="h-5 w-5 text-primary" />
@@ -467,7 +467,7 @@ export default function TesterProfile() {
 
               {/* Recent Earnings */}
               <ScrollReveal animation="fade-up" delay={0.4}>
-                <Card className="glass-card">
+                <Card className="bg-card border border-border/60 shadow-sm">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <DollarSign className="h-5 w-5 text-green-500" />

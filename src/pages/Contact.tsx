@@ -8,55 +8,31 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Background3D from '@/components/Background3D';
+import ScrollReveal from '@/components/ScrollReveal';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
 
 const contactChannels = [
-  {
-    icon: Building2,
-    title: 'FOR RECRUITERS & CLIENTS',
-    description: 'Sales, Enterprise Plans, and Mission Support',
-    email: 'support@recurteruserninjas.com',
-    color: 'bg-ninja-dark text-white',
-  },
-  {
-    icon: Users,
-    title: 'FOR TESTERS & NINJAS',
-    description: 'Payouts, Account issues, and Mission disputes',
-    email: 'support@userninjas.com',
-    color: 'bg-primary text-white',
-  },
+  { icon: Building2, title: 'For Recruiters & Clients', description: 'Sales, Enterprise Plans, and Support', email: 'support@recurteruserninjas.com' },
+  { icon: Users, title: 'For Testers & Ninjas', description: 'Payouts, Account issues, and Disputes', email: 'support@userninjas.com' },
 ];
 
-const subjects = [
-  'General Inquiry',
-  'Enterprise Sales',
-  'Technical Support',
-  'Partnership',
-  'Other',
-];
+const subjects = ['General Inquiry', 'Enterprise Sales', 'Technical Support', 'Partnership', 'Other'];
 
 export default function Contact() {
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    subject: '',
-    message: '',
-  });
+  const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', subject: '', message: '' });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Form submitted:', formData);
-    toast.success('Message sent! We\'ll get back to you soon.');
+    toast.success("Message sent! We'll get back to you soon.");
     setFormData({ firstName: '', lastName: '', email: '', subject: '', message: '' });
   };
 
   return (
     <>
       <Helmet>
-        <title>Contact HQ - User Ninjas</title>
-        <meta name="description" content="Ready to deploy a mission or need support? Our ops team is standing by. Contact User Ninjas today." />
+        <title>Contact - User Ninjas</title>
+        <meta name="description" content="Get in touch with the User Ninjas team. We're here to help with sales, support, and partnerships." />
       </Helmet>
 
       <Background3D />
@@ -64,152 +40,98 @@ export default function Contact() {
 
       <main className="pt-24 pb-16">
         <div className="container mx-auto px-4">
-          {/* Header */}
-          <div className="text-center mb-16">
-            <h1 className="font-display text-4xl md:text-6xl font-bold mb-4">
-              Contact HQ
-            </h1>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              Ready to deploy a mission or need support? Our ops team is standing by.
-            </p>
-          </div>
+          <ScrollReveal animation="fade-up">
+            <div className="text-center mb-16">
+              <p className="text-sm font-semibold text-primary tracking-wide uppercase mb-3">Contact</p>
+              <h1 className="font-display text-4xl md:text-6xl font-bold mb-4 tracking-tight">Get in touch</h1>
+              <p className="text-lg text-muted-foreground max-w-xl mx-auto">
+                Have a question or need support? Our team is standing by.
+              </p>
+            </div>
+          </ScrollReveal>
 
-          {/* Contact Channels Card */}
-          <div className="max-w-4xl mx-auto mb-12">
-            <div className="bg-card rounded-2xl border border-border p-8">
-              <h2 className="font-display text-2xl font-bold mb-6">Direct Channels</h2>
-
-              <div className="space-y-4">
-                {contactChannels.map((channel) => (
-                  <div
-                    key={channel.title}
-                    className="p-6 rounded-xl border border-border hover:border-primary/30 transition-colors"
-                  >
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 max-w-5xl mx-auto">
+            {/* Left: Contact Info */}
+            <ScrollReveal animation="fade-right" delay={150} className="lg:col-span-2">
+              <div className="space-y-5">
+                {contactChannels.map((ch) => (
+                  <div key={ch.title} className="p-6 rounded-2xl bg-card border border-border/60">
                     <div className="flex items-start gap-4">
-                      <div className={`w-12 h-12 rounded-xl ${channel.color} flex items-center justify-center shrink-0`}>
-                        <channel.icon className="w-6 h-6" />
+                      <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                        <ch.icon className="w-5 h-5 text-primary" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-sm tracking-wide mb-1">{channel.title}</h3>
-                        <p className="text-muted-foreground text-sm mb-2">{channel.description}</p>
-                        <a
-                          href={`mailto:${channel.email}`}
-                          className="text-primary font-medium hover:underline"
-                        >
-                          {channel.email}
-                        </a>
+                        <h3 className="font-semibold text-sm mb-1">{ch.title}</h3>
+                        <p className="text-xs text-muted-foreground mb-2">{ch.description}</p>
+                        <a href={`mailto:${ch.email}`} className="text-sm text-primary font-medium hover:underline">{ch.email}</a>
                       </div>
                     </div>
                   </div>
                 ))}
+
+                <div className="p-6 rounded-2xl bg-card border border-border/60 space-y-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                      <MapPin className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm mb-1">Office</h3>
+                      <p className="text-xs text-muted-foreground">Hyderabad, Hightech City 500081, India</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-secondary flex items-center justify-center shrink-0">
+                      <Phone className="w-5 h-5 text-muted-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-sm mb-1">Phone</h3>
+                      <p className="text-xs text-muted-foreground">Mon-Fri, 9am-6pm IST</p>
+                      <p className="text-sm font-medium">+91 9618495013</p>
+                    </div>
+                  </div>
+                </div>
               </div>
+            </ScrollReveal>
 
-              <div className="mt-8 pt-8 border-t border-border space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-                    <MapPin className="w-6 h-6 text-muted-foreground" />
+            {/* Right: Form */}
+            <ScrollReveal animation="fade-left" delay={250} className="lg:col-span-3">
+              <div className="bg-card rounded-2xl border border-border/60 p-8">
+                <h2 className="font-display text-xl font-bold mb-6">Send us a message</h2>
+                <form onSubmit={handleSubmit} className="space-y-5">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="firstName" className="text-sm">First Name</Label>
+                      <Input id="firstName" placeholder="Jane" className="mt-1.5" value={formData.firstName} onChange={(e) => setFormData({ ...formData, firstName: e.target.value })} />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastName" className="text-sm">Last Name</Label>
+                      <Input id="lastName" placeholder="Doe" className="mt-1.5" value={formData.lastName} onChange={(e) => setFormData({ ...formData, lastName: e.target.value })} />
+                    </div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-sm tracking-wide mb-1">BASE OF OPERATIONS</h3>
-                    <p className="text-muted-foreground">Hyderabad, Hightech city 5006167<br />India</p>
-                  </div>
-                </div>
-
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-secondary flex items-center justify-center shrink-0">
-                    <Phone className="w-6 h-6 text-muted-foreground" />
+                    <Label htmlFor="email" className="text-sm">Email</Label>
+                    <Input id="email" type="email" placeholder="jane@company.com" className="mt-1.5" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-sm tracking-wide mb-1">HOTLINE</h3>
-                    <p className="text-muted-foreground mb-1">Mon-Fri, 9am - 6pm IST</p>
-                    <p className="font-semibold">+91 9618495013</p>
+                    <Label htmlFor="subject" className="text-sm">Subject</Label>
+                    <Select value={formData.subject} onValueChange={(v) => setFormData({ ...formData, subject: v })}>
+                      <SelectTrigger className="mt-1.5"><SelectValue placeholder="Select a topic" /></SelectTrigger>
+                      <SelectContent>
+                        {subjects.map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
+                  <div>
+                    <Label htmlFor="message" className="text-sm">Message</Label>
+                    <Textarea id="message" placeholder="How can we help?" className="mt-1.5 min-h-[120px]" value={formData.message} onChange={(e) => setFormData({ ...formData, message: e.target.value })} />
+                  </div>
+                  <Button type="submit" className="w-full bg-foreground text-background hover:bg-foreground/90 rounded-xl h-11 gap-2">
+                    <Send className="w-4 h-4" />
+                    Send Message
+                  </Button>
+                </form>
               </div>
-            </div>
-          </div>
-
-          {/* Contact Form Card */}
-          <div className="max-w-4xl mx-auto">
-            <div className="bg-card rounded-2xl border border-border p-8">
-              <h2 className="font-display text-2xl font-bold mb-8">Send a Transmission</h2>
-
-              <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      placeholder="Jane"
-                      className="mt-2"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      placeholder="Doe"
-                      className="mt-2"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <Label htmlFor="email">Email Address</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="jane@company.com"
-                    className="mt-2"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="subject">Subject</Label>
-                  <Select
-                    value={formData.subject}
-                    onValueChange={(value) => setFormData({ ...formData, subject: value })}
-                  >
-                    <SelectTrigger className="mt-2">
-                      <SelectValue placeholder="General Inquiry" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {subjects.map((subject) => (
-                        <SelectItem key={subject} value={subject}>
-                          {subject}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label htmlFor="message">Message</Label>
-                  <Textarea
-                    id="message"
-                    placeholder="How can we help you execute your research goals?"
-                    className="mt-2 min-h-[120px]"
-                    value={formData.message}
-                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
-                  />
-                </div>
-
-                <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-xl">
-                  <Send className="w-5 h-5 mr-2" />
-                  Send Message
-                </Button>
-
-                <p className="text-center text-sm text-muted-foreground">
-                  By sending this message, you agree to our privacy policy and terms of service.
-                </p>
-              </form>
-            </div>
+            </ScrollReveal>
           </div>
         </div>
       </main>

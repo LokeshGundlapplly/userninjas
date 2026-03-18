@@ -415,7 +415,7 @@ export default function TesterDashboard() {
           {/* Stats Overview */}
           <ScrollReveal animation="fade-up" delay={0.1}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -429,7 +429,7 @@ export default function TesterDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -443,7 +443,7 @@ export default function TesterDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -457,7 +457,7 @@ export default function TesterDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -471,7 +471,7 @@ export default function TesterDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -514,7 +514,7 @@ export default function TesterDashboard() {
 
               <TabsContent value="available" className="space-y-4">
                 {tests.length === 0 ? (
-                  <Card className="glass-card">
+                  <Card className="bg-card border border-border/60 shadow-sm">
                     <CardContent className="pt-6 text-center">
                       <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">No tests available at the moment.</p>
@@ -526,7 +526,7 @@ export default function TesterDashboard() {
                     {tests.map((test) => {
                       const alreadyStarted = submissions.some(s => s.test_id === test.id);
                       return (
-                        <Card key={test.id} className="glass-card hover-lift">
+                        <Card key={test.id} className="bg-card border border-border/60 shadow-sm hover-lift">
                           <CardHeader>
                             <div className="flex items-start justify-between">
                               <div>
@@ -569,7 +569,7 @@ export default function TesterDashboard() {
 
               <TabsContent value="submissions" className="space-y-4">
                 {submissions.length === 0 ? (
-                  <Card className="glass-card">
+                  <Card className="bg-card border border-border/60 shadow-sm">
                     <CardContent className="pt-6 text-center">
                       <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">You haven't started any tests yet.</p>
@@ -579,7 +579,7 @@ export default function TesterDashboard() {
                 ) : (
                   <div className="space-y-4">
                     {submissions.map((submission) => (
-                      <Card key={submission.id} className="glass-card">
+                      <Card key={submission.id} className="bg-card border border-border/60 shadow-sm">
                         <CardContent className="pt-6">
                           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <div className="flex-1">
@@ -622,19 +622,19 @@ export default function TesterDashboard() {
 
               <TabsContent value="earnings" className="space-y-4">
                 <div className="grid sm:grid-cols-3 gap-4 mb-6">
-                  <Card className="glass-card">
+                  <Card className="bg-card border border-border/60 shadow-sm">
                     <CardContent className="pt-6 text-center">
                       <p className="text-sm text-muted-foreground">Total Earned</p>
                       <p className="text-2xl font-bold text-primary">${totalEarnings.toFixed(2)}</p>
                     </CardContent>
                   </Card>
-                  <Card className="glass-card">
+                  <Card className="bg-card border border-border/60 shadow-sm">
                     <CardContent className="pt-6 text-center">
                       <p className="text-sm text-muted-foreground">Pending Payout</p>
                       <p className="text-2xl font-bold text-yellow-500">${pendingEarnings.toFixed(2)}</p>
                     </CardContent>
                   </Card>
-                  <Card className="glass-card">
+                  <Card className="bg-card border border-border/60 shadow-sm">
                     <CardContent className="pt-6 text-center">
                       <p className="text-sm text-muted-foreground">Paid Out</p>
                       <p className="text-2xl font-bold text-green-500">${paidEarnings.toFixed(2)}</p>
@@ -643,7 +643,7 @@ export default function TesterDashboard() {
                 </div>
 
                 {earnings.length === 0 ? (
-                  <Card className="glass-card">
+                  <Card className="bg-card border border-border/60 shadow-sm">
                     <CardContent className="pt-6 text-center">
                       <Wallet className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">No earnings yet.</p>
@@ -651,7 +651,7 @@ export default function TesterDashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <Card className="glass-card">
+                  <Card className="bg-card border border-border/60 shadow-sm">
                     <CardHeader>
                       <CardTitle>Earnings History</CardTitle>
                     </CardHeader>

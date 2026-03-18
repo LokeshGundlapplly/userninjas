@@ -1,20 +1,19 @@
 import { useState } from 'react';
-import { Check } from 'lucide-react';
+import { Check, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import ScrollReveal from './ScrollReveal';
 
 const pricingTiers = [
   {
     name: 'Starter',
-    description: 'Perfect for small teams getting started',
+    description: 'For small teams getting started',
     monthlyPrice: 49,
     annualPrice: 39,
     features: [
       '5 user tests per month',
-      'Access to 10,000+ testers',
-      'Basic analytics dashboard',
+      '10,000+ testers',
+      'Basic analytics',
       '48-hour turnaround',
       'Email support',
     ],
@@ -23,16 +22,16 @@ const pricingTiers = [
   },
   {
     name: 'Pro',
-    description: 'For growing teams that need more power',
+    description: 'For growing teams that need more',
     monthlyPrice: 149,
     annualPrice: 119,
     features: [
       '25 user tests per month',
-      'Access to 50,000+ testers',
+      '50,000+ testers',
       'Advanced analytics & heatmaps',
       '24-hour turnaround',
       'Priority support',
-      'Custom screening criteria',
+      'Custom screening',
       'Video recordings',
     ],
     cta: 'Get Started',
@@ -40,17 +39,17 @@ const pricingTiers = [
   },
   {
     name: 'Enterprise',
-    description: 'For organizations with advanced needs',
+    description: 'For organizations at scale',
     monthlyPrice: 499,
     annualPrice: 399,
     features: [
       'Unlimited user tests',
-      'Access to 120,000+ testers',
+      '120,000+ testers',
       'Full analytics suite',
       '12-hour turnaround',
-      'Dedicated account manager',
+      'Dedicated manager',
       'Custom integrations',
-      'SSO & advanced security',
+      'SSO & security',
       'SLA guarantee',
     ],
     cta: 'Contact Sales',
@@ -62,26 +61,23 @@ export default function Pricing() {
   const [isAnnual, setIsAnnual] = useState(false);
 
   return (
-    <section className="py-24 px-4 bg-secondary/30">
-      <div className="container mx-auto max-w-7xl">
+    <section id="pricing" className="py-24 bg-secondary/30">
+      <div className="container mx-auto px-4 max-w-6xl">
         <ScrollReveal animation="fade-up">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-display font-bold mb-4">
-              Simple, Transparent <span className="text-gradient">Pricing</span>
+            <p className="text-sm font-semibold text-primary tracking-wide uppercase mb-3">Pricing</p>
+            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+              Simple, transparent pricing
             </h2>
             <p className="text-muted-foreground text-lg max-w-2xl mx-auto mb-8">
-              Choose the plan that fits your research needs. All plans include a 14-day free trial.
+              All plans include a 14-day free trial. No credit card required.
             </p>
             
             <div className="flex items-center justify-center gap-4">
               <span className={`text-sm font-medium transition-colors ${!isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
                 Monthly
               </span>
-              <Switch
-                checked={isAnnual}
-                onCheckedChange={setIsAnnual}
-                className="data-[state=checked]:bg-primary"
-              />
+              <Switch checked={isAnnual} onCheckedChange={setIsAnnual} />
               <span className={`text-sm font-medium transition-colors ${isAnnual ? 'text-foreground' : 'text-muted-foreground'}`}>
                 Annual
                 <span className="ml-2 text-xs text-primary font-semibold">Save 20%</span>
@@ -90,64 +86,64 @@ export default function Pricing() {
           </div>
         </ScrollReveal>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-5">
           {pricingTiers.map((tier, index) => (
-            <ScrollReveal key={tier.name} animation="fade-up" delay={index * 0.1}>
-              <Card 
-                className={`relative h-full flex flex-col transition-all duration-300 hover:-translate-y-2 ${
+            <ScrollReveal key={tier.name} animation="fade-up" delay={index * 100}>
+              <div 
+                className={`relative rounded-2xl p-7 h-full flex flex-col transition-all duration-300 hover:-translate-y-1 ${
                   tier.popular 
-                    ? 'border-primary shadow-lg shadow-primary/20 scale-105' 
-                    : 'border-border hover:border-primary/50'
+                    ? 'bg-foreground text-background shadow-2xl scale-[1.02]' 
+                    : 'bg-card border border-border/60 hover:border-primary/30 hover:shadow-lg'
                 }`}
               >
                 {tier.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="bg-primary text-primary-foreground text-xs font-semibold px-4 py-1.5 rounded-full">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                    <span className="bg-primary text-primary-foreground text-xs font-bold px-4 py-1 rounded-full">
                       Most Popular
                     </span>
                   </div>
                 )}
                 
-                <CardHeader className="text-center pb-4">
-                  <CardTitle className="text-2xl font-display">{tier.name}</CardTitle>
-                  <CardDescription>{tier.description}</CardDescription>
-                </CardHeader>
+                <div className="mb-6">
+                  <h3 className="font-display text-xl font-bold">{tier.name}</h3>
+                  <p className={`text-sm mt-1 ${tier.popular ? 'text-background/60' : 'text-muted-foreground'}`}>{tier.description}</p>
+                </div>
                 
-                <CardContent className="flex-1">
-                  <div className="text-center mb-8">
-                    <div className="flex items-baseline justify-center gap-1">
-                      <span className="text-4xl font-bold">
-                        ${isAnnual ? tier.annualPrice : tier.monthlyPrice}
-                      </span>
-                      <span className="text-muted-foreground">/month</span>
-                    </div>
-                    {isAnnual && (
-                      <p className="text-sm text-muted-foreground mt-1">
-                        Billed annually (${tier.annualPrice * 12}/year)
-                      </p>
-                    )}
+                <div className="mb-6">
+                  <div className="flex items-baseline gap-1">
+                    <span className="font-display text-4xl font-extrabold">
+                      ${isAnnual ? tier.annualPrice : tier.monthlyPrice}
+                    </span>
+                    <span className={`text-sm ${tier.popular ? 'text-background/50' : 'text-muted-foreground'}`}>/mo</span>
                   </div>
-                  
-                  <ul className="space-y-3">
-                    {tier.features.map((feature) => (
-                      <li key={feature} className="flex items-start gap-3">
-                        <Check className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                        <span className="text-sm text-muted-foreground">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
+                  {isAnnual && (
+                    <p className={`text-xs mt-1 ${tier.popular ? 'text-background/50' : 'text-muted-foreground'}`}>
+                      Billed annually (${tier.annualPrice * 12}/yr)
+                    </p>
+                  )}
+                </div>
                 
-                <CardFooter>
-                  <Button 
-                    className="w-full" 
-                    variant={tier.popular ? 'default' : 'outline'}
-                    size="lg"
-                  >
-                    {tier.cta}
-                  </Button>
-                </CardFooter>
-              </Card>
+                <ul className="space-y-3 flex-1 mb-8">
+                  {tier.features.map((feature) => (
+                    <li key={feature} className="flex items-start gap-2.5">
+                      <Check className={`h-4 w-4 shrink-0 mt-0.5 ${tier.popular ? 'text-primary' : 'text-primary'}`} />
+                      <span className={`text-sm ${tier.popular ? 'text-background/80' : 'text-muted-foreground'}`}>{feature}</span>
+                    </li>
+                  ))}
+                </ul>
+                
+                <Button 
+                  className={`w-full rounded-xl gap-2 ${
+                    tier.popular 
+                      ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                      : 'bg-foreground text-background hover:bg-foreground/90'
+                  }`}
+                  size="lg"
+                >
+                  {tier.cta}
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
             </ScrollReveal>
           ))}
         </div>
