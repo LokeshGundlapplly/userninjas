@@ -36,6 +36,7 @@ const App = () => (
               <Route path="/tester" element={<TesterDashboard />} />
               <Route path="/tester/profile" element={<TesterProfile />} />
               <Route path="/recruiter" element={<RecruiterDashboard />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
