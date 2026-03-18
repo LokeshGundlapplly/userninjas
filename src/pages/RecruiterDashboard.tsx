@@ -566,7 +566,7 @@ export default function RecruiterDashboard() {
           {/* Stats Overview */}
           <ScrollReveal animation="fade-up" delay={0.1}>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
@@ -580,7 +580,7 @@ export default function RecruiterDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
@@ -594,7 +594,7 @@ export default function RecruiterDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
@@ -608,7 +608,7 @@ export default function RecruiterDashboard() {
                 </CardContent>
               </Card>
 
-              <Card className="glass-card">
+              <Card className="bg-card border border-border/60 shadow-sm">
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div className="min-w-0">
@@ -640,7 +640,7 @@ export default function RecruiterDashboard() {
 
               <TabsContent value="tests" className="space-y-4">
                 {tests.length === 0 ? (
-                  <Card className="glass-card">
+                  <Card className="bg-card border border-border/60 shadow-sm">
                     <CardContent className="pt-6 text-center">
                       <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">You haven't created any tests yet.</p>
@@ -656,7 +656,7 @@ export default function RecruiterDashboard() {
                     {tests.map((test) => {
                       const testSubmissions = submissions.filter(s => s.test_id === test.id);
                       return (
-                        <Card key={test.id} className="glass-card">
+                        <Card key={test.id} className="bg-card border border-border/60 shadow-sm">
                           <CardHeader className="pb-3">
                             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
                               <div className="min-w-0 flex-1">
@@ -825,7 +825,7 @@ export default function RecruiterDashboard() {
 
               <TabsContent value="submissions" className="space-y-4">
                 {submissions.length === 0 ? (
-                  <Card className="glass-card">
+                  <Card className="bg-card border border-border/60 shadow-sm">
                     <CardContent className="pt-6 text-center">
                       <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                       <p className="text-muted-foreground">No submissions yet.</p>
@@ -835,7 +835,7 @@ export default function RecruiterDashboard() {
                 ) : (
                   <div className="space-y-4">
                     {submissions.map((submission) => (
-                      <Card key={submission.id} className="glass-card">
+                      <Card key={submission.id} className="bg-card border border-border/60 shadow-sm">
                         <CardContent className="pt-6">
                           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                             <div className="min-w-0 flex-1">
