@@ -13,6 +13,7 @@ import About from "./pages/About";
 import TesterDashboard from "./pages/TesterDashboard";
 import TesterProfile from "./pages/TesterProfile";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
