@@ -1087,6 +1087,11 @@ export default function RecruiterDashboard() {
                       )}
                     </Button>
                   ))}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={exportSubmissions} disabled={filteredSubmissions.length === 0}>
+                    <Download className="h-4 w-4 mr-1.5" />
+                    Export CSV
+                  </Button>
                 </div>
 
                 {filteredSubmissions.length === 0 ? (
