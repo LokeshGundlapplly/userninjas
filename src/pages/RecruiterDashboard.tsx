@@ -1230,6 +1230,12 @@ export default function RecruiterDashboard() {
                   </Card>
                 ) : (
                   <>
+                    <div className="flex justify-end">
+                      <Button variant="outline" size="sm" onClick={exportAnalytics}>
+                        <Download className="h-4 w-4 mr-1.5" />
+                        Export Analytics CSV
+                      </Button>
+                    </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Submission Status Breakdown */}
                       <Card className="bg-card border border-border/60 shadow-sm">
