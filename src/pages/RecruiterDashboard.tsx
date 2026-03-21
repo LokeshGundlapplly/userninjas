@@ -559,7 +559,7 @@ export default function RecruiterDashboard() {
     toast({ title: 'Export complete', description: 'Analytics data exported.' });
   };
 
-
+  if (authLoading || loading) {
     return (
       <>
         <Background3D />
