@@ -62,7 +62,8 @@ import {
   Percent,
   Award,
   Zap,
-  PieChart
+  PieChart,
+  Download
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 import StarRating from '@/components/StarRating';
