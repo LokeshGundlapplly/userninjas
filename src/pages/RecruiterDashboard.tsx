@@ -543,7 +543,7 @@ export default function RecruiterDashboard() {
       ['Approval Rate', `${approvalRate}%`],
       ['Average Rating', avgRating.toFixed(1)],
       ['Completion Rate', `${completionRate}%`],
-      ['Total Spend', `$${totalSpend.toFixed(2)}`],
+      ['Total Spend', `$${totalSpent.toFixed(2)}`],
       ['Unique Testers', uniqueTesters.toString()],
       ['', ''],
       ['--- Submissions by Status ---', ''],
