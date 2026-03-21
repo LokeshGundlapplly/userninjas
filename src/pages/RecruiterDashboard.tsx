@@ -62,7 +62,8 @@ import {
   Percent,
   Award,
   Zap,
-  PieChart
+  PieChart,
+  Download
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 import StarRating from '@/components/StarRating';
@@ -504,7 +505,61 @@ export default function RecruiterDashboard() {
     }
   };
 
-  if (authLoading || loading) {
+  const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportSubmissions = () => {
+    const headers = ['Test', 'Tester ID', 'Status', 'Rating', 'Feedback', 'Submitted At', 'Created At', 'Reward'];
+    const rows = filteredSubmissions.map(s => [
+      s.tests?.title || '',
+      s.tester_id,
+      s.status,
+      s.rating?.toString() || '',
+      s.feedback || '',
+      s.submitted_at ? new Date(s.submitted_at).toLocaleDateString() : '',
+      new Date(s.created_at).toLocaleDateString(),
+      s.tests?.reward_amount?.toString() || '',
+    ]);
+    downloadCSV(`submissions_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+    toast({ title: 'Export complete', description: `${rows.length} submissions exported.` });
+  };
+
+  const exportAnalytics = () => {
+    const headers = ['Metric', 'Value'];
+    const rows: string[][] = [
+      ['Total Tests', tests.length.toString()],
+      ['Total Submissions', submissions.length.toString()],
+      ['Approval Rate', `${approvalRate}%`],
+      ['Average Rating', avgRating.toFixed(1)],
+      ['Completion Rate', `${completionRate}%`],
+      ['Total Spend', `$${totalSpend.toFixed(2)}`],
+      ['Unique Testers', uniqueTesters.toString()],
+      ['', ''],
+      ['--- Submissions by Status ---', ''],
+      ...submissionStatusData.map(d => [d.name, d.value.toString()]),
+      ['', ''],
+      ['--- Tests by Category ---', ''],
+      ...categoryData.map(d => [d.name, d.value.toString()]),
+      ['', ''],
+      ['--- Spending by Test ---', ''],
+      ...spendingByTest.map(d => [d.name, `$${d.amount.toFixed(2)}`]),
+    ];
+    downloadCSV(`analytics_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+    toast({ title: 'Export complete', description: 'Analytics data exported.' });
+  };
+
+
     return (
       <>
         <Background3D />
@@ -1012,7 +1067,8 @@ export default function RecruiterDashboard() {
 
               <TabsContent value="submissions" className="space-y-4">
                 {/* Filter bar */}
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 justify-between">
+                  <div className="flex flex-wrap items-center gap-2">
                   <Filter className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Filter:</span>
                   {['all', 'in_progress', 'submitted', 'approved', 'rejected'].map(filter => (
@@ -1031,6 +1087,11 @@ export default function RecruiterDashboard() {
                       )}
                     </Button>
                   ))}
+                  </div>
+                  <Button variant="outline" size="sm" onClick={exportSubmissions} disabled={filteredSubmissions.length === 0}>
+                    <Download className="h-4 w-4 mr-1.5" />
+                    Export CSV
+                  </Button>
                 </div>
 
                 {filteredSubmissions.length === 0 ? (
@@ -1169,6 +1230,12 @@ export default function RecruiterDashboard() {
                   </Card>
                 ) : (
                   <>
+                    <div className="flex justify-end">
+                      <Button variant="outline" size="sm" onClick={exportAnalytics}>
+                        <Download className="h-4 w-4 mr-1.5" />
+                        Export Analytics CSV
+                      </Button>
+                    </div>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {/* Submission Status Breakdown */}
                       <Card className="bg-card border border-border/60 shadow-sm">
