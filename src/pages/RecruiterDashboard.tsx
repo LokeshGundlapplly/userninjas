@@ -505,7 +505,61 @@ export default function RecruiterDashboard() {
     }
   };
 
-  if (authLoading || loading) {
+  const downloadCSV = (filename: string, headers: string[], rows: string[][]) => {
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${String(cell ?? '').replace(/"/g, '""')}"`).join(','))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const exportSubmissions = () => {
+    const headers = ['Test', 'Tester ID', 'Status', 'Rating', 'Feedback', 'Submitted At', 'Created At', 'Reward'];
+    const rows = filteredSubmissions.map(s => [
+      s.tests?.title || '',
+      s.tester_id,
+      s.status,
+      s.rating?.toString() || '',
+      s.feedback || '',
+      s.submitted_at ? new Date(s.submitted_at).toLocaleDateString() : '',
+      new Date(s.created_at).toLocaleDateString(),
+      s.tests?.reward_amount?.toString() || '',
+    ]);
+    downloadCSV(`submissions_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+    toast({ title: 'Export complete', description: `${rows.length} submissions exported.` });
+  };
+
+  const exportAnalytics = () => {
+    const headers = ['Metric', 'Value'];
+    const rows: string[][] = [
+      ['Total Tests', tests.length.toString()],
+      ['Total Submissions', submissions.length.toString()],
+      ['Approval Rate', `${approvalRate}%`],
+      ['Average Rating', avgRating.toFixed(1)],
+      ['Completion Rate', `${completionRate}%`],
+      ['Total Spend', `$${totalSpend.toFixed(2)}`],
+      ['Unique Testers', uniqueTesters.toString()],
+      ['', ''],
+      ['--- Submissions by Status ---', ''],
+      ...submissionStatusData.map(d => [d.name, d.value.toString()]),
+      ['', ''],
+      ['--- Tests by Category ---', ''],
+      ...categoryData.map(d => [d.name, d.value.toString()]),
+      ['', ''],
+      ['--- Spending by Test ---', ''],
+      ...spendingByTest.map(d => [d.name, `$${d.amount.toFixed(2)}`]),
+    ];
+    downloadCSV(`analytics_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
+    toast({ title: 'Export complete', description: 'Analytics data exported.' });
+  };
+
+
     return (
       <>
         <Background3D />
