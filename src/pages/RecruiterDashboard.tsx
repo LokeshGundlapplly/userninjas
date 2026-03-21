@@ -1067,7 +1067,8 @@ export default function RecruiterDashboard() {
 
               <TabsContent value="submissions" className="space-y-4">
                 {/* Filter bar */}
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 justify-between">
+                  <div className="flex flex-wrap items-center gap-2">
                   <Filter className="h-4 w-4 text-muted-foreground" />
                   <span className="text-sm text-muted-foreground">Filter:</span>
                   {['all', 'in_progress', 'submitted', 'approved', 'rejected'].map(filter => (
