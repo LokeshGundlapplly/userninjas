@@ -57,33 +57,250 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           avatar_url: string | null
+          bio: string | null
           created_at: string
+          devices: string[] | null
           email: string | null
           full_name: string | null
+          gender: string | null
           id: string
+          interests: string[] | null
+          location: string | null
           updated_at: string
           user_id: string
         }
         Insert: {
+          age?: number | null
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          devices?: string[] | null
           email?: string | null
           full_name?: string | null
+          gender?: string | null
           id?: string
+          interests?: string[] | null
+          location?: string | null
           updated_at?: string
           user_id: string
         }
         Update: {
+          age?: number | null
           avatar_url?: string | null
+          bio?: string | null
           created_at?: string
+          devices?: string[] | null
           email?: string | null
           full_name?: string | null
+          gender?: string | null
           id?: string
+          interests?: string[] | null
+          location?: string | null
           updated_at?: string
           user_id?: string
         }
         Relationships: []
+      }
+      question_answers: {
+        Row: {
+          answer_text: string | null
+          created_at: string
+          id: string
+          question_id: string
+          selected_option: number | null
+          submission_id: string
+        }
+        Insert: {
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id: string
+          selected_option?: number | null
+          submission_id: string
+        }
+        Update: {
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id?: string
+          selected_option?: number | null
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "test_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_answers_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "test_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_questions: {
+        Row: {
+          created_at: string
+          id: string
+          logic_branch: Json | null
+          options: Json | null
+          question_text: string
+          question_type: string
+          required: boolean | null
+          sort_order: number
+          survey_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logic_branch?: Json | null
+          options?: Json | null
+          question_text: string
+          question_type?: string
+          required?: boolean | null
+          sort_order?: number
+          survey_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logic_branch?: Json | null
+          options?: Json | null
+          question_text?: string
+          question_type?: string
+          required?: boolean | null
+          sort_order?: number
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_questions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          respondent_id: string
+          survey_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          respondent_id: string
+          survey_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          respondent_id?: string
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surveys: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          recruiter_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          recruiter_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          recruiter_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      test_questions: {
+        Row: {
+          created_at: string
+          id: string
+          options: Json | null
+          question_text: string
+          question_type: string
+          required: boolean | null
+          sort_order: number
+          task_id: string | null
+          test_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          options?: Json | null
+          question_text: string
+          question_type?: string
+          required?: boolean | null
+          sort_order?: number
+          task_id?: string | null
+          test_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          options?: Json | null
+          question_text?: string
+          question_type?: string
+          required?: boolean | null
+          sort_order?: number
+          task_id?: string | null
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_questions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "test_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       test_submissions: {
         Row: {
@@ -92,6 +309,7 @@ export type Database = {
           feedback: string | null
           id: string
           rating: number | null
+          recording_url: string | null
           reviewed_at: string | null
           status: string
           submitted_at: string | null
@@ -104,6 +322,7 @@ export type Database = {
           feedback?: string | null
           id?: string
           rating?: number | null
+          recording_url?: string | null
           reviewed_at?: string | null
           status?: string
           submitted_at?: string | null
@@ -116,6 +335,7 @@ export type Database = {
           feedback?: string | null
           id?: string
           rating?: number | null
+          recording_url?: string | null
           reviewed_at?: string | null
           status?: string
           submitted_at?: string | null
@@ -132,49 +352,102 @@ export type Database = {
           },
         ]
       }
+      test_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          sort_order: number
+          test_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          sort_order?: number
+          test_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          sort_order?: number
+          test_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_tasks_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tests: {
         Row: {
+          browser_targeting: string[] | null
           category: string | null
           created_at: string
           current_testers: number | null
           description: string | null
+          device_targeting: string[] | null
           estimated_duration: number
           id: string
           max_testers: number | null
+          prototype_url: string | null
           recruiter_id: string
           requirements: string | null
           reward_amount: number
+          screener_questions: Json | null
           status: string
+          target_audience: Json | null
+          test_type: string | null
           title: string
           updated_at: string
         }
         Insert: {
+          browser_targeting?: string[] | null
           category?: string | null
           created_at?: string
           current_testers?: number | null
           description?: string | null
+          device_targeting?: string[] | null
           estimated_duration?: number
           id?: string
           max_testers?: number | null
+          prototype_url?: string | null
           recruiter_id: string
           requirements?: string | null
           reward_amount?: number
+          screener_questions?: Json | null
           status?: string
+          target_audience?: Json | null
+          test_type?: string | null
           title: string
           updated_at?: string
         }
         Update: {
+          browser_targeting?: string[] | null
           category?: string | null
           created_at?: string
           current_testers?: number | null
           description?: string | null
+          device_targeting?: string[] | null
           estimated_duration?: number
           id?: string
           max_testers?: number | null
+          prototype_url?: string | null
           recruiter_id?: string
           requirements?: string | null
           reward_amount?: number
+          screener_questions?: Json | null
           status?: string
+          target_audience?: Json | null
+          test_type?: string | null
           title?: string
           updated_at?: string
         }
@@ -219,7 +492,7 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "tester" | "recruiter"
+      app_role: "tester" | "recruiter" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -347,7 +620,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["tester", "recruiter"],
+      app_role: ["tester", "recruiter", "admin"],
     },
   },
 } as const
