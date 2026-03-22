@@ -14,6 +14,9 @@ import TesterDashboard from "./pages/TesterDashboard";
 import TesterProfile from "./pages/TesterProfile";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import ResetPassword from "./pages/ResetPassword";
+import CreateTest from "./pages/CreateTest";
+import SurveyBuilder from "./pages/SurveyBuilder";
+import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -36,6 +39,9 @@ const App = () => (
               <Route path="/tester" element={<TesterDashboard />} />
               <Route path="/tester/profile" element={<TesterProfile />} />
               <Route path="/recruiter" element={<RecruiterDashboard />} />
+              <Route path="/recruiter/create-test" element={<CreateTest />} />
+              <Route path="/recruiter/surveys" element={<SurveyBuilder />} />
+              <Route path="/admin" element={<AdminPanel />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
