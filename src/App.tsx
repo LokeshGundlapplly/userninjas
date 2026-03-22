@@ -14,6 +14,9 @@ import TesterDashboard from "./pages/TesterDashboard";
 import TesterProfile from "./pages/TesterProfile";
 import RecruiterDashboard from "./pages/RecruiterDashboard";
 import ResetPassword from "./pages/ResetPassword";
+import CreateTest from "./pages/CreateTest";
+import SurveyBuilder from "./pages/SurveyBuilder";
+import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
