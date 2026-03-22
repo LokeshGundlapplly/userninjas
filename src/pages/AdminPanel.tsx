@@ -41,10 +41,10 @@ export default function AdminPanel() {
   const [stats, setStats] = useState({ totalUsers: 0, totalTests: 0, totalEarnings: 0, pendingTests: 0 });
 
   useEffect(() => {
-    if (!authLoading && (!user || role !== 'admin')) {
+    if (!authLoading && (!user || (role as string) !== 'admin')) {
       navigate('/');
       toast({ title: 'Access denied', description: 'Admin access required.', variant: 'destructive' });
-    } else if (!authLoading && user && role === 'admin') {
+    } else if (!authLoading && user && (role as string) === 'admin') {
       fetchAll();
     }
   }, [authLoading, user, role]);

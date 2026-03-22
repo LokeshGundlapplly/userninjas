@@ -131,7 +131,7 @@ export default function CreateTest() {
       // Create test
       const { data: test, error: testError } = await supabase
         .from('tests')
-        .insert({
+        .insert([{
           recruiter_id: user.id,
           title: title.trim(),
           description: description.trim() || null,
@@ -141,12 +141,12 @@ export default function CreateTest() {
           max_testers: maxTesters,
           test_type: testType,
           prototype_url: prototypeUrl.trim() || null,
-          target_audience: { age: targetAge, location: targetLocation },
-          screener_questions: screenerQuestions.filter(s => s.question.trim()),
+          target_audience: { age: targetAge, location: targetLocation } as any,
+          screener_questions: screenerQuestions.filter(s => s.question.trim()) as any,
           device_targeting: deviceTargeting,
           browser_targeting: browserTargeting,
           status: 'active',
-        })
+        }])
         .select()
         .single();
 
