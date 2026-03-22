@@ -39,6 +39,9 @@ const App = () => (
               <Route path="/tester" element={<TesterDashboard />} />
               <Route path="/tester/profile" element={<TesterProfile />} />
               <Route path="/recruiter" element={<RecruiterDashboard />} />
+              <Route path="/recruiter/create-test" element={<CreateTest />} />
+              <Route path="/recruiter/surveys" element={<SurveyBuilder />} />
+              <Route path="/admin" element={<AdminPanel />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
