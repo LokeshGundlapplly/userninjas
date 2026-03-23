@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
+import ScreenRecorder from '@/components/ScreenRecorder';
 
 interface Test {
   id: string;
@@ -94,6 +95,9 @@ export default function TesterDashboard() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Screen recording state
+  const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -202,6 +206,7 @@ export default function TesterDashboard() {
     setSelectedSubmission(submission);
     setFeedbackText(submission.feedback || '');
     setUploadedFiles([]);
+    setRecordingBlob(null);
     setSubmitDialogOpen(true);
   };
 
@@ -252,23 +257,20 @@ export default function TesterDashboard() {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const uploadFiles = async (): Promise<string[]> => {
-    if (uploadedFiles.length === 0 || !user) return [];
+  const uploadFiles = async (): Promise<{ attachmentUrls: string[]; recordingUrl: string | null }> => {
+    if (!user || !selectedSubmission) return { attachmentUrls: [], recordingUrl: null };
     
     const urls: string[] = [];
     
     for (const file of uploadedFiles) {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${selectedSubmission?.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileName = `${user.id}/${selectedSubmission.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       
       const { error } = await supabase.storage
         .from('submission-attachments')
         .upload(fileName, file);
       
-      if (error) {
-        console.error('Error uploading file:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       const { data: { publicUrl } } = supabase.storage
         .from('submission-attachments')
@@ -277,7 +279,24 @@ export default function TesterDashboard() {
       urls.push(publicUrl);
     }
     
-    return urls;
+    // Upload screen recording if present
+    let recordingUrl: string | null = null;
+    if (recordingBlob) {
+      const recName = `${user.id}/${selectedSubmission.id}/recording-${Date.now()}.webm`;
+      const { error } = await supabase.storage
+        .from('submission-attachments')
+        .upload(recName, recordingBlob);
+      
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('submission-attachments')
+        .getPublicUrl(recName);
+      
+      recordingUrl = publicUrl;
+    }
+    
+    return { attachmentUrls: urls, recordingUrl };
   };
 
   const submitTest = async () => {
@@ -294,13 +313,10 @@ export default function TesterDashboard() {
 
     setSubmitting(true);
     try {
-      // Upload files first
-      let attachmentUrls: string[] = [];
-      if (uploadedFiles.length > 0) {
-        setUploading(true);
-        attachmentUrls = await uploadFiles();
-        setUploading(false);
-      }
+      // Upload files and recording
+      setUploading(true);
+      const { attachmentUrls, recordingUrl } = await uploadFiles();
+      setUploading(false);
       
       const { error } = await supabase
         .from('test_submissions')
@@ -309,6 +325,7 @@ export default function TesterDashboard() {
           feedback: feedbackText.trim(),
           submitted_at: new Date().toISOString(),
           attachments: attachmentUrls,
+          recording_url: recordingUrl,
         })
         .eq('id', selectedSubmission.id);
 
@@ -323,6 +340,7 @@ export default function TesterDashboard() {
       setSelectedSubmission(null);
       setFeedbackText('');
       setUploadedFiles([]);
+      setRecordingBlob(null);
       fetchData();
     } catch (error) {
       console.error('Error submitting test:', error);
@@ -706,6 +724,17 @@ export default function TesterDashboard() {
               </p>
             </div>
             
+            {/* Screen Recording Section */}
+            <ScreenRecorder
+              onRecordingComplete={(blob) => setRecordingBlob(blob)}
+              disabled={submitting}
+            />
+            {recordingBlob && (
+              <p className="text-xs text-green-500 flex items-center gap-1">
+                ✓ Recording attached ({(recordingBlob.size / 1024 / 1024).toFixed(1)}MB)
+              </p>
+            )}
+
             {/* File Upload Section */}
             <div className="space-y-3">
               <Label>Attachments (Optional)</Label>
@@ -774,6 +803,7 @@ export default function TesterDashboard() {
               onClick={() => {
                 setSubmitDialogOpen(false);
                 setUploadedFiles([]);
+                setRecordingBlob(null);
               }}
               disabled={submitting}
             >
