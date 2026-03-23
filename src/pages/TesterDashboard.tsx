@@ -206,6 +206,7 @@ export default function TesterDashboard() {
     setSelectedSubmission(submission);
     setFeedbackText(submission.feedback || '');
     setUploadedFiles([]);
+    setRecordingBlob(null);
     setSubmitDialogOpen(true);
   };
 
