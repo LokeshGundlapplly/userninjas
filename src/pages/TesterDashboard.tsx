@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
+import ScreenRecorder from '@/components/ScreenRecorder';
 
 interface Test {
   id: string;
