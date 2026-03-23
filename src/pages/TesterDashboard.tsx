@@ -803,6 +803,7 @@ export default function TesterDashboard() {
               onClick={() => {
                 setSubmitDialogOpen(false);
                 setUploadedFiles([]);
+                setRecordingBlob(null);
               }}
               disabled={submitting}
             >
