@@ -257,23 +257,20 @@ export default function TesterDashboard() {
     setUploadedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const uploadFiles = async (): Promise<string[]> => {
-    if (uploadedFiles.length === 0 || !user) return [];
+  const uploadFiles = async (): Promise<{ attachmentUrls: string[]; recordingUrl: string | null }> => {
+    if (!user || !selectedSubmission) return { attachmentUrls: [], recordingUrl: null };
     
     const urls: string[] = [];
     
     for (const file of uploadedFiles) {
       const fileExt = file.name.split('.').pop();
-      const fileName = `${user.id}/${selectedSubmission?.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      const fileName = `${user.id}/${selectedSubmission.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
       
       const { error } = await supabase.storage
         .from('submission-attachments')
         .upload(fileName, file);
       
-      if (error) {
-        console.error('Error uploading file:', error);
-        throw error;
-      }
+      if (error) throw error;
       
       const { data: { publicUrl } } = supabase.storage
         .from('submission-attachments')
@@ -282,7 +279,24 @@ export default function TesterDashboard() {
       urls.push(publicUrl);
     }
     
-    return urls;
+    // Upload screen recording if present
+    let recordingUrl: string | null = null;
+    if (recordingBlob) {
+      const recName = `${user.id}/${selectedSubmission.id}/recording-${Date.now()}.webm`;
+      const { error } = await supabase.storage
+        .from('submission-attachments')
+        .upload(recName, recordingBlob);
+      
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('submission-attachments')
+        .getPublicUrl(recName);
+      
+      recordingUrl = publicUrl;
+    }
+    
+    return { attachmentUrls: urls, recordingUrl };
   };
 
   const submitTest = async () => {
