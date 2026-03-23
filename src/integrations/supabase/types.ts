@@ -145,6 +145,57 @@ export type Database = {
           },
         ]
       }
+      submission_insights: {
+        Row: {
+          created_at: string
+          id: string
+          key_findings: string[]
+          pain_points: string[]
+          sentiment: string
+          submission_id: string
+          summary: string
+          tags: string[]
+          test_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_findings?: string[]
+          pain_points?: string[]
+          sentiment?: string
+          submission_id: string
+          summary: string
+          tags?: string[]
+          test_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_findings?: string[]
+          pain_points?: string[]
+          sentiment?: string
+          submission_id?: string
+          summary?: string
+          tags?: string[]
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submission_insights_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "test_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submission_insights_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       survey_questions: {
         Row: {
           created_at: string
