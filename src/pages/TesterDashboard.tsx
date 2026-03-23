@@ -724,6 +724,17 @@ export default function TesterDashboard() {
               </p>
             </div>
             
+            {/* Screen Recording Section */}
+            <ScreenRecorder
+              onRecordingComplete={(blob) => setRecordingBlob(blob)}
+              disabled={submitting}
+            />
+            {recordingBlob && (
+              <p className="text-xs text-green-500 flex items-center gap-1">
+                ✓ Recording attached ({(recordingBlob.size / 1024 / 1024).toFixed(1)}MB)
+              </p>
+            )}
+
             {/* File Upload Section */}
             <div className="space-y-3">
               <Label>Attachments (Optional)</Label>
