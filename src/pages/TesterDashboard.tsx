@@ -313,13 +313,10 @@ export default function TesterDashboard() {
 
     setSubmitting(true);
     try {
-      // Upload files first
-      let attachmentUrls: string[] = [];
-      if (uploadedFiles.length > 0) {
-        setUploading(true);
-        attachmentUrls = await uploadFiles();
-        setUploading(false);
-      }
+      // Upload files and recording
+      setUploading(true);
+      const { attachmentUrls, recordingUrl } = await uploadFiles();
+      setUploading(false);
       
       const { error } = await supabase
         .from('test_submissions')
@@ -328,6 +325,7 @@ export default function TesterDashboard() {
           feedback: feedbackText.trim(),
           submitted_at: new Date().toISOString(),
           attachments: attachmentUrls,
+          recording_url: recordingUrl,
         })
         .eq('id', selectedSubmission.id);
 
