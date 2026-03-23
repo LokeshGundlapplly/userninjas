@@ -95,6 +95,9 @@ export default function TesterDashboard() {
   const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Screen recording state
+  const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
 
   useEffect(() => {
     if (!authLoading && !user) {
