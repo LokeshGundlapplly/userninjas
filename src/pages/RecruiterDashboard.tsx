@@ -845,7 +845,7 @@ export default function RecruiterDashboard() {
           {/* Main Content Tabs */}
           <ScrollReveal animation="fade-up" delay={0.2}>
             <Tabs defaultValue="tests" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 max-w-lg">
+              <TabsList className="grid w-full grid-cols-4 max-w-xl">
                 <TabsTrigger value="tests" className="flex items-center gap-2">
                   <FileText className="h-4 w-4" />
                   My Tests
@@ -853,6 +853,10 @@ export default function RecruiterDashboard() {
                 <TabsTrigger value="submissions" className="flex items-center gap-2">
                   <TrendingUp className="h-4 w-4" />
                   Submissions
+                </TabsTrigger>
+                <TabsTrigger value="insights" className="flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  AI Insights
                 </TabsTrigger>
                 <TabsTrigger value="analytics" className="flex items-center gap-2">
                   <BarChart3 className="h-4 w-4" />
