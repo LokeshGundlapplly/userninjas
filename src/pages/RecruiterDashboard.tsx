@@ -68,6 +68,7 @@ import {
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
+import AIInsightsPanel from '@/components/AIInsightsPanel';
 
 interface Test {
   id: string;
