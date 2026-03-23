@@ -1223,6 +1223,11 @@ export default function RecruiterDashboard() {
                 )}
               </TabsContent>
 
+              {/* AI Insights Tab */}
+              <TabsContent value="insights" className="space-y-6">
+                <AIInsightsPanel tests={tests} userId={user!.id} />
+              </TabsContent>
+
               {/* Analytics Tab */}
               <TabsContent value="analytics" className="space-y-6">
                 {tests.length === 0 && submissions.length === 0 ? (
