@@ -51,6 +51,81 @@ interface Test {
   category: string;
   status: string;
   created_at: string;
+  target_audience: Record<string, any> | null;
+  device_targeting: string[] | null;
+  test_type: string | null;
+}
+
+interface TesterProfile {
+  age: number | null;
+  gender: string | null;
+  location: string | null;
+  devices: string[] | null;
+  interests: string[] | null;
+}
+
+function calculateMatchScore(test: Test, profile: TesterProfile | null): number {
+  if (!profile) return 50; // default mid-score if no profile
+  let score = 50;
+  let factors = 0;
+
+  // Device match
+  if (test.device_targeting && test.device_targeting.length > 0 && profile.devices && profile.devices.length > 0) {
+    const deviceMatch = test.device_targeting.some(d => 
+      profile.devices!.some(pd => pd.toLowerCase().includes(d.toLowerCase()) || d.toLowerCase().includes(pd.toLowerCase()))
+    );
+    score += deviceMatch ? 20 : -10;
+    factors++;
+  }
+
+  // Location match
+  const targetAudience = test.target_audience as Record<string, any> | null;
+  if (targetAudience?.location && profile.location) {
+    const targetLoc = String(targetAudience.location).toLowerCase();
+    const profLoc = profile.location.toLowerCase();
+    if (targetLoc.includes(profLoc) || profLoc.includes(targetLoc) || targetLoc === 'any') {
+      score += 15;
+    } else {
+      score -= 5;
+    }
+    factors++;
+  }
+
+  // Age match
+  if (targetAudience?.minAge && targetAudience?.maxAge && profile.age) {
+    if (profile.age >= Number(targetAudience.minAge) && profile.age <= Number(targetAudience.maxAge)) {
+      score += 15;
+    } else {
+      score -= 10;
+    }
+    factors++;
+  }
+
+  // Gender match
+  if (targetAudience?.gender && profile.gender) {
+    const targetGender = String(targetAudience.gender).toLowerCase();
+    if (targetGender === 'any' || targetGender === profile.gender.toLowerCase()) {
+      score += 10;
+    } else {
+      score -= 5;
+    }
+    factors++;
+  }
+
+  // Interest/category match
+  if (test.category && profile.interests && profile.interests.length > 0) {
+    const catLower = test.category.toLowerCase();
+    const interestMatch = profile.interests.some(i => 
+      i.toLowerCase().includes(catLower) || catLower.includes(i.toLowerCase())
+    );
+    if (interestMatch) score += 15;
+    factors++;
+  }
+
+  // Boost if no targeting (open to all)
+  if (factors === 0) score = 70;
+
+  return Math.max(0, Math.min(100, score));
 }
 
 interface Submission {
