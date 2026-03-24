@@ -35,7 +35,8 @@ import {
   X,
   Image,
   Film,
-  Star
+  Star,
+  Target
 } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
@@ -51,6 +52,81 @@ interface Test {
   category: string;
   status: string;
   created_at: string;
+  target_audience: any;
+  device_targeting: string[] | null;
+  test_type: string | null;
+}
+
+interface TesterProfile {
+  age: number | null;
+  gender: string | null;
+  location: string | null;
+  devices: string[] | null;
+  interests: string[] | null;
+}
+
+function calculateMatchScore(test: Test, profile: TesterProfile | null): number {
+  if (!profile) return 50; // default mid-score if no profile
+  let score = 50;
+  let factors = 0;
+
+  // Device match
+  if (test.device_targeting && test.device_targeting.length > 0 && profile.devices && profile.devices.length > 0) {
+    const deviceMatch = test.device_targeting.some(d => 
+      profile.devices!.some(pd => pd.toLowerCase().includes(d.toLowerCase()) || d.toLowerCase().includes(pd.toLowerCase()))
+    );
+    score += deviceMatch ? 20 : -10;
+    factors++;
+  }
+
+  // Location match
+  const targetAudience = test.target_audience as Record<string, any> | null;
+  if (targetAudience?.location && profile.location) {
+    const targetLoc = String(targetAudience.location).toLowerCase();
+    const profLoc = profile.location.toLowerCase();
+    if (targetLoc.includes(profLoc) || profLoc.includes(targetLoc) || targetLoc === 'any') {
+      score += 15;
+    } else {
+      score -= 5;
+    }
+    factors++;
+  }
+
+  // Age match
+  if (targetAudience?.minAge && targetAudience?.maxAge && profile.age) {
+    if (profile.age >= Number(targetAudience.minAge) && profile.age <= Number(targetAudience.maxAge)) {
+      score += 15;
+    } else {
+      score -= 10;
+    }
+    factors++;
+  }
+
+  // Gender match
+  if (targetAudience?.gender && profile.gender) {
+    const targetGender = String(targetAudience.gender).toLowerCase();
+    if (targetGender === 'any' || targetGender === profile.gender.toLowerCase()) {
+      score += 10;
+    } else {
+      score -= 5;
+    }
+    factors++;
+  }
+
+  // Interest/category match
+  if (test.category && profile.interests && profile.interests.length > 0) {
+    const catLower = test.category.toLowerCase();
+    const interestMatch = profile.interests.some(i => 
+      i.toLowerCase().includes(catLower) || catLower.includes(i.toLowerCase())
+    );
+    if (interestMatch) score += 15;
+    factors++;
+  }
+
+  // Boost if no targeting (open to all)
+  if (factors === 0) score = 70;
+
+  return Math.max(0, Math.min(100, score));
 }
 
 interface Submission {
@@ -84,6 +160,7 @@ export default function TesterDashboard() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [loading, setLoading] = useState(true);
+  const [testerProfile, setTesterProfile] = useState<TesterProfile | null>(null);
   
   // Submission flow state
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
@@ -121,6 +198,15 @@ export default function TesterDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Fetch tester profile for matching
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('age, gender, location, devices, interests')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+      
+      setTesterProfile(profileData || null);
+
       // Fetch available tests
       const { data: testsData, error: testsError } = await supabase
         .from('tests')
@@ -129,7 +215,14 @@ export default function TesterDashboard() {
         .order('created_at', { ascending: false });
 
       if (testsError) throw testsError;
-      setTests(testsData || []);
+      
+      // Sort tests by match score (highest first)
+      const scored = (testsData || []).map(t => ({
+        ...t,
+        _matchScore: calculateMatchScore(t as Test, profileData || null),
+      }));
+      scored.sort((a, b) => b._matchScore - a._matchScore);
+      setTests(scored as any);
 
       // Fetch user's submissions
       const { data: submissionsData, error: submissionsError } = await supabase
@@ -543,6 +636,9 @@ export default function TesterDashboard() {
                   <div className="grid gap-4">
                     {tests.map((test) => {
                       const alreadyStarted = submissions.some(s => s.test_id === test.id);
+                      const matchScore = (test as any)._matchScore ?? calculateMatchScore(test, testerProfile);
+                      const matchLabel = matchScore >= 80 ? 'Excellent Match' : matchScore >= 60 ? 'Good Match' : matchScore >= 40 ? 'Fair Match' : 'Low Match';
+                      const matchColor = matchScore >= 80 ? 'bg-green-500/15 text-green-400 border-green-500/30' : matchScore >= 60 ? 'bg-primary/15 text-primary border-primary/30' : matchScore >= 40 ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' : 'bg-muted text-muted-foreground border-border';
                       return (
                         <Card key={test.id} className="bg-card border border-border/60 shadow-sm hover-lift">
                           <CardHeader>
@@ -551,7 +647,10 @@ export default function TesterDashboard() {
                                 <CardTitle className="text-xl">{test.title}</CardTitle>
                                 <CardDescription className="mt-2">{test.description}</CardDescription>
                               </div>
-                              <Badge variant="secondary">{test.category}</Badge>
+                              <div className="flex flex-col items-end gap-2">
+                                <Badge className={`${matchColor} border text-xs`}>{matchScore}% — {matchLabel}</Badge>
+                                {test.category && <Badge variant="secondary">{test.category}</Badge>}
+                              </div>
                             </div>
                           </CardHeader>
                           <CardContent>
