@@ -421,7 +421,8 @@ export default function TesterDashboard() {
           submitted_at: new Date().toISOString(),
           attachments: attachmentUrls,
           recording_url: recordingUrl,
-        })
+          transcript: recordingTranscript || null,
+        } as any)
         .eq('id', selectedSubmission.id);
 
       if (error) throw error;
