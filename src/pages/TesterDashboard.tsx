@@ -175,6 +175,7 @@ export default function TesterDashboard() {
   
   // Screen recording state
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
+  const [recordingTranscript, setRecordingTranscript] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -300,6 +301,7 @@ export default function TesterDashboard() {
     setFeedbackText(submission.feedback || '');
     setUploadedFiles([]);
     setRecordingBlob(null);
+    setRecordingTranscript('');
     setSubmitDialogOpen(true);
   };
 
@@ -419,7 +421,8 @@ export default function TesterDashboard() {
           submitted_at: new Date().toISOString(),
           attachments: attachmentUrls,
           recording_url: recordingUrl,
-        })
+          transcript: recordingTranscript || null,
+        } as any)
         .eq('id', selectedSubmission.id);
 
       if (error) throw error;
@@ -434,6 +437,7 @@ export default function TesterDashboard() {
       setFeedbackText('');
       setUploadedFiles([]);
       setRecordingBlob(null);
+      setRecordingTranscript('');
       fetchData();
     } catch (error) {
       console.error('Error submitting test:', error);
@@ -825,12 +829,16 @@ export default function TesterDashboard() {
             
             {/* Screen Recording Section */}
             <ScreenRecorder
-              onRecordingComplete={(blob) => setRecordingBlob(blob)}
+              onRecordingComplete={(blob, transcript) => {
+                setRecordingBlob(blob);
+                setRecordingTranscript(transcript);
+              }}
               disabled={submitting}
             />
             {recordingBlob && (
               <p className="text-xs text-green-500 flex items-center gap-1">
                 ✓ Recording attached ({(recordingBlob.size / 1024 / 1024).toFixed(1)}MB)
+                {recordingTranscript && ` • ${recordingTranscript.split(' ').length} words transcribed`}
               </p>
             )}
 
@@ -903,6 +911,7 @@ export default function TesterDashboard() {
                 setSubmitDialogOpen(false);
                 setUploadedFiles([]);
                 setRecordingBlob(null);
+                setRecordingTranscript('');
               }}
               disabled={submitting}
             >
