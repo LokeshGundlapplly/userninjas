@@ -911,6 +911,7 @@ export default function TesterDashboard() {
                 setSubmitDialogOpen(false);
                 setUploadedFiles([]);
                 setRecordingBlob(null);
+                setRecordingTranscript('');
               }}
               disabled={submitting}
             >
