@@ -94,6 +94,9 @@ interface Submission {
   submitted_at: string | null;
   created_at: string;
   attachments: string[] | null;
+  recording_url: string | null;
+  transcript: string | null;
+  transcript_summary: string | null;
   tests: {
     title: string;
     reward_amount: number;
