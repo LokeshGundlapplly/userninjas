@@ -63,7 +63,10 @@ import {
   Award,
   Zap,
   PieChart,
-  Download
+  Download,
+  FileText as FileTextIcon,
+  Sparkles,
+  Play as PlayIcon
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 import StarRating from '@/components/StarRating';
