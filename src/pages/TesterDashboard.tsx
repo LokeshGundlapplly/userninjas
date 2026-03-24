@@ -51,7 +51,7 @@ interface Test {
   category: string;
   status: string;
   created_at: string;
-  target_audience: Record<string, any> | null;
+  target_audience: any;
   device_targeting: string[] | null;
   test_type: string | null;
 }
