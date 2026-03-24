@@ -301,6 +301,7 @@ export default function TesterDashboard() {
     setFeedbackText(submission.feedback || '');
     setUploadedFiles([]);
     setRecordingBlob(null);
+    setRecordingTranscript('');
     setSubmitDialogOpen(true);
   };
 
