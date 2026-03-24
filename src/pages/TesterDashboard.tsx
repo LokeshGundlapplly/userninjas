@@ -175,6 +175,7 @@ export default function TesterDashboard() {
   
   // Screen recording state
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
+  const [recordingTranscript, setRecordingTranscript] = useState('');
 
   useEffect(() => {
     if (!authLoading && !user) {
