@@ -159,6 +159,7 @@ export default function TesterDashboard() {
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [loading, setLoading] = useState(true);
+  const [testerProfile, setTesterProfile] = useState<TesterProfile | null>(null);
   
   // Submission flow state
   const [submitDialogOpen, setSubmitDialogOpen] = useState(false);
