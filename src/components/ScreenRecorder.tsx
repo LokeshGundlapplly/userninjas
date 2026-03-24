@@ -11,11 +11,12 @@ import {
   Play, 
   Trash2,
   Download,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from 'lucide-react';
 
 interface ScreenRecorderProps {
-  onRecordingComplete: (blob: Blob) => void;
+  onRecordingComplete: (blob: Blob, transcript: string) => void;
   disabled?: boolean;
 }
 
@@ -26,15 +27,20 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [transcript, setTranscript] = useState('');
+  const [isTranscribing, setIsTranscribing] = useState(false);
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const recognitionRef = useRef<any>(null);
+  const transcriptRef = useRef('');
 
   useEffect(() => {
     return () => {
       stopAllTracks();
+      stopSpeechRecognition();
       if (timerRef.current) clearInterval(timerRef.current);
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
@@ -45,14 +51,79 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
     streamRef.current = null;
   };
 
+  const startSpeechRecognition = () => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      console.warn('Speech Recognition not supported in this browser');
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: any) => {
+      let finalTranscript = transcriptRef.current;
+      let interimTranscript = '';
+
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const result = event.results[i];
+        if (result.isFinal) {
+          finalTranscript += result[0].transcript + ' ';
+          transcriptRef.current = finalTranscript;
+        } else {
+          interimTranscript += result[0].transcript;
+        }
+      }
+
+      setTranscript(finalTranscript + interimTranscript);
+    };
+
+    recognition.onerror = (event: any) => {
+      if (event.error !== 'aborted' && event.error !== 'no-speech') {
+        console.warn('Speech recognition error:', event.error);
+      }
+    };
+
+    recognition.onend = () => {
+      // Restart if still recording
+      if (mediaRecorderRef.current?.state === 'recording') {
+        try {
+          recognition.start();
+        } catch { /* already started */ }
+      }
+    };
+
+    try {
+      recognition.start();
+      recognitionRef.current = recognition;
+      setIsTranscribing(true);
+    } catch (e) {
+      console.warn('Could not start speech recognition:', e);
+    }
+  };
+
+  const stopSpeechRecognition = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch { /* already stopped */ }
+      recognitionRef.current = null;
+      setIsTranscribing(false);
+    }
+  };
+
   const startRecording = useCallback(async () => {
     setError(null);
     chunksRef.current = [];
+    transcriptRef.current = '';
+    setTranscript('');
 
     try {
       const screenStream = await navigator.mediaDevices.getDisplayMedia({
         video: { frameRate: 30 },
-        audio: true, // system audio
+        audio: true,
       });
 
       let combinedStream = screenStream;
@@ -63,7 +134,6 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
           const ctx = new AudioContext();
           const dest = ctx.createMediaStreamDestination();
 
-          // Mix system audio (if available) + mic
           screenStream.getAudioTracks().forEach(t => {
             ctx.createMediaStreamSource(new MediaStream([t])).connect(dest);
           });
@@ -76,7 +146,6 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
             ...dest.stream.getAudioTracks(),
           ]);
 
-          // Stop mic when screen share stops
           screenStream.getVideoTracks()[0].addEventListener('ended', () => {
             micStream.getTracks().forEach(t => t.stop());
           });
@@ -106,18 +175,25 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
         setPreviewUrl(url);
         setStatus('stopped');
         stopAllTracks();
+        stopSpeechRecognition();
         if (timerRef.current) clearInterval(timerRef.current);
+        // Finalize transcript
+        setTranscript(transcriptRef.current.trim());
       };
 
-      // Handle user clicking "Stop sharing" in browser UI
       screenStream.getVideoTracks()[0].addEventListener('ended', () => {
         if (recorder.state !== 'inactive') recorder.stop();
       });
 
-      recorder.start(1000); // collect chunks every second
+      recorder.start(1000);
       setStatus('recording');
       setDuration(0);
       timerRef.current = window.setInterval(() => setDuration(d => d + 1), 1000);
+
+      // Start live transcription
+      if (includeAudio) {
+        startSpeechRecognition();
+      }
     } catch (err: any) {
       if (err.name === 'NotAllowedError') {
         setError('Screen sharing was cancelled.');
@@ -125,6 +201,7 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
         setError('Failed to start recording. Please try again.');
       }
       stopAllTracks();
+      stopSpeechRecognition();
     }
   }, [includeAudio, previewUrl]);
 
@@ -133,6 +210,7 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
       mediaRecorderRef.current.pause();
       setStatus('paused');
       if (timerRef.current) clearInterval(timerRef.current);
+      stopSpeechRecognition();
     }
   };
 
@@ -141,6 +219,7 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
       mediaRecorderRef.current.resume();
       setStatus('recording');
       timerRef.current = window.setInterval(() => setDuration(d => d + 1), 1000);
+      if (includeAudio) startSpeechRecognition();
     }
   };
 
@@ -156,11 +235,13 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
     setPreviewUrl(null);
     setStatus('idle');
     setDuration(0);
+    setTranscript('');
+    transcriptRef.current = '';
   };
 
   const confirmRecording = () => {
     if (recordedBlob) {
-      onRecordingComplete(recordedBlob);
+      onRecordingComplete(recordedBlob, transcript);
     }
   };
 
@@ -178,10 +259,18 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
           <span className="text-sm font-medium">Screen Recording</span>
         </div>
         {status === 'recording' && (
-          <Badge variant="destructive" className="animate-pulse flex items-center gap-1">
-            <span className="h-2 w-2 rounded-full bg-white" />
-            REC {formatTime(duration)}
-          </Badge>
+          <div className="flex items-center gap-2">
+            {isTranscribing && (
+              <Badge variant="outline" className="text-xs border-primary/40 text-primary">
+                <FileText className="h-3 w-3 mr-1" />
+                Transcribing
+              </Badge>
+            )}
+            <Badge variant="destructive" className="animate-pulse flex items-center gap-1">
+              <span className="h-2 w-2 rounded-full bg-white" />
+              REC {formatTime(duration)}
+            </Badge>
+          </div>
         )}
         {status === 'paused' && (
           <Badge variant="outline" className="text-yellow-500 border-yellow-500">
@@ -211,7 +300,7 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
               {includeAudio ? 'Mic On' : 'Mic Off'}
             </Button>
             <span className="text-xs text-muted-foreground">
-              {includeAudio ? 'Voice will be recorded (think-aloud)' : 'No voice recording'}
+              {includeAudio ? 'Voice will be recorded + live transcribed' : 'No voice recording'}
             </span>
           </div>
           <Button
@@ -243,6 +332,14 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
         </div>
       )}
 
+      {/* Live transcript preview during recording */}
+      {(status === 'recording' || status === 'paused') && transcript && (
+        <div className="p-2 bg-background/50 rounded border border-border/50 max-h-24 overflow-y-auto">
+          <p className="text-xs text-muted-foreground mb-1 font-medium">Live Transcript:</p>
+          <p className="text-xs text-foreground">{transcript}</p>
+        </div>
+      )}
+
       {status === 'stopped' && previewUrl && (
         <div className="space-y-3">
           <video
@@ -253,6 +350,14 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
           <p className="text-xs text-muted-foreground">
             Duration: {formatTime(duration)} • Size: {recordedBlob ? (recordedBlob.size / 1024 / 1024).toFixed(1) : 0}MB
           </p>
+          {transcript && (
+            <div className="p-2 bg-background/50 rounded border border-border/50 max-h-32 overflow-y-auto">
+              <p className="text-xs text-muted-foreground mb-1 font-medium flex items-center gap-1">
+                <FileText className="h-3 w-3" /> Transcript ({transcript.split(' ').length} words)
+              </p>
+              <p className="text-xs text-foreground">{transcript}</p>
+            </div>
+          )}
           <div className="flex items-center gap-2">
             <Button type="button" variant="outline" size="sm" onClick={discardRecording}>
               <Trash2 className="h-4 w-4 mr-1" /> Discard
@@ -266,7 +371,7 @@ export default function ScreenRecorder({ onRecordingComplete, disabled }: Screen
 
       {status === 'idle' && !error && (
         <p className="text-xs text-muted-foreground">
-          Record your screen while testing. Use the think-aloud method — speak your thoughts as you navigate.
+          Record your screen while testing. Use the think-aloud method — your voice will be transcribed in real-time for AI analysis.
         </p>
       )}
     </div>
