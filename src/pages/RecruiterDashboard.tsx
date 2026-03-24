@@ -1222,6 +1222,67 @@ export default function RecruiterDashboard() {
                               </div>
                             </div>
                           )}
+                          {/* Screen Recording */}
+                          {submission.recording_url && (
+                            <div className="mt-4">
+                              <p className="text-sm font-semibold mb-2 flex items-center gap-1">
+                                <PlayIcon className="h-4 w-4" /> Screen Recording
+                              </p>
+                              <video
+                                src={submission.recording_url}
+                                controls
+                                className="w-full rounded-lg border border-border max-h-64"
+                              />
+                            </div>
+                          )}
+                          {/* Transcript */}
+                          {submission.transcript && (
+                            <div className="mt-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-sm font-semibold flex items-center gap-1">
+                                  <FileTextIcon className="h-4 w-4" /> Voice Transcript
+                                </p>
+                                {!submission.transcript_summary && (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={async () => {
+                                      try {
+                                        const { data, error } = await supabase.functions.invoke('summarize-transcript', {
+                                          body: { submission_id: submission.id },
+                                        });
+                                        if (error) throw error;
+                                        if (data?.error) throw new Error(data.error);
+                                        toast({ title: 'Transcript summarized!', description: 'AI summary generated successfully.' });
+                                        fetchData();
+                                      } catch (err: any) {
+                                        toast({ title: 'Error', description: err.message || 'Failed to summarize', variant: 'destructive' });
+                                      }
+                                    }}
+                                    className="flex items-center gap-1"
+                                  >
+                                    <Sparkles className="h-3 w-3" /> AI Summarize
+                                  </Button>
+                                )}
+                              </div>
+                              <div className="p-3 bg-muted/50 rounded-lg max-h-32 overflow-y-auto">
+                                <p className="text-xs text-foreground whitespace-pre-wrap">{submission.transcript}</p>
+                              </div>
+                            </div>
+                          )}
+                          {/* AI Transcript Summary */}
+                          {submission.transcript_summary && (
+                            <div className="mt-4">
+                              <p className="text-sm font-semibold mb-2 flex items-center gap-1">
+                                <Sparkles className="h-4 w-4 text-primary" /> AI Transcript Summary
+                              </p>
+                              <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                                <p className="text-sm text-foreground whitespace-pre-wrap">
+                                  {submission.transcript_summary.replace(/\*\*(.*?)\*\*/g, '$1')}
+                                </p>
+                              </div>
+                            </div>
+                          )}
                         </CardContent>
                       </Card>
                     ))}
