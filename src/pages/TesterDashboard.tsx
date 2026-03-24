@@ -635,6 +635,9 @@ export default function TesterDashboard() {
                   <div className="grid gap-4">
                     {tests.map((test) => {
                       const alreadyStarted = submissions.some(s => s.test_id === test.id);
+                      const matchScore = (test as any)._matchScore ?? calculateMatchScore(test, testerProfile);
+                      const matchLabel = matchScore >= 80 ? 'Excellent Match' : matchScore >= 60 ? 'Good Match' : matchScore >= 40 ? 'Fair Match' : 'Low Match';
+                      const matchColor = matchScore >= 80 ? 'bg-green-500/15 text-green-400 border-green-500/30' : matchScore >= 60 ? 'bg-primary/15 text-primary border-primary/30' : matchScore >= 40 ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' : 'bg-muted text-muted-foreground border-border';
                       return (
                         <Card key={test.id} className="bg-card border border-border/60 shadow-sm hover-lift">
                           <CardHeader>
@@ -643,7 +646,10 @@ export default function TesterDashboard() {
                                 <CardTitle className="text-xl">{test.title}</CardTitle>
                                 <CardDescription className="mt-2">{test.description}</CardDescription>
                               </div>
-                              <Badge variant="secondary">{test.category}</Badge>
+                              <div className="flex flex-col items-end gap-2">
+                                <Badge className={`${matchColor} border text-xs`}>{matchScore}% — {matchLabel}</Badge>
+                                {test.category && <Badge variant="secondary">{test.category}</Badge>}
+                              </div>
                             </div>
                           </CardHeader>
                           <CardContent>
