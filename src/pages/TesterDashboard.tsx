@@ -437,6 +437,7 @@ export default function TesterDashboard() {
       setFeedbackText('');
       setUploadedFiles([]);
       setRecordingBlob(null);
+      setRecordingTranscript('');
       fetchData();
     } catch (error) {
       console.error('Error submitting test:', error);
