@@ -366,6 +366,8 @@ export type Database = {
           submitted_at: string | null
           test_id: string
           tester_id: string
+          transcript: string | null
+          transcript_summary: string | null
         }
         Insert: {
           attachments?: string[] | null
@@ -379,6 +381,8 @@ export type Database = {
           submitted_at?: string | null
           test_id: string
           tester_id: string
+          transcript?: string | null
+          transcript_summary?: string | null
         }
         Update: {
           attachments?: string[] | null
@@ -392,6 +396,8 @@ export type Database = {
           submitted_at?: string | null
           test_id?: string
           tester_id?: string
+          transcript?: string | null
+          transcript_summary?: string | null
         }
         Relationships: [
           {
