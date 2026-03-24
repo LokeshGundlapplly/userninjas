@@ -35,7 +35,8 @@ import {
   X,
   Image,
   Film,
-  Star
+  Star,
+  Target
 } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
