@@ -197,6 +197,15 @@ export default function TesterDashboard() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Fetch tester profile for matching
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('age, gender, location, devices, interests')
+        .eq('user_id', user!.id)
+        .maybeSingle();
+      
+      setTesterProfile(profileData || null);
+
       // Fetch available tests
       const { data: testsData, error: testsError } = await supabase
         .from('tests')
@@ -205,7 +214,14 @@ export default function TesterDashboard() {
         .order('created_at', { ascending: false });
 
       if (testsError) throw testsError;
-      setTests(testsData || []);
+      
+      // Sort tests by match score (highest first)
+      const scored = (testsData || []).map(t => ({
+        ...t,
+        _matchScore: calculateMatchScore(t as Test, profileData || null),
+      }));
+      scored.sort((a, b) => b._matchScore - a._matchScore);
+      setTests(scored as any);
 
       // Fetch user's submissions
       const { data: submissionsData, error: submissionsError } = await supabase
