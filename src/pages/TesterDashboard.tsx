@@ -829,12 +829,16 @@ export default function TesterDashboard() {
             
             {/* Screen Recording Section */}
             <ScreenRecorder
-              onRecordingComplete={(blob) => setRecordingBlob(blob)}
+              onRecordingComplete={(blob, transcript) => {
+                setRecordingBlob(blob);
+                setRecordingTranscript(transcript);
+              }}
               disabled={submitting}
             />
             {recordingBlob && (
               <p className="text-xs text-green-500 flex items-center gap-1">
                 ✓ Recording attached ({(recordingBlob.size / 1024 / 1024).toFixed(1)}MB)
+                {recordingTranscript && ` • ${recordingTranscript.split(' ').length} words transcribed`}
               </p>
             )}
 
