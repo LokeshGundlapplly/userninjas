@@ -36,7 +36,9 @@ import {
   Image,
   Film,
   Star,
-  Target
+  Target,
+  Sparkles,
+  ArrowRight
 } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
@@ -608,6 +610,57 @@ export default function TesterDashboard() {
               </Card>
             </div>
           </ScrollReveal>
+
+          {/* Recommended For You */}
+          {(() => {
+            const recommendedTests = tests
+              .filter(t => !submissions.some(s => s.test_id === t.id))
+              .slice(0, 3);
+            if (recommendedTests.length === 0) return null;
+            return (
+              <ScrollReveal animation="fade-up" delay={0.15}>
+                <div className="mb-8">
+                  <div className="flex items-center gap-2 mb-4">
+                    <Sparkles className="h-5 w-5 text-primary" />
+                    <h2 className="text-xl font-bold text-foreground">Recommended for You</h2>
+                  </div>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    {recommendedTests.map((test) => {
+                      const matchScore = (test as any)._matchScore ?? calculateMatchScore(test, testerProfile);
+                      const matchLabel = matchScore >= 80 ? 'Excellent Match' : matchScore >= 60 ? 'Good Match' : matchScore >= 40 ? 'Fair Match' : 'Low Match';
+                      const matchColor = matchScore >= 80 ? 'bg-green-500/15 text-green-400 border-green-500/30' : matchScore >= 60 ? 'bg-primary/15 text-primary border-primary/30' : matchScore >= 40 ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' : 'bg-muted text-muted-foreground border-border';
+                      const ringColor = matchScore >= 80 ? 'ring-green-500/30' : matchScore >= 60 ? 'ring-primary/30' : 'ring-border';
+                      return (
+                        <Card key={test.id} className={`bg-card border border-border/60 shadow-sm hover-lift ring-2 ${ringColor}`}>
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <Badge className={`${matchColor} border text-xs`}>{matchScore}% — {matchLabel}</Badge>
+                              {test.category && <Badge variant="secondary" className="text-xs">{test.category}</Badge>}
+                            </div>
+                            <CardTitle className="text-lg mt-2">{test.title}</CardTitle>
+                            <CardDescription className="line-clamp-2 text-sm">{test.description}</CardDescription>
+                          </CardHeader>
+                          <CardContent className="pt-0">
+                            <div className="flex items-center gap-4 mb-3 text-sm text-muted-foreground">
+                              <span className="flex items-center gap-1 font-semibold text-foreground">
+                                <DollarSign className="h-3.5 w-3.5" />${Number(test.reward_amount).toFixed(2)}
+                              </span>
+                              <span className="flex items-center gap-1">
+                                <Clock className="h-3.5 w-3.5" />{test.estimated_duration} min
+                              </span>
+                            </div>
+                            <Button size="sm" className="w-full" onClick={() => startTest(test.id)}>
+                              Start Test <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                            </Button>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              </ScrollReveal>
+            );
+          })()}
 
           {/* Main Content Tabs */}
           <ScrollReveal animation="fade-up" delay={0.2}>
