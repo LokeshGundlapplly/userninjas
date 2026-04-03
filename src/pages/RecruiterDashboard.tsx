@@ -150,6 +150,39 @@ export default function RecruiterDashboard() {
   });
   
   const [reviewRating, setReviewRating] = useState<{ [key: string]: number }>({});
+  const [bulkSummarizing, setBulkSummarizing] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
+
+  const summarizeAllTranscripts = async () => {
+    const pending = submissions.filter(s => s.transcript && !s.transcript_summary);
+    if (pending.length === 0) {
+      toast({ title: 'Nothing to summarize', description: 'All transcripts already have summaries.' });
+      return;
+    }
+    setBulkSummarizing(true);
+    setBulkProgress({ done: 0, total: pending.length });
+    let successCount = 0;
+    let failCount = 0;
+    for (const sub of pending) {
+      try {
+        const { data, error } = await supabase.functions.invoke('summarize-transcript', {
+          body: { submission_id: sub.id },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+      setBulkProgress(prev => ({ ...prev, done: prev.done + 1 }));
+    }
+    setBulkSummarizing(false);
+    toast({
+      title: 'Bulk summarization complete',
+      description: `${successCount} succeeded, ${failCount} failed out of ${pending.length}.`,
+    });
+    fetchData();
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
