@@ -1132,10 +1132,23 @@ export default function RecruiterDashboard() {
                     </Button>
                   ))}
                   </div>
-                  <Button variant="outline" size="sm" onClick={exportSubmissions} disabled={filteredSubmissions.length === 0}>
-                    <Download className="h-4 w-4 mr-1.5" />
-                    Export CSV
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={summarizeAllTranscripts}
+                      disabled={bulkSummarizing || submissions.filter(s => s.transcript && !s.transcript_summary).length === 0}
+                    >
+                      <Sparkles className="h-4 w-4 mr-1.5" />
+                      {bulkSummarizing
+                        ? `Summarizing ${bulkProgress.done}/${bulkProgress.total}…`
+                        : `Summarize All (${submissions.filter(s => s.transcript && !s.transcript_summary).length})`}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={exportSubmissions} disabled={filteredSubmissions.length === 0}>
+                      <Download className="h-4 w-4 mr-1.5" />
+                      Export CSV
+                    </Button>
+                  </div>
                 </div>
 
                 {filteredSubmissions.length === 0 ? (
