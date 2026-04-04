@@ -5,9 +5,11 @@ import TrustedBy from '@/components/TrustedBy';
 import MissionProtocol from '@/components/MissionProtocol';
 import Features from '@/components/Features';
 import Capabilities from '@/components/Capabilities';
+import ComparisonTable from '@/components/ComparisonTable';
 import Testimonials from '@/components/Testimonials';
 import Pricing from '@/components/Pricing';
 import FAQ from '@/components/FAQ';
+import TesterCTA from '@/components/TesterCTA';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import Background3D from '@/components/Background3D';
@@ -16,8 +18,8 @@ export default function Index() {
   return (
     <>
       <Helmet>
-        <title>User Ninjas - Elite User Research for Product Teams</title>
-        <meta name="description" content="Join 4,000+ elite product teams building better software with stealth-speed insights. Access 120,000+ verified testers from 150+ countries." />
+        <title>User Ninjas - Test Your Product with Real Users | UX Testing Platform</title>
+        <meta name="description" content="Test your product with real users and get insights in hours. Video recordings, AI-powered analysis, and targeted recruitment. Trusted by 500+ companies." />
       </Helmet>
 
       <Background3D />
@@ -29,9 +31,11 @@ export default function Index() {
         <MissionProtocol />
         <Features />
         <Capabilities />
+        <ComparisonTable />
         <Testimonials />
         <Pricing />
         <FAQ />
+        <TesterCTA />
         <CTA />
       </main>
 
