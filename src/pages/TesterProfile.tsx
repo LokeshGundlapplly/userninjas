@@ -24,7 +24,19 @@ import {
   Target,
   Clock,
   Award,
+  Edit,
+  Save,
+  X,
+  MapPin,
+  Smartphone,
+  Heart,
+  User,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 
 interface Submission {
