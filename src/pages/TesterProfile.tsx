@@ -24,7 +24,19 @@ import {
   Target,
   Clock,
   Award,
+  Edit,
+  Save,
+  X,
+  MapPin,
+  Smartphone,
+  Heart,
+  User,
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { format } from 'date-fns';
 
 interface Submission {
@@ -56,6 +68,12 @@ interface Profile {
   email: string | null;
   avatar_url: string | null;
   created_at: string;
+  age: number | null;
+  gender: string | null;
+  location: string | null;
+  bio: string | null;
+  devices: string[] | null;
+  interests: string[] | null;
 }
 
 export default function TesterProfile() {
@@ -67,6 +85,18 @@ export default function TesterProfile() {
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    age: '',
+    gender: '',
+    location: '',
+    bio: '',
+    devices: [] as string[],
+    interests: [] as string[],
+    newInterest: '',
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -103,7 +133,7 @@ export default function TesterProfile() {
           .order('created_at', { ascending: false }),
         supabase
           .from('profiles')
-          .select('full_name, email, avatar_url, created_at')
+          .select('full_name, email, avatar_url, created_at, age, gender, location, bio, devices, interests')
           .eq('user_id', user!.id)
           .single(),
       ]);
@@ -126,7 +156,78 @@ export default function TesterProfile() {
     }
   };
 
-  // Calculations
+  const startEditing = () => {
+    if (profile) {
+      setEditForm({
+        full_name: profile.full_name || '',
+        age: profile.age?.toString() || '',
+        gender: profile.gender || '',
+        location: profile.location || '',
+        bio: profile.bio || '',
+        devices: profile.devices || [],
+        interests: profile.interests || [],
+        newInterest: '',
+      });
+    }
+    setEditing(true);
+  };
+
+  const saveProfile = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editForm.full_name || null,
+          age: editForm.age ? parseInt(editForm.age) : null,
+          gender: editForm.gender || null,
+          location: editForm.location || null,
+          bio: editForm.bio || null,
+          devices: editForm.devices,
+          interests: editForm.interests,
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Profile updated', description: 'Your demographics have been saved. Match scores will improve!' });
+      setEditing(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({ title: 'Error', description: 'Failed to save profile.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleDevice = (device: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      devices: prev.devices.includes(device)
+        ? prev.devices.filter(d => d !== device)
+        : [...prev.devices, device],
+    }));
+  };
+
+  const addInterest = () => {
+    const interest = editForm.newInterest.trim();
+    if (interest && !editForm.interests.includes(interest)) {
+      setEditForm(prev => ({
+        ...prev,
+        interests: [...prev.interests, interest],
+        newInterest: '',
+      }));
+    }
+  };
+
+  const removeInterest = (interest: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      interests: prev.interests.filter(i => i !== interest),
+    }));
+  };
   const totalEarnings = earnings.reduce((sum, e) => sum + Number(e.amount), 0);
   const completedTests = submissions.filter(s => s.status === 'approved').length;
   const submittedTests = submissions.filter(s => s.status === 'submitted').length;
@@ -227,8 +328,135 @@ export default function TesterProfile() {
                   Member since {profile?.created_at ? format(new Date(profile.created_at), 'MMMM yyyy') : 'N/A'}
                 </p>
               </div>
+              <div className="ml-auto">
+                {!editing ? (
+                  <Button variant="outline" size="sm" onClick={startEditing}>
+                    <Edit className="h-4 w-4 mr-2" /> Edit Profile
+                  </Button>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => setEditing(false)}>
+                      <X className="h-4 w-4 mr-1" /> Cancel
+                    </Button>
+                    <Button size="sm" onClick={saveProfile} disabled={saving}>
+                      <Save className="h-4 w-4 mr-1" /> {saving ? 'Saving...' : 'Save'}
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </ScrollReveal>
+
+          {/* Demographics Edit Section */}
+          {editing && (
+            <ScrollReveal animation="fade-up" delay={0.05}>
+              <Card className="bg-card border border-border/60 shadow-sm mb-8">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" />
+                    Edit Demographics
+                  </CardTitle>
+                  <CardDescription>Complete your profile to get better test recommendations and higher match scores.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name">Full Name</Label>
+                      <Input id="full_name" value={editForm.full_name} onChange={e => setEditForm(prev => ({ ...prev, full_name: e.target.value }))} placeholder="Your name" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="age">Age</Label>
+                      <Input id="age" type="number" value={editForm.age} onChange={e => setEditForm(prev => ({ ...prev, age: e.target.value }))} placeholder="25" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="gender">Gender</Label>
+                      <Select value={editForm.gender} onValueChange={v => setEditForm(prev => ({ ...prev, gender: v }))}>
+                        <SelectTrigger><SelectValue placeholder="Select gender" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                          <SelectItem value="non-binary">Non-binary</SelectItem>
+                          <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="location">Location</Label>
+                      <Input id="location" value={editForm.location} onChange={e => setEditForm(prev => ({ ...prev, location: e.target.value }))} placeholder="City, Country" />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="bio">Bio</Label>
+                    <Textarea id="bio" value={editForm.bio} onChange={e => setEditForm(prev => ({ ...prev, bio: e.target.value }))} placeholder="Tell us about yourself..." rows={3} />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Smartphone className="h-4 w-4" /> Devices</Label>
+                    <div className="flex flex-wrap gap-3">
+                      {['Desktop', 'Laptop', 'Tablet', 'Mobile (iOS)', 'Mobile (Android)'].map(device => (
+                        <label key={device} className="flex items-center gap-2 cursor-pointer">
+                          <Checkbox checked={editForm.devices.includes(device)} onCheckedChange={() => toggleDevice(device)} />
+                          <span className="text-sm">{device}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><Heart className="h-4 w-4" /> Interests</Label>
+                    <div className="flex gap-2">
+                      <Input value={editForm.newInterest} onChange={e => setEditForm(prev => ({ ...prev, newInterest: e.target.value }))} placeholder="Add interest (e.g., E-commerce, Gaming)" onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), addInterest())} />
+                      <Button variant="outline" size="sm" onClick={addInterest}>Add</Button>
+                    </div>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {editForm.interests.map(interest => (
+                        <Badge key={interest} variant="secondary" className="cursor-pointer" onClick={() => removeInterest(interest)}>
+                          {interest} <X className="h-3 w-3 ml-1" />
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
+          )}
+
+          {/* Demographics Display (when not editing) */}
+          {!editing && profile && (profile.age || profile.gender || profile.location || (profile.devices && profile.devices.length > 0) || (profile.interests && profile.interests.length > 0)) && (
+            <ScrollReveal animation="fade-up" delay={0.05}>
+              <Card className="bg-card border border-border/60 shadow-sm mb-8">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <User className="h-5 w-5 text-primary" />
+                    Demographics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {profile.age && (
+                      <div><p className="text-xs text-muted-foreground">Age</p><p className="font-medium">{profile.age}</p></div>
+                    )}
+                    {profile.gender && (
+                      <div><p className="text-xs text-muted-foreground">Gender</p><p className="font-medium capitalize">{profile.gender}</p></div>
+                    )}
+                    {profile.location && (
+                      <div className="flex items-start gap-1"><MapPin className="h-3 w-3 mt-1 text-muted-foreground" /><div><p className="text-xs text-muted-foreground">Location</p><p className="font-medium">{profile.location}</p></div></div>
+                    )}
+                    {profile.devices && profile.devices.length > 0 && (
+                      <div><p className="text-xs text-muted-foreground">Devices</p><div className="flex flex-wrap gap-1 mt-1">{profile.devices.map(d => <Badge key={d} variant="outline" className="text-xs">{d}</Badge>)}</div></div>
+                    )}
+                  </div>
+                  {profile.interests && profile.interests.length > 0 && (
+                    <div className="mt-4"><p className="text-xs text-muted-foreground mb-2">Interests</p><div className="flex flex-wrap gap-1">{profile.interests.map(i => <Badge key={i} variant="secondary" className="text-xs">{i}</Badge>)}</div></div>
+                  )}
+                  {profile.bio && (
+                    <div className="mt-4"><p className="text-xs text-muted-foreground mb-1">Bio</p><p className="text-sm">{profile.bio}</p></div>
+                  )}
+                </CardContent>
+              </Card>
+            </ScrollReveal>
+          )}
 
           {/* Key Stats */}
           <ScrollReveal animation="fade-up" delay={0.1}>
