@@ -156,7 +156,78 @@ export default function TesterProfile() {
     }
   };
 
-  // Calculations
+  const startEditing = () => {
+    if (profile) {
+      setEditForm({
+        full_name: profile.full_name || '',
+        age: profile.age?.toString() || '',
+        gender: profile.gender || '',
+        location: profile.location || '',
+        bio: profile.bio || '',
+        devices: profile.devices || [],
+        interests: profile.interests || [],
+        newInterest: '',
+      });
+    }
+    setEditing(true);
+  };
+
+  const saveProfile = async () => {
+    if (!user) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: editForm.full_name || null,
+          age: editForm.age ? parseInt(editForm.age) : null,
+          gender: editForm.gender || null,
+          location: editForm.location || null,
+          bio: editForm.bio || null,
+          devices: editForm.devices,
+          interests: editForm.interests,
+        })
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      toast({ title: 'Profile updated', description: 'Your demographics have been saved. Match scores will improve!' });
+      setEditing(false);
+      fetchData();
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      toast({ title: 'Error', description: 'Failed to save profile.', variant: 'destructive' });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const toggleDevice = (device: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      devices: prev.devices.includes(device)
+        ? prev.devices.filter(d => d !== device)
+        : [...prev.devices, device],
+    }));
+  };
+
+  const addInterest = () => {
+    const interest = editForm.newInterest.trim();
+    if (interest && !editForm.interests.includes(interest)) {
+      setEditForm(prev => ({
+        ...prev,
+        interests: [...prev.interests, interest],
+        newInterest: '',
+      }));
+    }
+  };
+
+  const removeInterest = (interest: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      interests: prev.interests.filter(i => i !== interest),
+    }));
+  };
   const totalEarnings = earnings.reduce((sum, e) => sum + Number(e.amount), 0);
   const completedTests = submissions.filter(s => s.status === 'approved').length;
   const submittedTests = submissions.filter(s => s.status === 'submitted').length;
