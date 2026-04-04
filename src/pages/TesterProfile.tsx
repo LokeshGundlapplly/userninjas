@@ -121,7 +121,7 @@ export default function TesterProfile() {
           .order('created_at', { ascending: false }),
         supabase
           .from('profiles')
-          .select('full_name, email, avatar_url, created_at')
+          .select('full_name, email, avatar_url, created_at, age, gender, location, bio, devices, interests')
           .eq('user_id', user!.id)
           .single(),
       ]);
