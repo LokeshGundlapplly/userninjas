@@ -68,6 +68,12 @@ interface Profile {
   email: string | null;
   avatar_url: string | null;
   created_at: string;
+  age: number | null;
+  gender: string | null;
+  location: string | null;
+  bio: string | null;
+  devices: string[] | null;
+  interests: string[] | null;
 }
 
 export default function TesterProfile() {
