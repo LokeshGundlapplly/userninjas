@@ -85,6 +85,18 @@ export default function TesterProfile() {
   const [earnings, setEarnings] = useState<Earning[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editForm, setEditForm] = useState({
+    full_name: '',
+    age: '',
+    gender: '',
+    location: '',
+    bio: '',
+    devices: [] as string[],
+    interests: [] as string[],
+    newInterest: '',
+  });
 
   useEffect(() => {
     if (!authLoading && !user) {
