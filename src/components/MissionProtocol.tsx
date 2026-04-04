@@ -1,30 +1,27 @@
-import { Users, Layers, GitBranch, Target } from 'lucide-react';
+import { FileText, Users, Eye } from 'lucide-react';
 import ScrollReveal from './ScrollReveal';
 
 const steps = [
   {
-    icon: Users,
+    icon: FileText,
     step: '01',
-    title: 'Recruit',
-    description: 'Access 120,000+ verified testers from 150+ countries. Filter by demographics, device, skills.',
+    title: 'Create a Test',
+    description: 'Set up your test in minutes. Add tasks, questions, and define your target audience. Upload prototypes or share your live URL.',
+    accent: 'bg-primary/10 text-primary',
   },
   {
-    icon: Layers,
+    icon: Users,
     step: '02',
-    title: 'Deploy',
-    description: 'Launch moderated or unmoderated research in minutes with our streamlined workflow.',
+    title: 'Get Real Users',
+    description: 'Our matching algorithm finds the perfect testers from our global panel. Filter by demographics, devices, and expertise.',
+    accent: 'bg-accent/10 text-accent',
   },
   {
-    icon: GitBranch,
+    icon: Eye,
     step: '03',
-    title: 'Analyze',
-    description: 'AI-powered insights extraction with automatic tagging, sentiment scoring, and highlights.',
-  },
-  {
-    icon: Target,
-    step: '04',
-    title: 'Deliver',
-    description: 'Share actionable findings with your team through exportable reports and integrations.',
+    title: 'Watch Insights & Recordings',
+    description: 'Review video recordings, read AI-generated summaries, and discover pain points. Export reports to share with your team.',
+    accent: 'bg-primary/10 text-primary',
   },
 ];
 
@@ -36,25 +33,27 @@ export default function MissionProtocol() {
           <div className="text-center mb-16">
             <p className="text-sm font-semibold text-primary tracking-wide uppercase mb-3">How It Works</p>
             <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-              Four steps to better products
+              Three steps to better products
             </h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              From recruitment to revenue-impacting insights in record time.
+              From test creation to actionable insights in as little as 24 hours.
             </p>
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto relative">
+          {/* Connector line */}
+          <div className="hidden md:block absolute top-20 left-[20%] right-[20%] h-px bg-gradient-to-r from-primary/20 via-accent/20 to-primary/20" />
+
           {steps.map((step, index) => (
-            <ScrollReveal key={step.title} animation="fade-up" delay={index * 120}>
-              <div className="group relative p-8 rounded-2xl bg-card border border-border/60 hover:border-primary/30 hover:shadow-lg transition-all duration-300 h-full">
-                <div className="flex items-center justify-between mb-6">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/15 transition-colors">
-                    <step.icon className="w-5 h-5 text-primary" />
-                  </div>
-                  <span className="font-display text-4xl font-extrabold text-border/80 group-hover:text-primary/20 transition-colors">{step.step}</span>
+            <ScrollReveal key={step.title} animation="fade-up" delay={index * 150}>
+              <div className="group relative p-8 rounded-2xl bg-card border border-border/60 hover:border-primary/30 hover:shadow-xl transition-all duration-300 h-full text-center">
+                <div className="mx-auto w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-colors group-hover:scale-105 duration-300"
+                  style={{ background: index === 1 ? 'hsl(var(--accent) / 0.1)' : 'hsl(var(--primary) / 0.1)' }}>
+                  <step.icon className="w-6 h-6" style={{ color: index === 1 ? 'hsl(var(--accent))' : 'hsl(var(--primary))' }} />
                 </div>
-                <h3 className="font-display text-xl font-bold mb-2">{step.title}</h3>
+                <span className="absolute top-6 right-6 font-display text-3xl font-extrabold text-border/60 group-hover:text-primary/15 transition-colors">{step.step}</span>
+                <h3 className="font-display text-xl font-bold mb-3">{step.title}</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">{step.description}</p>
               </div>
             </ScrollReveal>
