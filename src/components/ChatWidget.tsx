@@ -161,9 +161,7 @@ export default function ChatWidget() {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-primary/5">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-primary/15 flex items-center justify-center">
-                <Bot className="w-4 h-4 text-primary" />
-              </div>
+              <NinjaLogo showText={false} className="scale-75 origin-left" />
               <div>
                 <p className="text-sm font-semibold">User Ninjas</p>
                 <p className="text-[10px] text-muted-foreground">
