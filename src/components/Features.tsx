@@ -1,64 +1,86 @@
-import { Video, Sparkles, Target, Zap, DollarSign, BarChart3 } from 'lucide-react';
+import { Video, Sparkles, Target, Zap, DollarSign, BarChart3, Users, Shield } from 'lucide-react';
 import ScrollReveal from './ScrollReveal';
 
 const features = [
   {
     icon: Video,
-    title: 'Video Recordings',
-    description: 'Watch real users interact with your product. Screen and voice recordings capture every click, scroll, and reaction.',
+    title: 'Session Recordings',
+    description: 'Watch real users navigate your product with HD screen and voice recordings. See every click, scroll, and hesitation.',
+    color: 'primary',
   },
   {
     icon: Sparkles,
-    title: 'AI-Powered Insights',
-    description: 'Automatic transcription, sentiment analysis, pain point detection, and smart summaries powered by advanced AI.',
+    title: 'AI-Powered Analysis',
+    description: 'Automatic transcription, sentiment detection, pain point analysis, and smart summaries — powered by advanced AI.',
+    color: 'accent',
   },
   {
     icon: Target,
-    title: 'Targeted Recruitment',
-    description: 'Find the right testers with advanced filtering by age, location, device, profession, and custom screener questions.',
+    title: 'Smart Recruitment',
+    description: 'AI-matched testers from our global panel. Filter by demographics, devices, profession, and custom screener questions.',
+    color: 'primary',
   },
   {
     icon: Zap,
-    title: 'Fast Turnaround',
-    description: 'Get results in hours, not weeks. Our streamlined workflow delivers insights at the speed your team needs.',
+    title: 'Results in Hours',
+    description: 'Get actionable insights in hours, not weeks. Our streamlined workflow delivers the speed your team needs.',
+    color: 'accent',
   },
   {
-    icon: DollarSign,
-    title: 'Affordable Pricing',
-    description: 'Enterprise-quality research at a fraction of the cost. No hidden fees, no long-term contracts.',
+    icon: Shield,
+    title: 'Enterprise Security',
+    description: 'SOC 2 compliant, GDPR ready, SSO support. Built for teams that take security and privacy seriously.',
+    color: 'primary',
   },
   {
     icon: BarChart3,
-    title: 'Dashboard Analytics',
-    description: 'Clean, intuitive analytics dashboard with exportable reports, charts, and team collaboration tools.',
+    title: 'Rich Analytics',
+    description: 'Intuitive dashboards with exportable reports, heatmaps, charts, and team collaboration tools.',
+    color: 'accent',
   },
 ];
 
 export default function Features() {
   return (
-    <section className="py-24">
-      <div className="container mx-auto px-4">
+    <section className="py-28 relative overflow-hidden">
+      <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-accent/3 rounded-full blur-[200px]" />
+      
+      <div className="container mx-auto px-4 relative z-10">
         <ScrollReveal animation="fade-up">
-          <div className="text-center mb-16">
-            <p className="text-sm font-semibold text-primary tracking-wide uppercase mb-3">Features</p>
-            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">
-              Everything you need to ship<br />products people love
+          <div className="text-center mb-20">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-accent/8 border border-accent/15 text-xs font-semibold text-accent uppercase tracking-wider mb-5">
+              Platform Features
+            </div>
+            <h2 className="font-display text-4xl md:text-5xl lg:text-6xl font-bold mb-5 tracking-tight">
+              Everything you need to<br />
+              <span className="text-gradient">ship products people love</span>
             </h2>
             <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              A complete toolkit for modern product research and UX testing.
+              A complete research toolkit trusted by the world's best product teams.
             </p>
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
           {features.map((feature, index) => (
             <ScrollReveal key={feature.title} animation="fade-up" delay={index * 80}>
-              <div className="group p-7 rounded-2xl bg-card border border-border/60 hover:border-primary/25 hover:shadow-lg transition-all duration-300 h-full">
-                <div className="w-11 h-11 rounded-xl bg-primary/8 flex items-center justify-center mb-5 group-hover:bg-primary/12 transition-colors">
-                  <feature.icon className="w-5 h-5 text-primary" />
+              <div className="group relative p-8 rounded-3xl bg-card border border-border/50 hover:border-primary/25 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 h-full overflow-hidden">
+                {/* Subtle gradient on hover */}
+                <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ${
+                  feature.color === 'primary' 
+                    ? 'bg-gradient-to-br from-primary/3 to-transparent' 
+                    : 'bg-gradient-to-br from-accent/3 to-transparent'
+                }`} />
+                
+                <div className="relative z-10">
+                  <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300 group-hover:scale-110 ${
+                    feature.color === 'primary' ? 'bg-primary/10' : 'bg-accent/10'
+                  }`}>
+                    <feature.icon className={`w-6 h-6 ${feature.color === 'primary' ? 'text-primary' : 'text-accent'}`} />
+                  </div>
+                  <h3 className="font-display text-lg font-bold mb-3">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
                 </div>
-                <h3 className="font-display text-lg font-bold mb-2">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
               </div>
             </ScrollReveal>
           ))}
