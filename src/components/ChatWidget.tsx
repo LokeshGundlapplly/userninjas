@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, User, Bot, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import NinjaLogo from '@/components/NinjaLogo';
 import { supabase } from '@/integrations/supabase/client';
 import ReactMarkdown from 'react-markdown';
 
