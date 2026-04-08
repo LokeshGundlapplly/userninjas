@@ -202,8 +202,8 @@ export default function ChatWidget() {
             ))}
             {loading && (
               <div className="flex gap-2">
-                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-3 h-3 text-primary" />
+                <div className="flex-shrink-0">
+                  <NinjaLogo showText={false} className="scale-[0.55] origin-top-left" />
                 </div>
                 <div className="bg-secondary/60 border border-border/30 rounded-2xl px-4 py-3">
                   <div className="flex gap-1.5">
