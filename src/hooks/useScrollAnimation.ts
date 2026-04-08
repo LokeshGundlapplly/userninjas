@@ -14,14 +14,6 @@ export function useScrollAnimation<T extends HTMLElement = HTMLDivElement>({
   const ref = useRef<T>(null);
   const [isVisible, setIsVisible] = useState(false);
 
-  // Fallback: if element doesn't intersect within 1.5s, make it visible anyway
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(true);
-    }, 1500);
-    return () => clearTimeout(timer);
-  }, []);
-
   useEffect(() => {
     const element = ref.current;
     if (!element) return;
