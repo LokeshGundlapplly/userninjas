@@ -148,67 +148,68 @@ export default function ChatWidget() {
       {!open && (
         <button
           onClick={() => setOpen(true)}
-          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-105 transition-transform"
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-xl shadow-primary/25 flex items-center justify-center hover:scale-110 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 group"
           aria-label="Open chat"
         >
-          <MessageCircle className="w-6 h-6" />
+          <MessageCircle className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-background animate-pulse" />
         </button>
       )}
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-4rem)] rounded-2xl border border-border bg-background shadow-2xl flex flex-col overflow-hidden animate-fade-in">
-          {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border/60 bg-primary/5">
-            <div className="flex items-center gap-2">
+        <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-4rem)] rounded-2xl border border-border/50 bg-background/95 backdrop-blur-xl shadow-2xl shadow-primary/10 flex flex-col overflow-hidden animate-fade-in">
+          {/* Header with gradient */}
+          <div className="flex items-center justify-between px-4 py-3.5 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-b border-border/40">
+            <div className="flex items-center gap-2.5">
               <NinjaLogo showText={false} className="scale-75 origin-left" />
               <div>
-                <p className="text-sm font-semibold">User Ninjas</p>
-                <p className="text-[10px] text-muted-foreground">
+                <p className="text-sm font-display font-bold tracking-tight">User Ninjas</p>
+                <p className="text-[10px] text-muted-foreground font-medium">
                   {escalated ? '🟡 Waiting for agent' : '🟢 AI Assistant'}
                 </p>
               </div>
             </div>
-            <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-secondary transition-colors">
-              <X className="w-4 h-4" />
+            <button onClick={() => setOpen(false)} className="p-1.5 rounded-lg hover:bg-secondary/80 transition-colors">
+              <X className="w-4 h-4 text-muted-foreground" />
             </button>
           </div>
 
           {/* Messages */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3 bg-gradient-to-b from-background to-secondary/10">
             {messages.map((msg, i) => (
               <div key={i} className={`flex gap-2 ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 {msg.role !== 'user' && (
-                  <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center flex-shrink-0 mt-0.5">
                     <Bot className="w-3 h-3 text-primary" />
                   </div>
                 )}
-                <div className={`max-w-[80%] rounded-xl px-3 py-2 text-sm ${
+                <div className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
                   msg.role === 'user'
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-secondary/80 text-foreground'
+                    ? 'bg-gradient-to-br from-primary to-primary/85 text-primary-foreground shadow-sm shadow-primary/20'
+                    : 'bg-secondary/60 text-foreground border border-border/30'
                 }`}>
-                  <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:m-0 [&_a]:text-primary [&_a]:underline">
+                  <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_strong]:font-semibold">
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 </div>
                 {msg.role === 'user' && (
-                  <div className="w-6 h-6 rounded-full bg-foreground/10 flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <User className="w-3 h-3" />
+                  <div className="w-6 h-6 rounded-lg bg-foreground/8 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <User className="w-3 h-3 text-muted-foreground" />
                   </div>
                 )}
               </div>
             ))}
             {loading && (
               <div className="flex gap-2">
-                <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-primary/15 to-accent/15 flex items-center justify-center flex-shrink-0">
                   <Bot className="w-3 h-3 text-primary" />
                 </div>
-                <div className="bg-secondary/80 rounded-xl px-3 py-2">
-                  <div className="flex gap-1">
-                    <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-1.5 h-1.5 bg-muted-foreground/50 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                <div className="bg-secondary/60 border border-border/30 rounded-2xl px-4 py-3">
+                  <div className="flex gap-1.5">
+                    <span className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <span className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                   </div>
                 </div>
               </div>
@@ -220,7 +221,7 @@ export default function ChatWidget() {
             <div className="px-4 pb-1">
               <button
                 onClick={handleEscalate}
-                className="w-full text-xs text-muted-foreground hover:text-primary py-1.5 flex items-center justify-center gap-1 transition-colors"
+                className="w-full text-xs text-muted-foreground hover:text-accent py-1.5 flex items-center justify-center gap-1.5 transition-colors font-medium"
               >
                 <ArrowRight className="w-3 h-3" />
                 Talk to a human
@@ -229,7 +230,7 @@ export default function ChatWidget() {
           )}
 
           {/* Input */}
-          <div className="p-3 border-t border-border/60">
+          <div className="p-3 border-t border-border/40 bg-background/80">
             <form
               onSubmit={(e) => { e.preventDefault(); send(); }}
               className="flex gap-2"
@@ -239,13 +240,14 @@ export default function ChatWidget() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder={escalated ? "Leave a message for our team..." : "Ask me anything..."}
-                className="flex-1 bg-secondary/60 rounded-lg px-3 py-2 text-sm outline-none focus:ring-1 focus:ring-primary/40 placeholder:text-muted-foreground"
+                className="flex-1 bg-secondary/50 rounded-xl px-3.5 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/30 focus:bg-secondary/70 placeholder:text-muted-foreground/60 transition-all"
                 disabled={loading}
               />
-              <Button type="submit" size="icon" className="h-9 w-9 rounded-lg" disabled={loading || !input.trim()}>
+              <Button type="submit" size="icon" className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-sm shadow-primary/20" disabled={loading || !input.trim()}>
                 <Send className="w-4 h-4" />
               </Button>
             </form>
+            <p className="text-[9px] text-muted-foreground/50 text-center mt-2 font-medium">Powered by User Ninjas AI</p>
           </div>
         </div>
       )}
