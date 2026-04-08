@@ -13,6 +13,7 @@ import TesterCTA from '@/components/TesterCTA';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import Background3D from '@/components/Background3D';
+import ChatWidget from '@/components/ChatWidget';
 
 export default function Index() {
   return (
@@ -40,6 +41,7 @@ export default function Index() {
       </main>
 
       <Footer />
+      <ChatWidget />
     </>
   );
 }
