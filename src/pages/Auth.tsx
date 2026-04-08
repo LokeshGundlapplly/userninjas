@@ -122,7 +122,7 @@ export default function Auth() {
   return (
     <>
       <Helmet>
-        <title>{isSignUp ? 'Sign Up' : 'Sign In'} - User Ninjas</title>
+        <title>{isForgotPassword ? 'Forgot Password' : isSignUp ? 'Sign Up' : 'Sign In'} - User Ninjas</title>
         <meta name="description" content="Sign in or create an account to access User Ninjas platform." />
       </Helmet>
 
@@ -133,10 +133,10 @@ export default function Auth() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <h1 className="font-display text-3xl font-bold tracking-tight mb-2">
-              {isSignUp ? 'Create your account' : 'Welcome back'}
+              {isForgotPassword ? 'Reset your password' : isSignUp ? 'Create your account' : 'Welcome back'}
             </h1>
             <p className="text-sm text-muted-foreground">
-              {isSignUp ? 'Join User Ninjas as a tester or recruiter' : 'Sign in to continue to your dashboard'}
+              {isForgotPassword ? "Enter your email and we'll send you a reset link" : isSignUp ? 'Join User Ninjas as a tester or recruiter' : 'Sign in to continue to your dashboard'}
             </p>
           </div>
 
