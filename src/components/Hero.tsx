@@ -14,7 +14,7 @@ const orbitFeatures = [
 
 function GlobeVisual() {
   return (
-    <div className="relative w-[500px] h-[500px] lg:w-[600px] lg:h-[600px] mx-auto">
+    <div className="relative w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] lg:w-[600px] lg:h-[600px] mx-auto">
       {/* Outer glow rings */}
       <div className="absolute inset-0 rounded-full border border-primary/10 animate-[spin_30s_linear_infinite]" />
       <div className="absolute inset-6 rounded-full border border-accent/8 animate-[spin_25s_linear_infinite_reverse]" />
