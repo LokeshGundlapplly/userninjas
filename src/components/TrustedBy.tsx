@@ -13,25 +13,25 @@ const logos = [
 
 export default function TrustedBy() {
   return (
-    <section className="py-14 border-y border-border/40">
+    <section className="py-16 border-y border-border/30 bg-secondary/20">
       <div className="container mx-auto px-4">
         <ScrollReveal animation="fade-up">
-          <p className="text-center text-xs font-semibold tracking-[0.2em] text-muted-foreground mb-10 uppercase">
-            Trusted by leading product teams at
+          <p className="text-center text-xs font-semibold tracking-[0.25em] text-muted-foreground mb-10 uppercase">
+            Powering research at world-class companies
           </p>
         </ScrollReveal>
 
-        <div className="flex flex-wrap justify-center items-center gap-8 md:gap-14">
-          {logos.map((logo, i) => (
-            <ScrollReveal key={logo.name} animation="fade-up" delay={i * 60}>
-              <div className="flex items-center gap-2.5 opacity-35 hover:opacity-60 transition-opacity duration-300 cursor-default">
-                <div className="w-9 h-9 rounded-lg bg-foreground/8 flex items-center justify-center border border-border/40">
+        <div className="relative overflow-hidden">
+          <div className="flex animate-[scroll_20s_linear_infinite] gap-12 md:gap-16">
+            {[...logos, ...logos].map((logo, i) => (
+              <div key={`${logo.name}-${i}`} className="flex items-center gap-2.5 opacity-30 hover:opacity-60 transition-opacity duration-300 cursor-default shrink-0">
+                <div className="w-10 h-10 rounded-xl bg-foreground/6 flex items-center justify-center border border-border/30">
                   <span className="font-display font-bold text-xs text-foreground/50">{logo.letter}</span>
                 </div>
-                <span className="font-display font-semibold text-sm text-foreground/45 tracking-tight">{logo.name}</span>
+                <span className="font-display font-semibold text-sm text-foreground/40 tracking-tight">{logo.name}</span>
               </div>
-            </ScrollReveal>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
     </section>
