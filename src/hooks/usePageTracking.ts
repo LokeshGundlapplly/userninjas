@@ -11,7 +11,7 @@ export function usePageTracking(): void {
   const previousPathRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
-    const currentPath = location.pathname + location.search;
+    const currentPath = location.pathname + location.search + location.hash;
     traceNavigation(currentPath, previousPathRef.current);
     previousPathRef.current = currentPath;
   }, [location]);
