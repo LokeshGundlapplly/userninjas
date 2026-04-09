@@ -95,6 +95,15 @@
     --sidebar-accent-foreground: 0 0% 98%;
     --sidebar-border: 222 40% 15%;
     --sidebar-ring: 262 83% 62%;
+
+    /* Custom dark overrides */
+    --success: 160 60% 45%;
+    --warning: 38 92% 55%;
+    --indigo: 230 60% 60%;
+    --gold: 37 95% 60%;
+    --gold-light: 40 90% 65%;
+    --teal: 173 58% 44%;
+    --purple-light: 262 70% 75%;
   }
 }
 

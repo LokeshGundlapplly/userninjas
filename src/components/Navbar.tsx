@@ -4,6 +4,7 @@ import { Menu, X, LogOut, User, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import NinjaLogo from './NinjaLogo';
+import ThemeToggle from './ThemeToggle';
 
 const navLinks = [
   { href: '/#how-it-works', label: 'How it Works' },
@@ -45,6 +46,7 @@ export default function Navbar() {
 
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle />
             {loading ? (
               <div className="h-9 w-20 bg-muted animate-pulse rounded-lg" />
             ) : user ? (
@@ -81,13 +83,16 @@ export default function Navbar() {
           </div>
 
           {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center gap-1">
+            <ThemeToggle />
           <button
-            className="md:hidden p-2 rounded-lg hover:bg-secondary/60 transition-colors"
+            className="p-2 rounded-lg hover:bg-secondary/60 transition-colors"
             onClick={() => setIsOpen(!isOpen)}
             aria-label="Toggle menu"
           >
             {isOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
+          </div>
         </nav>
 
         {/* Mobile Navigation */}
