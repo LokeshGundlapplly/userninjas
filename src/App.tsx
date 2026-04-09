@@ -7,6 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "@/hooks/useAuth";
 import { useChatEscalationNotifier } from "@/hooks/useChatEscalation";
+import { usePageTracking } from "@/hooks/usePageTracking";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
@@ -28,6 +29,11 @@ function ChatEscalationListener() {
   return null;
 }
 
+function PageTracker() {
+  usePageTracking();
+  return null;
+}
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
   <HelmetProvider>
@@ -38,6 +44,7 @@ const App = () => (
           <Sonner />
           <ChatEscalationListener />
           <BrowserRouter>
+            <PageTracker />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
