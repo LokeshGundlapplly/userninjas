@@ -1,63 +1,114 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Video, Sparkles, Target, Zap, BarChart3, Users, Shield, Globe } from 'lucide-react';
+import { ArrowRight, Sparkles, Zap, BarChart3, Globe, Video, Target, Shield } from 'lucide-react';
 import ScrollReveal from './ScrollReveal';
 
-const orbitFeatures = [
-  { icon: Video, label: 'Video Recordings', angle: 0, color: 'primary' },
-  { icon: Sparkles, label: 'AI Insights', angle: 60, color: 'accent' },
-  { icon: Target, label: 'Targeted Users', angle: 120, color: 'primary' },
-  { icon: Zap, label: 'Fast Results', angle: 180, color: 'accent' },
-  { icon: BarChart3, label: 'Analytics', angle: 240, color: 'primary' },
-  { icon: Shield, label: 'Enterprise Ready', angle: 300, color: 'accent' },
-];
+function AIDataFlow() {
+  return (
+    <div className="relative w-full h-[500px] flex items-center justify-center mx-auto">
+      {/* Animated neural network background */}
+      <svg className="absolute inset-0 w-full h-full" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid slice">
+        <defs>
+          <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+            <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+            <feMerge>
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+          <gradient id="dataFlow" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.8"/>
+            <stop offset="100%" stopColor="hsl(var(--accent))" stopOpacity="0.4"/>
+          </gradient>
+        </defs>
+
+        {/* Connection lines with animation */}
+        <g strokeWidth="1.5" opacity="0.3" stroke="url(#dataFlow)">
+          <line x1="100" y1="150" x2="300" y2="200" className="animate-pulse" style={{animationDuration: '3s'}} />
+          <line x1="300" y1="200" x2="500" y2="150" className="animate-pulse" style={{animationDuration: '3.5s'}} />
+          <line x1="500" y1="150" x2="700" y2="250" className="animate-pulse" style={{animationDuration: '4s'}} />
+          <line x1="300" y1="200" x2="400" y2="350" className="animate-pulse" style={{animationDuration: '3.2s'}} />
+          <line x1="500" y1="150" x2="300" y2="350" className="animate-pulse" style={{animationDuration: '3.8s'}} />
+        </g>
+
+        {/* Node points */}
+        {[
+          { x: 100, y: 150, label: 'Data' },
+          { x: 300, y: 200, label: 'AI' },
+          { x: 500, y: 150, label: 'Analysis' },
+          { x: 700, y: 250, label: 'Insights' },
+          { x: 400, y: 350, label: 'Recommendations' },
+        ].map((node, i) => (
+          <g key={i}>
+            <circle cx={node.x} cy={node.y} r="8" fill="hsl(var(--primary))" opacity="0.2" />
+            <circle 
+              cx={node.x} 
+              cy={node.y} 
+              r="4" 
+              fill="hsl(var(--primary))" 
+              className="animate-pulse"
+              style={{animationDelay: `${i * 0.2}s`}}
+            />
+          </g>
+        ))}
+      </svg>
+
+      {/* Floating metric cards */}
+      <div className="absolute top-12 left-8 p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-primary/20 shadow-xl animate-float">
+        <div className="flex items-center gap-2 mb-1">
+          <Sparkles className="w-4 h-4 text-primary" />
+          <span className="text-xs font-semibold text-primary">AI Processing</span>
+        </div>
+        <p className="text-xs text-muted-foreground">Accuracy: 94.7%</p>
+      </div>
+
+      <div className="absolute bottom-20 right-12 p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-accent/20 shadow-xl animate-float" style={{animationDelay: '1s'}}>
+        <div className="flex items-center gap-2 mb-1">
+          <Zap className="w-4 h-4 text-accent" />
+          <span className="text-xs font-semibold text-accent">Processing Speed</span>
+        </div>
+        <p className="text-xs text-muted-foreground">2.3s avg</p>
+      </div>
+
+      <div className="absolute top-1/2 right-8 p-4 rounded-xl bg-card/80 backdrop-blur-sm border border-primary/20 shadow-xl animate-float" style={{animationDelay: '0.5s'}}>
+        <div className="flex items-center gap-2 mb-1">
+          <BarChart3 className="w-4 h-4 text-primary" />
+          <span className="text-xs font-semibold text-primary">Insights Detected</span>
+        </div>
+        <p className="text-xs text-muted-foreground">847 patterns</p>
+      </div>
+    </div>
+  );
+}
 
 function GlobeVisual() {
+  const orbitFeatures = [
+    { icon: Video, label: 'HD Recordings', angle: 0, color: 'primary' },
+    { icon: Sparkles, label: 'AI Analysis', angle: 60, color: 'accent' },
+    { icon: Target, label: 'Smart Targeting', angle: 120, color: 'primary' },
+    { icon: Zap, label: 'Instant Results', angle: 180, color: 'accent' },
+    { icon: BarChart3, label: 'Rich Analytics', angle: 240, color: 'primary' },
+    { icon: Shield, label: 'Enterprise', angle: 300, color: 'accent' },
+  ];
+
   return (
-    <div className="relative w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] lg:w-[600px] lg:h-[600px] mx-auto">
+    <div className="relative w-[280px] h-[280px] sm:w-[380px] sm:h-[380px] lg:w-[520px] lg:h-[520px] mx-auto">
       {/* Outer glow rings */}
-      <div className="absolute inset-0 rounded-full border border-primary/10 animate-[spin_30s_linear_infinite]" />
-      <div className="absolute inset-6 rounded-full border border-accent/8 animate-[spin_25s_linear_infinite_reverse]" />
-      <div className="absolute inset-12 rounded-full border border-primary/6 animate-[spin_20s_linear_infinite]" />
+      <div className="absolute inset-0 rounded-full border border-primary/15 animate-[spin_40s_linear_infinite]" />
+      <div className="absolute inset-6 rounded-full border border-accent/10 animate-[spin_35s_linear_infinite_reverse]" />
+      <div className="absolute inset-12 rounded-full border border-primary/8 animate-[spin_30s_linear_infinite]" />
 
-      {/* Gradient glow behind globe */}
-      <div className="absolute inset-[15%] rounded-full bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 blur-[60px]" />
-      
-      {/* Main globe/orb */}
-      <div className="absolute inset-[25%] rounded-full bg-gradient-to-br from-primary/20 via-card to-accent/10 border border-primary/20 shadow-2xl backdrop-blur-sm flex items-center justify-center animate-glow-pulse">
-        {/* Inner ring */}
-        <div className="absolute inset-3 rounded-full border border-primary/15" />
-        
-        {/* Globe grid lines */}
-        <div className="absolute inset-0 rounded-full overflow-hidden opacity-20">
-          <div className="absolute inset-0 border-l border-r border-primary/30" style={{ left: '30%', right: '30%' }} />
-          <div className="absolute inset-0 border-t border-b border-primary/30" style={{ top: '30%', bottom: '30%' }} />
-          <div className="absolute w-full h-px bg-primary/20 top-1/2" />
-          <div className="absolute h-full w-px bg-primary/20 left-1/2" />
-          {/* Curved latitude lines */}
-          <div className="absolute inset-[15%] rounded-full border border-primary/15" />
-          <div className="absolute inset-[35%] rounded-full border border-primary/10" />
-        </div>
-
-        {/* Logo center */}
-        <div className="relative z-10 flex flex-col items-center gap-2">
-          <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-xl shadow-primary/30">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="hsl(var(--primary-foreground))" opacity="0.9"/>
-              <path d="M2 17L12 22L22 17" stroke="hsl(var(--primary-foreground))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
-              <path d="M2 12L12 17L22 12" stroke="hsl(var(--primary-foreground))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.85"/>
-            </svg>
-          </div>
-          <span className="font-display font-bold text-sm lg:text-base tracking-tight">
-            <span className="text-foreground">User</span>
-            <span className="text-primary">Ninjas</span>
-          </span>
+      {/* Main orb with gradient */}
+      <div className="absolute inset-[20%] rounded-full bg-gradient-to-br from-primary/25 via-card to-accent/15 border border-primary/25 shadow-2xl backdrop-blur-md flex items-center justify-center">
+        <div className="absolute inset-2 rounded-full border border-primary/20" />
+        <div className="w-14 h-14 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-xl text-primary-foreground font-display font-bold text-sm lg:text-base">
+          UN
         </div>
       </div>
 
-      {/* Orbiting feature nodes */}
+      {/* Orbiting features */}
       {orbitFeatures.map((feature, i) => {
-        const radius = 42; // percentage from center
+        const radius = 38;
         const angleRad = (feature.angle * Math.PI) / 180;
         const x = 50 + radius * Math.cos(angleRad);
         const y = 50 + radius * Math.sin(angleRad);
@@ -71,82 +122,70 @@ function GlobeVisual() {
               left: `${x}%`,
               top: `${y}%`,
               transform: 'translate(-50%, -50%)',
-              animationDelay: `${i * 0.15}s`,
             }}
           >
-            {/* Connection line to center */}
-            <div 
-              className="absolute w-px bg-gradient-to-b from-primary/20 to-transparent hidden lg:block"
-              style={{
-                height: `${radius * 2}px`,
-                left: '50%',
-                top: '50%',
-                transform: `rotate(${feature.angle + 90}deg)`,
-                transformOrigin: '0 0',
-                opacity: 0.3,
-              }}
-            />
-            
-            {/* Feature node */}
-            <div className="relative animate-fade-in" style={{ animationDelay: `${0.3 + i * 0.1}s` }}>
-              <div className={`w-12 h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 group-hover:scale-110 ${
-                feature.color === 'primary' 
-                  ? 'bg-card border-primary/20 shadow-primary/10 group-hover:shadow-primary/25 group-hover:border-primary/40' 
-                  : 'bg-card border-accent/20 shadow-accent/10 group-hover:shadow-accent/25 group-hover:border-accent/40'
-              }`}>
-                <Icon className={`w-5 h-5 lg:w-6 lg:h-6 ${feature.color === 'primary' ? 'text-primary' : 'text-accent'}`} />
-              </div>
-              <p className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] lg:text-xs font-semibold text-muted-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                {feature.label}
-              </p>
+            <div className={`w-10 h-10 lg:w-12 lg:h-12 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 group-hover:scale-110 ${
+              feature.color === 'primary' 
+                ? 'bg-card border-primary/20 group-hover:shadow-primary/30' 
+                : 'bg-card border-accent/20 group-hover:shadow-accent/30'
+            }`}>
+              <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${feature.color === 'primary' ? 'text-primary' : 'text-accent'}`} />
             </div>
+            <p className="absolute -bottom-5 left-1/2 -translate-x-1/2 text-[9px] lg:text-xs font-semibold text-muted-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
+              {feature.label}
+            </p>
           </div>
         );
       })}
 
       {/* Floating particles */}
-      <div className="absolute top-[15%] left-[10%] w-2 h-2 rounded-full bg-primary/30 animate-float" />
-      <div className="absolute top-[70%] right-[8%] w-1.5 h-1.5 rounded-full bg-accent/40 animate-float" style={{ animationDelay: '1s' }} />
-      <div className="absolute bottom-[15%] left-[20%] w-1 h-1 rounded-full bg-primary/50 animate-float" style={{ animationDelay: '2s' }} />
-      <div className="absolute top-[25%] right-[15%] w-1.5 h-1.5 rounded-full bg-accent/30 animate-float" style={{ animationDelay: '0.5s' }} />
+      <div className="absolute top-[10%] left-[5%] w-2 h-2 rounded-full bg-primary/40 animate-float" />
+      <div className="absolute top-[75%] right-[5%] w-1.5 h-1.5 rounded-full bg-accent/50 animate-float" style={{animationDelay: '1s'}} />
+      <div className="absolute bottom-[10%] left-[12%] w-1 h-1 rounded-full bg-primary/60 animate-float" style={{animationDelay: '2s'}} />
     </div>
   );
 }
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
-      {/* Background decorations */}
+    <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+      {/* Enhanced background */}
       <div className="absolute inset-0 mesh-gradient" />
-      <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px]" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[120px]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/3 rounded-full blur-[200px]" />
+      <div className="absolute top-1/4 right-0 w-[600px] h-[600px] bg-primary/8 rounded-full blur-[180px]" />
+      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/6 rounded-full blur-[150px]" />
+      <div className="absolute top-1/3 left-1/4 w-[400px] h-[400px] bg-primary/4 rounded-full blur-[180px]" />
 
       <div className="container mx-auto px-4 py-12 relative z-10">
-        {/* Top badge */}
+        {/* Top badge with enhanced styling */}
         <ScrollReveal animation="fade-up" delay={100}>
           <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/8 border border-primary/15 text-sm font-medium text-primary">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              Trusted by 500+ companies worldwide
+            <div className="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20 text-sm font-medium text-primary hover:border-primary/30 transition-all duration-300">
+              <span className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+                <span className="font-semibold">AI-Powered Insights</span>
+              </span>
+              <span className="text-primary/50">•</span>
+              <span>Trusted by leading product teams</span>
             </div>
           </div>
         </ScrollReveal>
 
-        {/* Headline */}
+        {/* Main headline */}
         <ScrollReveal animation="fade-up" delay={200}>
-          <div className="text-center max-w-4xl mx-auto mb-4">
-            <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05]">
-              Test your product with{' '}
-              <span className="text-gradient">real users</span>
+          <div className="text-center max-w-5xl mx-auto mb-6">
+            <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tight leading-[1.08] mb-4">
+              Unlock Insights With{' '}
+              <span className="text-gradient bg-gradient-to-r from-primary via-accent to-primary bg-clip-text">
+                Intelligent Research
+              </span>
             </h1>
           </div>
         </ScrollReveal>
 
+        {/* Subheading */}
         <ScrollReveal animation="fade-up" delay={300}>
-          <p className="text-center text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
-            The all-in-one UX research platform. Video recordings, AI-powered insights, 
-            and targeted user recruitment — get actionable feedback in hours, not weeks.
+          <p className="text-center text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto mb-12 leading-relaxed font-light">
+            Transform user feedback into actionable intelligence. Our AI-driven platform captures, analyzes, and synthesizes real user behavior to accelerate your product decisions.
           </p>
         </ScrollReveal>
 
