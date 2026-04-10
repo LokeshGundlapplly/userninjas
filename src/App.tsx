@@ -20,6 +20,29 @@ import CreateTest from "./pages/CreateTest";
 import SurveyBuilder from "./pages/SurveyBuilder";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
+// Legal
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import Cookies from "./pages/Cookies";
+// Product
+import Integrations from "./pages/Integrations";
+import Changelog from "./pages/Changelog";
+// Resources
+import Blog from "./pages/Blog";
+import Templates from "./pages/Templates";
+import Docs from "./pages/Docs";
+import Glossary from "./pages/Glossary";
+import Community from "./pages/Community";
+// Company
+import Careers from "./pages/Careers";
+import Press from "./pages/Press";
+// Compare
+import Compare from "./pages/Compare";
+import CompareVsMaze from "./pages/CompareVsMaze";
+import CompareVsUserTesting from "./pages/CompareVsUserTesting";
+import CompareVsPlaybook from "./pages/CompareVsPlaybook";
+import CompareVsUXTweak from "./pages/CompareVsUXTweak";
+import CompareVsLookback from "./pages/CompareVsLookback";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +75,29 @@ const App = () => (
               <Route path="/recruiter/surveys" element={<SurveyBuilder />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              {/* Legal */}
+              <Route path="/privacy" element={<Privacy />} />
+              <Route path="/terms" element={<Terms />} />
+              <Route path="/cookies" element={<Cookies />} />
+              {/* Product */}
+              <Route path="/integrations" element={<Integrations />} />
+              <Route path="/changelog" element={<Changelog />} />
+              {/* Resources */}
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/templates" element={<Templates />} />
+              <Route path="/docs" element={<Docs />} />
+              <Route path="/glossary" element={<Glossary />} />
+              <Route path="/community" element={<Community />} />
+              {/* Company */}
+              <Route path="/careers" element={<Careers />} />
+              <Route path="/press" element={<Press />} />
+              {/* Compare */}
+              <Route path="/compare" element={<Compare />} />
+              <Route path="/compare/vs-maze" element={<CompareVsMaze />} />
+              <Route path="/compare/vs-usertesting" element={<CompareVsUserTesting />} />
+              <Route path="/compare/vs-playbook" element={<CompareVsPlaybook />} />
+              <Route path="/compare/vs-uxtweak" element={<CompareVsUXTweak />} />
+              <Route path="/compare/vs-lookback" element={<CompareVsLookback />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
