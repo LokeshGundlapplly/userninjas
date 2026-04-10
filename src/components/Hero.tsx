@@ -13,7 +13,7 @@ const heroStats = [
   { value: '120K+', label: 'Vetted Testers', icon: Users },
   { value: '<24h', label: 'Avg. Results', icon: Zap },
   { value: '500+', label: 'Product Teams', icon: Shield },
-  { value: '4.9★', label: 'G2 Rating', icon: Star },
+  { value: '98%', label: 'Satisfaction', icon: Star },
 ];
 
 export default function Hero() {
@@ -51,7 +51,7 @@ export default function Hero() {
           <ScrollReveal animation="fade-up" delay={240}>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
               <Link to="/auth">
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-12 text-base font-semibold rounded-xl gap-2 shadow-xl shadow-primary/25 w-full sm:w-auto">
+                <Button size="lg" className="btn-shimmer bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-12 text-base font-semibold rounded-xl gap-2 shadow-xl shadow-primary/25 w-full sm:w-auto">
                   Start for Free — No Credit Card
                   <ArrowRight className="h-4 w-4" />
                 </Button>
@@ -64,7 +64,7 @@ export default function Hero() {
               </Link>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted-foreground mb-10">
-              {['No credit card required', '14-day free trial', 'Results in 24h', 'Cancel anytime'].map((item) => (
+              {['Free forever plan', 'Results in 24h', 'Cancel anytime'].map((item) => (
                 <span key={item} className="flex items-center gap-1.5">
                   <CheckCircle className="h-3.5 w-3.5 text-accent" />
                   {item}
@@ -75,8 +75,8 @@ export default function Hero() {
 
           <ScrollReveal animation="fade-up" delay={300}>
             <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
-              {awards.map((a) => (
-                <div key={a.label} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-card border border-border/50 shadow-sm hover:border-primary/20 transition-colors">
+              {awards.map((a, i) => (
+                <div key={a.label} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-card border border-border/50 shadow-sm hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-300" style={{ animationDelay: `${i * 150}ms` }}>
                   <div className="flex gap-0.5">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-3 h-3 fill-primary text-primary" />
@@ -93,9 +93,9 @@ export default function Hero() {
 
           <ScrollReveal animation="fade-up" delay={340}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto mb-16">
-              {heroStats.map((stat) => (
-                <div key={stat.label} className="flex flex-col items-center gap-1 p-3 rounded-xl bg-secondary/30 border border-border/30">
-                  <p className="font-display text-xl font-extrabold text-primary">{stat.value}</p>
+              {heroStats.map((stat, i) => (
+                <div key={stat.label} className="flex flex-col items-center gap-1 p-3 rounded-xl bg-secondary/30 border border-border/30 hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-300" style={{ animationDelay: `${i * 100}ms` }}>
+                  <p className="font-display text-xl font-extrabold text-primary stat-number">{stat.value}</p>
                   <p className="text-[11px] text-muted-foreground font-medium">{stat.label}</p>
                 </div>
               ))}

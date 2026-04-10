@@ -15,9 +15,12 @@ export default function CTA() {
     <section className="py-28 bg-secondary/20">
       <div className="container mx-auto px-4">
         <ScrollReveal animation="scale">
-          <div className="relative max-w-5xl mx-auto rounded-3xl overflow-hidden">
-            {/* Gradient background */}
+          <div className="relative max-w-5xl mx-auto rounded-3xl overflow-hidden group">
+            {/* Animated Aurora sweeps */}
             <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-[hsl(var(--teal))]" />
+            <div className="absolute inset-0 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-700">
+              <div className="absolute w-[200%] h-[100%] top-0 -left-full shimmer-surface opacity-20" />
+            </div>
             
             {/* Layered orbs */}
             <div className="absolute -top-20 -right-20 w-80 h-80 rounded-full bg-accent/20 blur-[80px]" />

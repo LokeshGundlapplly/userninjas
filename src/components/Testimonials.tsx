@@ -118,10 +118,10 @@ export default function Testimonials() {
         <div className="columns-1 md:columns-2 lg:columns-3 gap-5 max-w-6xl mx-auto space-y-5">
           {testimonials.map((t, index) => (
             <ScrollReveal key={t.name} animation="fade-up" delay={index * 60}>
-              <div className={`break-inside-avoid p-6 rounded-2xl border transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${
+              <div className={`break-inside-avoid p-6 rounded-2xl border transition-all duration-300 spring-card ${
                 t.highlight
-                  ? 'bg-gradient-to-br from-primary/8 to-accent/5 border-primary/20 hover:border-primary/35'
-                  : 'bg-card border-border/50 hover:border-primary/20'
+                  ? 'bg-gradient-to-br from-primary/8 to-accent/5 border-primary/20 hover:border-primary/35 hover:shadow-xl hover:shadow-primary/5'
+                  : 'bg-card border-border/50 hover:border-primary/20 hover:shadow-xl'
               }`}>
                 <Quote className={`w-8 h-8 mb-4 ${t.highlight ? 'text-primary/40' : 'text-primary/20'}`} />
                 

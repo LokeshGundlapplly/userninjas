@@ -125,6 +125,34 @@ export default {
           "0%": { transform: "translateX(0)" },
           "100%": { transform: "translateX(-50%)" },
         },
+        "gradient-x": {
+          "0%, 100%": { backgroundPosition: "0% 50%" },
+          "50%": { backgroundPosition: "100% 50%" },
+        },
+        "float-slow": {
+          "0%, 100%": { transform: "translateY(0) scale(1)" },
+          "50%": { transform: "translateY(-24px) scale(1.01)" },
+        },
+        "spin-slow": {
+          "0%": { transform: "rotate(0deg)" },
+          "100%": { transform: "rotate(360deg)" },
+        },
+        "blob": {
+          "0%, 100%": { borderRadius: "60% 40% 30% 70% / 60% 30% 70% 40%" },
+          "50%": { borderRadius: "30% 60% 70% 40% / 50% 60% 30% 60%" },
+        },
+        "aurora": {
+          "0%": { backgroundPosition: "50% 50%, 50% 50%" },
+          "100%": { backgroundPosition: "350% 50%, 350% 50%" },
+        },
+        "slide-in": {
+          "0%": { opacity: "0", transform: "translateY(-8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "count-up": {
+          "0%": { transform: "translateY(100%)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -133,11 +161,17 @@ export default {
         "fade-in-up": "fade-in-up 0.8s ease-out forwards",
         "scale-in": "scale-in 0.4s ease-out forwards",
         float: "float 3s ease-in-out infinite",
+        "float-slow": "float-slow 8s ease-in-out infinite",
         pulse: "pulse 2s ease-in-out infinite",
-        shimmer: "shimmer 2s linear infinite",
+        shimmer: "shimmer 2.5s linear infinite",
         "slide-up": "slide-up 0.6s ease-out forwards",
         "glow-pulse": "glow-pulse 3s ease-in-out infinite",
         scroll: "scroll 20s linear infinite",
+        "gradient-x": "gradient-x 5s ease infinite",
+        "spin-slow": "spin-slow 20s linear infinite",
+        blob: "blob 9s ease-in-out infinite",
+        aurora: "aurora 60s linear infinite",
+        "slide-in": "slide-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards",
       },
     },
   },

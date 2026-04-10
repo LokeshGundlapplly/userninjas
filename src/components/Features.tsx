@@ -87,8 +87,8 @@ export default function Features() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
           {features.map((feature, index) => (
             <ScrollReveal key={feature.title} animation="fade-up" delay={index * 70}>
-              <div className={`group p-6 rounded-2xl bg-card border border-border/50 ${feature.border} hover:shadow-xl transition-all duration-300 h-full hover:-translate-y-0.5`}>
-                <div className={`w-12 h-12 rounded-2xl ${feature.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform duration-300`}>
+              <div className={`group p-6 rounded-2xl bg-card border border-border/50 ${feature.border} hover:shadow-2xl transition-all duration-300 h-full glow-card spring-card`}>
+                <div className={`w-12 h-12 rounded-2xl ${feature.color} flex items-center justify-center mb-5 group-hover:scale-110 group-hover:rotate-3 icon-glow transition-all duration-300`}>
                   <feature.icon className="w-5 h-5" />
                 </div>
                 <h3 className="font-display text-base font-bold mb-2.5">{feature.title}</h3>

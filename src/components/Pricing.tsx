@@ -109,16 +109,16 @@ export default function Pricing() {
             <div className="inline-flex items-center p-1.5 rounded-xl bg-card border border-border/50 shadow-sm gap-1">
               <button
                 onClick={() => setIsAnnual(false)}
-                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all ${
-                  !isAnnual ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:text-foreground'
+                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
+                  !isAnnual ? 'bg-primary text-primary-foreground shadow-md scale-[1.02]' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Monthly
               </button>
               <button
                 onClick={() => setIsAnnual(true)}
-                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all flex items-center gap-2 ${
-                  isAnnual ? 'bg-primary text-primary-foreground shadow-md' : 'text-muted-foreground hover:text-foreground'
+                className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-300 flex items-center gap-2 ${
+                  isAnnual ? 'bg-primary text-primary-foreground shadow-md scale-[1.02]' : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Annual
@@ -136,8 +136,8 @@ export default function Pricing() {
               <div
                 className={`relative rounded-2xl p-7 h-full flex flex-col transition-all duration-300 ${
                   tier.popular
-                    ? 'bg-primary text-primary-foreground shadow-2xl shadow-primary/20 ring-2 ring-primary scale-[1.02]'
-                    : 'bg-card border border-border/50 hover:border-primary/20 hover:shadow-xl hover:-translate-y-0.5'
+                    ? 'bg-primary text-primary-foreground shadow-2xl shadow-primary/25 gradient-border scale-[1.02]'
+                    : 'bg-card border border-border/50 hover:border-primary/20 hover:shadow-xl spring-card'
                 }`}
               >
                 {tier.popular && (

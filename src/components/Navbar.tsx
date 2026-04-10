@@ -68,7 +68,7 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     to={link.href}
-                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-xl hover:bg-secondary/60 transition-all duration-200"
+                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-xl hover:bg-secondary/60 transition-all duration-200 relative link-underline"
                   >
                     {link.label}
                   </Link>
@@ -79,7 +79,7 @@ export default function Navbar() {
                   <a
                     key={link.href}
                     href={link.href}
-                    className="px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-xl hover:bg-secondary/60 transition-all duration-200"
+                    className="relative px-4 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-xl hover:bg-secondary/60 transition-all duration-200 link-underline"
                   >
                     {link.label}
                   </a>
