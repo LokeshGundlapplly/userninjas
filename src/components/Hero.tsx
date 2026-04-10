@@ -1,195 +1,158 @@
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Video, Sparkles, Target, Zap, BarChart3, Users, Shield, Globe } from 'lucide-react';
+import { ArrowRight, Play, CheckCircle } from 'lucide-react';
 import ScrollReveal from './ScrollReveal';
-
-const orbitFeatures = [
-  { icon: Video, label: 'Video Recordings', angle: 0, color: 'primary' },
-  { icon: Sparkles, label: 'AI Insights', angle: 60, color: 'accent' },
-  { icon: Target, label: 'Targeted Users', angle: 120, color: 'primary' },
-  { icon: Zap, label: 'Fast Results', angle: 180, color: 'accent' },
-  { icon: BarChart3, label: 'Analytics', angle: 240, color: 'primary' },
-  { icon: Shield, label: 'Enterprise Ready', angle: 300, color: 'accent' },
-];
-
-function GlobeVisual() {
-  return (
-    <div className="relative w-[320px] h-[320px] sm:w-[420px] sm:h-[420px] lg:w-[600px] lg:h-[600px] mx-auto">
-      {/* Outer glow rings */}
-      <div className="absolute inset-0 rounded-full border border-primary/10 animate-[spin_30s_linear_infinite]" />
-      <div className="absolute inset-6 rounded-full border border-accent/8 animate-[spin_25s_linear_infinite_reverse]" />
-      <div className="absolute inset-12 rounded-full border border-primary/6 animate-[spin_20s_linear_infinite]" />
-
-      {/* Gradient glow behind globe */}
-      <div className="absolute inset-[15%] rounded-full bg-gradient-to-br from-primary/15 via-accent/10 to-primary/5 blur-[60px]" />
-      
-      {/* Main globe/orb */}
-      <div className="absolute inset-[25%] rounded-full bg-gradient-to-br from-primary/20 via-card to-accent/10 border border-primary/20 shadow-2xl backdrop-blur-sm flex items-center justify-center animate-glow-pulse">
-        {/* Inner ring */}
-        <div className="absolute inset-3 rounded-full border border-primary/15" />
-        
-        {/* Globe grid lines */}
-        <div className="absolute inset-0 rounded-full overflow-hidden opacity-20">
-          <div className="absolute inset-0 border-l border-r border-primary/30" style={{ left: '30%', right: '30%' }} />
-          <div className="absolute inset-0 border-t border-b border-primary/30" style={{ top: '30%', bottom: '30%' }} />
-          <div className="absolute w-full h-px bg-primary/20 top-1/2" />
-          <div className="absolute h-full w-px bg-primary/20 left-1/2" />
-          {/* Curved latitude lines */}
-          <div className="absolute inset-[15%] rounded-full border border-primary/15" />
-          <div className="absolute inset-[35%] rounded-full border border-primary/10" />
-        </div>
-
-        {/* Logo center */}
-        <div className="relative z-10 flex flex-col items-center gap-2">
-          <div className="w-16 h-16 lg:w-20 lg:h-20 rounded-2xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-xl shadow-primary/30">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="hsl(var(--primary-foreground))" opacity="0.9"/>
-              <path d="M2 17L12 22L22 17" stroke="hsl(var(--primary-foreground))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
-              <path d="M2 12L12 17L22 12" stroke="hsl(var(--primary-foreground))" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.85"/>
-            </svg>
-          </div>
-          <span className="font-display font-bold text-sm lg:text-base tracking-tight">
-            <span className="text-foreground">User</span>
-            <span className="text-primary">Ninjas</span>
-          </span>
-        </div>
-      </div>
-
-      {/* Orbiting feature nodes */}
-      {orbitFeatures.map((feature, i) => {
-        const radius = 42; // percentage from center
-        const angleRad = (feature.angle * Math.PI) / 180;
-        const x = 50 + radius * Math.cos(angleRad);
-        const y = 50 + radius * Math.sin(angleRad);
-        const Icon = feature.icon;
-        
-        return (
-          <div
-            key={feature.label}
-            className="absolute group"
-            style={{
-              left: `${x}%`,
-              top: `${y}%`,
-              transform: 'translate(-50%, -50%)',
-              animationDelay: `${i * 0.15}s`,
-            }}
-          >
-            {/* Connection line to center */}
-            <div 
-              className="absolute w-px bg-gradient-to-b from-primary/20 to-transparent hidden lg:block"
-              style={{
-                height: `${radius * 2}px`,
-                left: '50%',
-                top: '50%',
-                transform: `rotate(${feature.angle + 90}deg)`,
-                transformOrigin: '0 0',
-                opacity: 0.3,
-              }}
-            />
-            
-            {/* Feature node */}
-            <div className="relative animate-fade-in" style={{ animationDelay: `${0.3 + i * 0.1}s` }}>
-              <div className={`w-12 h-12 lg:w-14 lg:h-14 rounded-2xl flex items-center justify-center shadow-lg border transition-all duration-300 group-hover:scale-110 ${
-                feature.color === 'primary' 
-                  ? 'bg-card border-primary/20 shadow-primary/10 group-hover:shadow-primary/25 group-hover:border-primary/40' 
-                  : 'bg-card border-accent/20 shadow-accent/10 group-hover:shadow-accent/25 group-hover:border-accent/40'
-              }`}>
-                <Icon className={`w-5 h-5 lg:w-6 lg:h-6 ${feature.color === 'primary' ? 'text-primary' : 'text-accent'}`} />
-              </div>
-              <p className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] lg:text-xs font-semibold text-muted-foreground whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">
-                {feature.label}
-              </p>
-            </div>
-          </div>
-        );
-      })}
-
-      {/* Floating particles */}
-      <div className="absolute top-[15%] left-[10%] w-2 h-2 rounded-full bg-primary/30 animate-float" />
-      <div className="absolute top-[70%] right-[8%] w-1.5 h-1.5 rounded-full bg-accent/40 animate-float" style={{ animationDelay: '1s' }} />
-      <div className="absolute bottom-[15%] left-[20%] w-1 h-1 rounded-full bg-primary/50 animate-float" style={{ animationDelay: '2s' }} />
-      <div className="absolute top-[25%] right-[15%] w-1.5 h-1.5 rounded-full bg-accent/30 animate-float" style={{ animationDelay: '0.5s' }} />
-    </div>
-  );
-}
 
 export default function Hero() {
   return (
-    <section className="relative min-h-screen flex items-center pt-16 overflow-hidden">
-      {/* Background decorations */}
+    <section className="relative min-h-screen flex items-center pt-20 pb-16 overflow-hidden">
+      {/* Subtle background */}
       <div className="absolute inset-0 mesh-gradient" />
-      <div className="absolute top-1/4 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px]" />
-      <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/5 rounded-full blur-[120px]" />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/3 rounded-full blur-[200px]" />
+      <div className="absolute top-1/3 right-0 w-[500px] h-[500px] bg-primary/5 rounded-full blur-[150px]" />
 
-      <div className="container mx-auto px-4 py-12 relative z-10">
-        {/* Top badge */}
-        <ScrollReveal animation="fade-up" delay={100}>
-          <div className="flex justify-center mb-8">
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/8 border border-primary/15 text-sm font-medium text-primary">
-              <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-              Trusted by 500+ companies worldwide
+      <div className="container mx-auto px-4 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+          {/* Left — Copy */}
+          <div className="max-w-xl">
+            <ScrollReveal animation="fade-up">
+              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/8 border border-primary/15 text-xs font-semibold text-primary mb-6">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                Trusted by 500+ product teams
+              </div>
+            </ScrollReveal>
+
+            <ScrollReveal animation="fade-up" delay={100}>
+              <h1 className="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.08] mb-6">
+                User testing that{' '}
+                <span className="text-gradient">moves fast</span>
+              </h1>
+            </ScrollReveal>
+
+            <ScrollReveal animation="fade-up" delay={200}>
+              <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+                Get video recordings, AI-powered insights, and real user feedback in hours — not weeks. 
+                The research platform built for modern product teams.
+              </p>
+            </ScrollReveal>
+
+            <ScrollReveal animation="fade-up" delay={300}>
+              <div className="flex flex-col sm:flex-row gap-3 mb-8">
+                <Link to="/auth">
+                  <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-8 py-6 text-base font-semibold rounded-xl gap-2 shadow-lg shadow-primary/20 w-full sm:w-auto">
+                    Start Free Trial
+                    <ArrowRight className="h-4 w-4" />
+                  </Button>
+                </Link>
+                <Link to="/contact">
+                  <Button size="lg" variant="outline" className="px-8 py-6 text-base font-semibold rounded-xl gap-2 border-border/60 w-full sm:w-auto">
+                    <Play className="h-4 w-4" />
+                    Watch Demo
+                  </Button>
+                </Link>
+              </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-muted-foreground">
+                {['No credit card required', '14-day free trial', 'Cancel anytime'].map((item) => (
+                  <span key={item} className="flex items-center gap-1.5">
+                    <CheckCircle className="h-3.5 w-3.5 text-accent" />
+                    {item}
+                  </span>
+                ))}
+              </div>
+            </ScrollReveal>
+          </div>
+
+          {/* Right — Dashboard mockup */}
+          <ScrollReveal animation="fade-up" delay={400}>
+            <div className="relative">
+              {/* Glow behind */}
+              <div className="absolute -inset-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-3xl blur-2xl" />
+
+              <div className="relative rounded-2xl border border-border/60 bg-card shadow-2xl overflow-hidden">
+                {/* Browser bar */}
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-border/40 bg-secondary/40">
+                  <div className="flex gap-1.5">
+                    <div className="w-3 h-3 rounded-full bg-destructive/60" />
+                    <div className="w-3 h-3 rounded-full bg-warning/60" />
+                    <div className="w-3 h-3 rounded-full bg-success/60" />
+                  </div>
+                  <div className="flex-1 mx-4">
+                    <div className="h-6 rounded-md bg-secondary/80 max-w-[200px] mx-auto" />
+                  </div>
+                </div>
+
+                {/* Dashboard content */}
+                <div className="p-5 space-y-4">
+                  {/* Stats row */}
+                  <div className="grid grid-cols-3 gap-3">
+                    {[
+                      { label: 'Tests Run', value: '1,284' },
+                      { label: 'Avg. Rating', value: '4.9' },
+                      { label: 'Turnaround', value: '24h' },
+                    ].map((stat) => (
+                      <div key={stat.label} className="rounded-xl bg-secondary/50 border border-border/30 p-3 text-center">
+                        <p className="font-display text-lg font-bold">{stat.value}</p>
+                        <p className="text-[11px] text-muted-foreground">{stat.label}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Chart placeholder */}
+                  <div className="rounded-xl bg-secondary/30 border border-border/30 p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs font-semibold">Test Completion Rate</span>
+                      <span className="text-xs text-accent font-semibold">+12.5%</span>
+                    </div>
+                    <div className="flex items-end gap-1.5 h-16">
+                      {[40, 55, 45, 65, 50, 75, 60, 80, 70, 85, 78, 92].map((h, i) => (
+                        <div
+                          key={i}
+                          className="flex-1 rounded-sm bg-primary/20"
+                          style={{ height: `${h}%` }}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Sessions list */}
+                  <div className="space-y-2">
+                    {[
+                      { name: 'Anna S.', task: 'Checkout flow', sentiment: 'Positive' },
+                      { name: 'Mike R.', task: 'Onboarding', sentiment: 'Neutral' },
+                    ].map((session) => (
+                      <div key={session.name} className="flex items-center gap-3 rounded-lg bg-secondary/30 border border-border/20 p-3">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <span className="text-xs font-bold text-primary">{session.name[0]}</span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold truncate">{session.name}</p>
+                          <p className="text-[10px] text-muted-foreground">{session.task}</p>
+                        </div>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                          session.sentiment === 'Positive' 
+                            ? 'bg-accent/10 text-accent' 
+                            : 'bg-muted text-muted-foreground'
+                        }`}>{session.sentiment}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </ScrollReveal>
-
-        {/* Headline */}
-        <ScrollReveal animation="fade-up" delay={200}>
-          <div className="text-center max-w-4xl mx-auto mb-4">
-            <h1 className="font-display text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05]">
-              Test your product with{' '}
-              <span className="text-gradient">real users</span>
-            </h1>
-          </div>
-        </ScrollReveal>
-
-        <ScrollReveal animation="fade-up" delay={300}>
-          <p className="text-center text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-8 leading-relaxed">
-            The all-in-one UX research platform. Video recordings, AI-powered insights, 
-            and targeted user recruitment — get actionable feedback in hours, not weeks.
-          </p>
-        </ScrollReveal>
-
-        {/* CTA Buttons */}
-        <ScrollReveal animation="fade-up" delay={400}>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center mb-3">
-            <Link to="/auth">
-              <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 px-10 py-6 text-base font-semibold rounded-xl gap-2 shadow-lg shadow-primary/25">
-                Start Testing Free
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link to="/contact">
-              <Button size="lg" variant="outline" className="px-10 py-6 text-base font-semibold rounded-xl gap-2 border-border/60">
-                <Globe className="h-4 w-4" />
-                Book a Demo
-              </Button>
-            </Link>
-          </div>
-          <p className="text-center text-sm text-muted-foreground">
-            No credit card required · Setup in 2 minutes · Cancel anytime
-          </p>
-        </ScrollReveal>
-
-        {/* Globe Visual */}
-        <ScrollReveal animation="scale" delay={500}>
-          <div className="mt-8 lg:mt-4">
-            <GlobeVisual />
-          </div>
-        </ScrollReveal>
+          </ScrollReveal>
+        </div>
 
         {/* Stats bar */}
-        <ScrollReveal animation="fade-up" delay={700}>
-          <div className="flex flex-wrap justify-center gap-8 md:gap-16 mt-0 lg:-mt-8 relative z-20">
+        <ScrollReveal animation="fade-up" delay={600}>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-20 pt-10 border-t border-border/40">
             {[
               { value: '10,000+', label: 'Tests Completed' },
-              { value: '500+', label: 'Companies Trust Us' },
+              { value: '500+', label: 'Companies' },
               { value: '24h', label: 'Avg. Turnaround' },
               { value: '4.9/5', label: 'Customer Rating' },
             ].map((stat) => (
               <div key={stat.label} className="text-center">
-                <p className="font-display text-2xl md:text-3xl font-bold text-foreground">{stat.value}</p>
-                <p className="text-xs md:text-sm text-muted-foreground mt-1">{stat.label}</p>
+                <p className="font-display text-2xl md:text-3xl font-bold">{stat.value}</p>
+                <p className="text-xs text-muted-foreground mt-1">{stat.label}</p>
               </div>
             ))}
           </div>

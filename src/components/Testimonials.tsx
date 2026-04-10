@@ -15,7 +15,7 @@ const testimonials = [
     rating: 5,
   },
   {
-    quote: "Their AI sentiment analysis saves us hours of manual video review. Game changer for our workflow.",
+    quote: "AI sentiment analysis saves us hours of manual video review. Absolute game changer for our workflow.",
     name: "Aisha Patel",
     title: "Research Lead, CloudBase",
     rating: 5,
@@ -24,33 +24,35 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <section className="py-24">
+    <section className="py-24 bg-secondary/30">
       <div className="container mx-auto px-4">
         <ScrollReveal animation="fade-up">
-          <div className="text-center mb-16">
-            <p className="text-sm font-semibold text-primary tracking-wide uppercase mb-3">Testimonials</p>
-            <h2 className="font-display text-4xl md:text-5xl font-bold mb-4 tracking-tight">
+          <div className="text-center mb-14">
+            <p className="text-xs font-semibold text-primary tracking-widest uppercase mb-3">Testimonials</p>
+            <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight">
               Loved by product teams
             </h2>
-            <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-              See what our customers have to say about User Ninjas.
-            </p>
           </div>
         </ScrollReveal>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
           {testimonials.map((t, index) => (
-            <ScrollReveal key={t.name} animation="fade-up" delay={index * 120}>
-              <div className="p-7 rounded-2xl bg-card border border-border/60 h-full flex flex-col">
+            <ScrollReveal key={t.name} animation="fade-up" delay={index * 100}>
+              <div className="p-6 rounded-2xl bg-card border border-border/50 h-full flex flex-col hover:border-primary/20 hover:shadow-lg transition-all duration-300">
                 <div className="flex gap-0.5 mb-4">
                   {Array.from({ length: t.rating }).map((_, i) => (
                     <Star key={i} className="w-4 h-4 fill-primary text-primary" />
                   ))}
                 </div>
-                <p className="text-foreground leading-relaxed flex-1 mb-6">"{t.quote}"</p>
-                <div>
-                  <p className="font-display font-semibold text-sm">{t.name}</p>
-                  <p className="text-xs text-muted-foreground">{t.title}</p>
+                <p className="text-sm text-foreground leading-relaxed flex-1 mb-5">"{t.quote}"</p>
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-xs font-bold text-primary">{t.name.split(' ').map(n => n[0]).join('')}</span>
+                  </div>
+                  <div>
+                    <p className="font-display font-semibold text-sm">{t.name}</p>
+                    <p className="text-xs text-muted-foreground">{t.title}</p>
+                  </div>
                 </div>
               </div>
             </ScrollReveal>
