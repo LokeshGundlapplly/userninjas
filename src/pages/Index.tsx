@@ -5,11 +5,9 @@ import TrustedBy from '@/components/TrustedBy';
 import MissionProtocol from '@/components/MissionProtocol';
 import Features from '@/components/Features';
 import Capabilities from '@/components/Capabilities';
-import ComparisonTable from '@/components/ComparisonTable';
 import Testimonials from '@/components/Testimonials';
 import Pricing from '@/components/Pricing';
 import FAQ from '@/components/FAQ';
-import TesterCTA from '@/components/TesterCTA';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import Background3D from '@/components/Background3D';
@@ -32,11 +30,9 @@ export default function Index() {
         <MissionProtocol />
         <Features />
         <Capabilities />
-        <ComparisonTable />
         <Testimonials />
         <Pricing />
         <FAQ />
-        <TesterCTA />
         <CTA />
       </main>
 
