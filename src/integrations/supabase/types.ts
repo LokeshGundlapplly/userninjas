@@ -14,6 +14,75 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_interview_sessions: {
+        Row: {
+          id: string
+          test_id: string | null
+          submission_id: string | null
+          tester_id: string
+          status: string
+          eligible: boolean | null
+          eligibility_reason: string | null
+          transcript: Json
+          friction_points: Json
+          insights: Json
+          key_quotes: Json
+          duration_seconds: number | null
+          started_at: string | null
+          ended_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          test_id?: string | null
+          submission_id?: string | null
+          tester_id: string
+          status?: string
+          eligible?: boolean | null
+          eligibility_reason?: string | null
+          transcript?: Json
+          friction_points?: Json
+          insights?: Json
+          key_quotes?: Json
+          duration_seconds?: number | null
+          started_at?: string | null
+          ended_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          test_id?: string | null
+          submission_id?: string | null
+          tester_id?: string
+          status?: string
+          eligible?: boolean | null
+          eligibility_reason?: string | null
+          transcript?: Json
+          friction_points?: Json
+          insights?: Json
+          key_quotes?: Json
+          duration_seconds?: number | null
+          started_at?: string | null
+          ended_at?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_interview_sessions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interview_sessions_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "test_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_conversations: {
         Row: {
           created_at: string

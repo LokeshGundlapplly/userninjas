@@ -51,10 +51,11 @@ export interface EligibilityResult {
 
 interface UseAIInterviewerOptions {
   testId: string;
+  estimatedDuration?: number; // minutes
   onError?: (msg: string) => void;
 }
 
-export function useAIInterviewer({ testId, onError }: UseAIInterviewerOptions) {
+export function useAIInterviewer({ testId, estimatedDuration, onError }: UseAIInterviewerOptions) {
   const [phase, setPhase] = useState<InterviewPhase>('idle');
   const [eligibility, setEligibility] = useState<EligibilityResult | null>(null);
   const [transcript, setTranscript] = useState<TranscriptEntry[]>([]);
@@ -64,12 +65,17 @@ export function useAIInterviewer({ testId, onError }: UseAIInterviewerOptions) {
   const [error, setError] = useState<string | null>(null);
   const [screenStream, setScreenStream] = useState<MediaStream | null>(null);
   const [exchangeCount, setExchangeCount] = useState(0);
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null); // seconds
 
   // Refs for screen capture
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const frameIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pendingFrameRef = useRef<string | null>(null);
+
+  // Refs for duration timer
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -93,29 +99,12 @@ export function useAIInterviewer({ testId, onError }: UseAIInterviewerOptions) {
     setPhase('checking');
     setError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) throw new Error('Not authenticated');
+      const { data, error: fnError } = await supabase.functions.invoke('ai-eligibility-check', {
+        body: { test_id: testId },
+      });
+      if (fnError) throw new Error(fnError.message || 'Eligibility check failed');
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-eligibility-check`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({ test_id: testId }),
-        }
-      );
-
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `Eligibility check failed (${res.status})`);
-      }
-
-      const result: EligibilityResult = await res.json();
+      const result: EligibilityResult = data;
       setEligibility(result);
       setPhase(result.eligible ? 'ready' : 'ineligible');
     } catch (err) {
@@ -225,37 +214,20 @@ export function useAIInterviewer({ testId, onError }: UseAIInterviewerOptions) {
   // ─── Step 4: Send message to AI ──────────────────────────────────────────────
   const callInterviewSession = useCallback(
     async (sid: string, message?: string): Promise<{ reply: string; should_end: boolean } | null> => {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-      if (!token) return null;
-
       // Pop pending frame (consume once per message)
       const frame = pendingFrameRef.current;
       pendingFrameRef.current = null;
 
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-interview-session`,
-        {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json',
-            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-          },
-          body: JSON.stringify({
-            session_id: sid,
-            message: message ?? undefined,
-            frame_base64: frame ?? undefined,
-          }),
-        }
-      );
+      const { data, error: fnError } = await supabase.functions.invoke('ai-interview-session', {
+        body: {
+          session_id: sid,
+          message: message ?? undefined,
+          frame_base64: frame ?? undefined,
+        },
+      });
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `Session error (${res.status})`);
-      }
-
-      return res.json();
+      if (fnError) throw new Error(fnError.message || 'Session error');
+      return data;
     },
     []
   );
@@ -284,6 +256,24 @@ export function useAIInterviewer({ testId, onError }: UseAIInterviewerOptions) {
       const now = new Date().toISOString();
       setTranscript([{ role: 'ai', content: result.reply, timestamp: now }]);
       setPhase('active');
+
+      // Start duration countdown timer
+      if (estimatedDuration && estimatedDuration > 0) {
+        const totalSeconds = estimatedDuration * 60;
+        startTimeRef.current = Date.now();
+        setTimeRemaining(totalSeconds);
+        timerIntervalRef.current = setInterval(() => {
+          const elapsed = Math.floor((Date.now() - (startTimeRef.current ?? Date.now())) / 1000);
+          const remaining = totalSeconds - elapsed;
+          if (remaining <= 0) {
+            clearInterval(timerIntervalRef.current!);
+            timerIntervalRef.current = null;
+            setTimeRemaining(0);
+          } else {
+            setTimeRemaining(remaining);
+          }
+        }, 1000);
+      }
     } catch (err) {
       setAiTyping(false);
       reportError(err instanceof Error ? err.message : 'Failed to start interview');
@@ -337,33 +327,22 @@ export function useAIInterviewer({ testId, onError }: UseAIInterviewerOptions) {
       const targetSid = sid || sessionId;
       if (!targetSid) return;
 
+      // Clear the duration timer
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+        timerIntervalRef.current = null;
+      }
+
       setPhase('completing');
       stopScreenCapture();
 
       try {
-        const { data: { session } } = await supabase.auth.getSession();
-        const token = session?.access_token;
-        if (!token) throw new Error('Not authenticated');
+        const { data, error: fnError } = await supabase.functions.invoke('ai-interview-report', {
+          body: { session_id: targetSid },
+        });
+        if (fnError) throw new Error(fnError.message || 'Report generation failed');
 
-        const res = await fetch(
-          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/ai-interview-report`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${token}`,
-              'Content-Type': 'application/json',
-              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
-            },
-            body: JSON.stringify({ session_id: targetSid }),
-          }
-        );
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.error || `Report generation failed (${res.status})`);
-        }
-
-        const reportData: InterviewReport = await res.json();
+        const reportData: InterviewReport = data;
         setReport(reportData);
         setPhase('done');
       } catch (err) {
@@ -393,11 +372,17 @@ export function useAIInterviewer({ testId, onError }: UseAIInterviewerOptions) {
 
   // ─── Reset ────────────────────────────────────────────────────────────────────
   const reset = useCallback(() => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    startTimeRef.current = null;
     stopScreenCapture();
     setPhase('idle');
     setEligibility(null);
     setTranscript([]);
     setSessionId(null);
+    setTimeRemaining(null);
     setReport(null);
     setAiTyping(false);
     setError(null);
@@ -415,6 +400,8 @@ export function useAIInterviewer({ testId, onError }: UseAIInterviewerOptions) {
     error,
     screenStream,
     exchangeCount,
+    timeRemaining,
+    estimatedDuration,
     checkEligibility,
     startInterview,
     sendMessage,

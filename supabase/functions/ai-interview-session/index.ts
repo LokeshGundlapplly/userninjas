@@ -96,7 +96,7 @@ serve(async (req) => {
     // Fetch test details for context
     const { data: test } = await supabase
       .from("tests")
-      .select("title, description, requirements, test_type")
+      .select("title, description, requirements, test_type, estimated_duration")
       .eq("id", session.test_id)
       .single();
 
@@ -155,8 +155,32 @@ serve(async (req) => {
       geminiMessages.push({ role: "user", content: contentParts as any });
     }
 
-    // Determine if session should wrap up
-    const shouldSuggestEnd = exchangeCount >= 9;
+    // Time-budget context for the AI
+    const durationMinutes: number | null = (test as any)?.estimated_duration ?? null;
+    let timeContext = "";
+    if (durationMinutes) {
+      if (session.started_at) {
+        const elapsedSeconds = Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000);
+        const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+        const remainingMinutes = Math.max(0, durationMinutes - elapsedMinutes);
+        timeContext = `\n\nSession duration: ${durationMinutes} minutes total. Elapsed: ${elapsedMinutes} min. Remaining: ~${remainingMinutes} min.${
+          remainingMinutes <= 2
+            ? " IMPORTANT: Time is almost up. Begin wrapping up now — thank the participant and conclude the session."
+            : remainingMinutes <= 5
+            ? " You are approaching the end of the session. Start guiding toward a natural conclusion."
+            : ""
+        }`;
+      } else {
+        timeContext = `\n\nSession duration: ${durationMinutes} minutes total. The session is just starting — pace your questions accordingly.`;
+      }
+    }
+
+    // Determine if session should wrap up (by exchange count OR time expiry)
+    let shouldSuggestEnd = exchangeCount >= 9;
+    if (durationMinutes && session.started_at) {
+      const elapsedSeconds = Math.floor((Date.now() - new Date(session.started_at).getTime()) / 1000);
+      if (elapsedSeconds >= durationMinutes * 60) shouldSuggestEnd = true;
+    }
     const endHint = shouldSuggestEnd
       ? "\n\nIMPORTANT: This session has had sufficient exchanges. After your next response, set should_end to true and provide a warm, professional closing statement thanking the participant and explaining next steps."
       : "";
@@ -170,7 +194,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: "google/gemini-2.5-flash-lite",
         messages: [
-          { role: "system", content: fullSystemPrompt + endHint },
+          { role: "system", content: fullSystemPrompt + timeContext + endHint },
           ...(isFirstMessage ? [] : geminiMessages),
           ...(isFirstMessage
             ? [

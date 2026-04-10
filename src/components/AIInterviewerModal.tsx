@@ -33,6 +33,7 @@ import {
   ShieldX,
   Sparkles,
   ChevronRight,
+  Clock,
 } from 'lucide-react';
 import type { InterviewPhase, TranscriptEntry, EligibilityResult } from '@/hooks/useAIInterviewer';
 
@@ -69,6 +70,8 @@ interface AIInterviewerModalProps {
   error: string | null;
   screenStream: MediaStream | null;
   exchangeCount: number;
+  timeRemaining?: number | null; // seconds
+  estimatedDuration?: number;    // minutes
   onCheckEligibility: () => void;
   onStartInterview: () => void;
   onSendMessage: (text: string) => void;
@@ -87,6 +90,8 @@ export default function AIInterviewerModal({
   error,
   screenStream,
   exchangeCount,
+  timeRemaining,
+  estimatedDuration,
   onCheckEligibility,
   onStartInterview,
   onSendMessage,
@@ -98,6 +103,15 @@ export default function AIInterviewerModal({
   const transcriptEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const screenPreviewRef = useRef<HTMLVideoElement>(null);
+
+  // Format seconds as MM:SS
+  const formatTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = secs % 60;
+    return `${m}:${String(s).padStart(2, '0')}`;
+  };
+
+  const isTimeLow = timeRemaining !== null && timeRemaining !== undefined && timeRemaining <= 120; // ≤ 2 min
 
   // Auto-scroll transcript
   useEffect(() => {
@@ -189,6 +203,25 @@ export default function AIInterviewerModal({
               </div>
               {phase === 'active' && (
                 <div className="flex items-center gap-1.5 flex-shrink-0">
+                  {timeRemaining !== null && timeRemaining !== undefined && (
+                    <Badge
+                      variant="outline"
+                      className={`text-xs gap-1 ${
+                        isTimeLow
+                          ? 'text-destructive border-destructive/40 animate-pulse'
+                          : 'text-muted-foreground'
+                      }`}
+                    >
+                      <Clock className="h-3 w-3" />
+                      {formatTime(timeRemaining)}
+                    </Badge>
+                  )}
+                  {!timeRemaining && estimatedDuration && (
+                    <Badge variant="outline" className="text-xs text-muted-foreground gap-1">
+                      <Clock className="h-3 w-3" />
+                      {estimatedDuration} min
+                    </Badge>
+                  )}
                   {screenStream ? (
                     <Badge variant="outline" className="text-xs text-green-500 border-green-500/40 gap-1">
                       <Monitor className="h-3 w-3" /> Screen shared

@@ -151,13 +151,14 @@ interface Submission {
 }
 
 // ─── AI Interview Button (own hook instance per test) ─────────────────────────
-function AIInterviewButton({ testId, testTitle }: { testId: string; testTitle: string }) {
+function AIInterviewButton({ testId, testTitle, estimatedDuration }: { testId: string; testTitle: string; estimatedDuration?: number }) {
   const { toast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
 
   const interviewer = useAIInterviewer({
     testId,
+    estimatedDuration,
     onError: (msg) =>
       toast({ title: 'Interview error', description: msg, variant: 'destructive' }),
   });
@@ -200,6 +201,8 @@ function AIInterviewButton({ testId, testTitle }: { testId: string; testTitle: s
         error={interviewer.error}
         screenStream={interviewer.screenStream}
         exchangeCount={interviewer.exchangeCount}
+        timeRemaining={interviewer.timeRemaining}
+        estimatedDuration={interviewer.estimatedDuration}
         onCheckEligibility={interviewer.checkEligibility}
         onStartInterview={interviewer.startInterview}
         onSendMessage={interviewer.sendMessage}
@@ -694,7 +697,7 @@ export default function TesterDashboard() {
                               <Button size="sm" className="flex-1" onClick={() => startTest(test.id)}>
                                 Start Test <ArrowRight className="h-3.5 w-3.5 ml-1" />
                               </Button>
-                              <AIInterviewButton testId={test.id} testTitle={test.title} />
+                              <AIInterviewButton testId={test.id} testTitle={test.title} estimatedDuration={test.estimated_duration} />
                             </div>
                           </CardContent>
                         </Card>
@@ -765,7 +768,7 @@ export default function TesterDashboard() {
                                 <Button size="sm" onClick={() => startTest(test.id)} disabled={alreadyStarted} className="w-full sm:w-auto">
                                   {alreadyStarted ? 'Already Started' : <><PlayCircle className="h-3.5 w-3.5 mr-1.5" />Start Test</>}
                                 </Button>
-                                {!alreadyStarted && <AIInterviewButton testId={test.id} testTitle={test.title} />}
+                                {!alreadyStarted && <AIInterviewButton testId={test.id} testTitle={test.title} estimatedDuration={test.estimated_duration} />}
                               </div>
                             </div>
                           </CardContent>
