@@ -39,11 +39,15 @@ import {
   Target,
   Sparkles,
   ArrowRight,
-  Settings
+  Settings,
+  Bot,
 } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
 import ScreenRecorder from '@/components/ScreenRecorder';
+import AIInterviewerModal from '@/components/AIInterviewerModal';
+import AIInterviewReport from '@/components/AIInterviewReport';
+import { useAIInterviewer } from '@/hooks/useAIInterviewer';
 
 interface Test {
   id: string;
@@ -144,6 +148,91 @@ interface Submission {
     title: string;
     reward_amount: number;
   };
+}
+
+// ─── AI Interview Button (own hook instance per test) ─────────────────────────
+function AIInterviewButton({ testId, testTitle }: { testId: string; testTitle: string }) {
+  const { toast } = useToast();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+
+  const interviewer = useAIInterviewer({
+    testId,
+    onError: (msg) =>
+      toast({ title: 'Interview error', description: msg, variant: 'destructive' }),
+  });
+
+  const handleModalOpen = () => {
+    setModalOpen(true);
+    // Auto-start eligibility check when opening
+    if (interviewer.phase === 'idle') {
+      interviewer.checkEligibility();
+    }
+  };
+
+  const handleModalClose = (open: boolean) => {
+    setModalOpen(open);
+    if (!open && interviewer.phase === 'done' && interviewer.report) {
+      setReportOpen(true);
+    }
+  };
+
+  return (
+    <>
+      <Button
+        size="sm"
+        variant="outline"
+        className="w-full sm:w-auto gap-1.5 border-primary/40 text-primary hover:bg-primary/5"
+        onClick={handleModalOpen}
+      >
+        <Bot className="h-3.5 w-3.5" />
+        AI Interview
+      </Button>
+
+      <AIInterviewerModal
+        open={modalOpen}
+        onOpenChange={handleModalClose}
+        testTitle={testTitle}
+        phase={interviewer.phase}
+        eligibility={interviewer.eligibility}
+        transcript={interviewer.transcript}
+        aiTyping={interviewer.aiTyping}
+        error={interviewer.error}
+        screenStream={interviewer.screenStream}
+        exchangeCount={interviewer.exchangeCount}
+        onCheckEligibility={interviewer.checkEligibility}
+        onStartInterview={interviewer.startInterview}
+        onSendMessage={interviewer.sendMessage}
+        onEndInterview={interviewer.endInterview}
+        onReset={interviewer.reset}
+      />
+
+      {/* Report Dialog */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-primary" />
+              Your UX Interview Report
+            </DialogTitle>
+            <DialogDescription>
+              AI-generated insights from your interview session for "{testTitle}".
+            </DialogDescription>
+          </DialogHeader>
+          {interviewer.report && (
+            <AIInterviewReport
+              report={interviewer.report}
+              testTitle={testTitle}
+              onClose={() => {
+                setReportOpen(false);
+                interviewer.reset();
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 }
 
 interface Earning {
@@ -601,9 +690,12 @@ export default function TesterDashboard() {
                                 <Clock className="h-3.5 w-3.5" />{test.estimated_duration} min
                               </span>
                             </div>
-                            <Button size="sm" className="w-full" onClick={() => startTest(test.id)}>
-                              Start Test <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                            </Button>
+                            <div className="flex gap-2">
+                              <Button size="sm" className="flex-1" onClick={() => startTest(test.id)}>
+                                Start Test <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                              </Button>
+                              <AIInterviewButton testId={test.id} testTitle={test.title} />
+                            </div>
                           </CardContent>
                         </Card>
                       );
@@ -669,9 +761,12 @@ export default function TesterDashboard() {
                                   <p className="text-xs text-muted-foreground mt-2"><span className="font-medium">Requirements:</span> {test.requirements}</p>
                                 )}
                               </div>
-                              <Button size="sm" onClick={() => startTest(test.id)} disabled={alreadyStarted} className="flex-shrink-0 w-full sm:w-auto">
-                                {alreadyStarted ? 'Already Started' : <><PlayCircle className="h-3.5 w-3.5 mr-1.5" />Start Test</>}
-                              </Button>
+                              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                                <Button size="sm" onClick={() => startTest(test.id)} disabled={alreadyStarted} className="w-full sm:w-auto">
+                                  {alreadyStarted ? 'Already Started' : <><PlayCircle className="h-3.5 w-3.5 mr-1.5" />Start Test</>}
+                                </Button>
+                                {!alreadyStarted && <AIInterviewButton testId={test.id} testTitle={test.title} />}
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
