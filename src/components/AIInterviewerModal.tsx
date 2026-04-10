@@ -28,7 +28,6 @@ import {
   AlertCircle,
   CheckCircle2,
   Loader2,
-  Bot,
   User,
   ShieldCheck,
   ShieldX,
@@ -36,6 +35,28 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import type { InterviewPhase, TranscriptEntry, EligibilityResult } from '@/hooks/useAIInterviewer';
+
+// Inline UserNinjas AI avatar — no external import needed
+function NinjaAIAvatar({ size = 28, animate = false }: { size?: number; animate?: boolean }) {
+  return (
+    <div
+      className={`rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-md ${animate ? 'ring-2 ring-primary/40 ring-offset-1 ring-offset-background' : 'ring-1 ring-primary/20'}`}
+      style={{ width: size, height: size }}
+    >
+      <svg
+        width={Math.round(size * 0.58)}
+        height={Math.round(size * 0.58)}
+        viewBox="0 0 24 24"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white" opacity="0.95" />
+        <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.75" />
+        <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+      </svg>
+    </div>
+  );
+}
 
 interface AIInterviewerModalProps {
   open: boolean;
@@ -152,14 +173,19 @@ export default function AIInterviewerModal({
           <DialogHeader className="px-5 pt-5 pb-3 border-b border-border/60 flex-shrink-0">
             <div className="flex items-start justify-between gap-3">
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2 mb-1 flex-wrap">
-                  <Bot className="h-4 w-4 text-primary flex-shrink-0" />
-                  <DialogTitle className="text-base font-semibold truncate">AI Interview</DialogTitle>
+                <div className="flex items-center gap-2.5 mb-1 flex-wrap">
+                  <NinjaAIAvatar size={26} animate={phase === 'active'} />
+                  <div>
+                    <DialogTitle className="text-base font-semibold leading-tight">
+                      <span className="text-foreground">User</span><span className="text-primary">Ninjas</span>
+                      <span className="text-muted-foreground font-normal text-sm"> · Alex AI</span>
+                    </DialogTitle>
+                  </div>
                   <Badge className={`${phaseBadgeColor[phase]} border text-xs ${phase === 'active' ? 'animate-pulse' : ''}`}>
                     {phaseLabel[phase]}
                   </Badge>
                 </div>
-                <p className="text-xs text-muted-foreground truncate">{testTitle}</p>
+                <p className="text-xs text-muted-foreground truncate pl-0.5">{testTitle}</p>
               </div>
               {phase === 'active' && (
                 <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -185,19 +211,22 @@ export default function AIInterviewerModal({
             {/* ─── IDLE / CHECKING ── */}
             {(phase === 'idle' || phase === 'checking') && (
               <div className="flex flex-col items-center justify-center px-6 py-12 text-center gap-5">
-                <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center ring-4 ring-primary/10">
-                  {phase === 'checking' ? (
-                    <Loader2 className="h-8 w-8 text-primary animate-spin" />
-                  ) : (
-                    <Bot className="h-8 w-8 text-primary" />
+                <div className="relative">
+                  <NinjaAIAvatar size={64} animate={phase === 'checking'} />
+                  {phase === 'checking' && (
+                    <span className="absolute -bottom-1 -right-1 h-5 w-5 rounded-full bg-background flex items-center justify-center">
+                      <Loader2 className="h-3.5 w-3.5 text-primary animate-spin" />
+                    </span>
                   )}
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg text-foreground mb-1">AI-Moderated Interview</h3>
+                  <h3 className="font-semibold text-lg text-foreground mb-1">
+                    {phase === 'checking' ? 'Checking your profile…' : 'Interview with UserNinjas AI'}
+                  </h3>
                   <p className="text-sm text-muted-foreground max-w-sm">
                     {phase === 'checking'
-                      ? 'Analyzing your profile against the study requirements…'
-                      : 'A senior AI researcher will guide you through tasks and capture authentic insights from your screen.'}
+                      ? 'Alex is analyzing your profile against the study requirements…'
+                      : 'Alex, your UserNinjas AI researcher, will guide you through tasks and capture authentic insights from your screen.'}
                   </p>
                 </div>
                 {phase === 'idle' && (
@@ -328,7 +357,7 @@ export default function AIInterviewerModal({
                             : 'bg-secondary text-muted-foreground'
                         }`}
                       >
-                        {entry.role === 'ai' ? <Bot className="h-3.5 w-3.5" /> : <User className="h-3.5 w-3.5" />}
+                        {entry.role === 'ai' ? <NinjaAIAvatar size={28} animate={false} /> : <User className="h-3.5 w-3.5" />}
                       </div>
                       <div
                         className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
@@ -350,9 +379,7 @@ export default function AIInterviewerModal({
                   {/* AI typing indicator */}
                   {aiTyping && (
                     <div className="flex gap-2.5">
-                      <div className="h-7 w-7 rounded-full flex-shrink-0 flex items-center justify-center bg-primary/15">
-                        <Bot className="h-3.5 w-3.5 text-primary" />
-                      </div>
+                      <NinjaAIAvatar size={28} animate={true} />
                       <div className="bg-muted/60 rounded-2xl rounded-tl-sm px-3.5 py-2.5 flex items-center gap-1">
                         {[0, 1, 2].map((i) => (
                           <span
@@ -425,8 +452,8 @@ export default function AIInterviewerModal({
 
             {phase === 'ready' && (
               <Button onClick={onStartInterview} className="w-full gap-2 btn-shimmer">
-                <Bot className="h-4 w-4" />
-                Start AI Interview
+                <NinjaAIAvatar size={18} />
+                Start UserNinjas AI Interview
               </Button>
             )}
 

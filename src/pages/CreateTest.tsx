@@ -18,8 +18,9 @@ import {
   ArrowLeft, ArrowRight, Plus, Trash2, GripVertical,
   Monitor, Smartphone, Tablet, Globe, Video, FileText,
   MessageSquare, ClipboardList, Layers, Eye, Shuffle, BookOpen,
-  Target, Users, Zap
+  Target, Users, Zap, Bot, Wand2
 } from 'lucide-react';
+import AITestCreatorChat, { type TestSuggestion } from '@/components/AITestCreatorChat';
 
 const TEST_TYPES = [
   { id: 'unmoderated', label: 'Unmoderated Test', icon: Video, desc: 'Tester completes tasks independently with screen recording' },
@@ -32,6 +33,7 @@ const TEST_TYPES = [
   { id: 'card_sort', label: 'Card Sorting', icon: GripVertical, desc: 'Users organize items into categories' },
   { id: 'tree_test', label: 'Tree Testing', icon: BookOpen, desc: 'Test navigation structure without UI' },
   { id: 'diary_study', label: 'Diary Study', icon: FileText, desc: 'Long-term feedback over days or weeks' },
+  { id: 'ai_interview', label: 'AI Interview', icon: Bot, desc: 'Gemini-powered AI researcher conducts moderated sessions automatically' },
 ];
 
 const CATEGORIES = ['Web App', 'Mobile App', 'E-commerce', 'SaaS', 'Landing Page', 'Game', 'Other'];
@@ -63,6 +65,7 @@ export default function CreateTest() {
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [aiChatOpen, setAiChatOpen] = useState(false);
 
   // Step 0: Test type
   const [testType, setTestType] = useState('unmoderated');
@@ -119,6 +122,38 @@ export default function CreateTest() {
   };
   const toggleBrowser = (b: string) => {
     setBrowserTargeting(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]);
+  };
+
+  const handleAIApply = (suggestion: TestSuggestion) => {
+    if (suggestion.title) setTitle(suggestion.title);
+    if (suggestion.description) setDescription(suggestion.description);
+    if (suggestion.category) setCategory(suggestion.category);
+    if (suggestion.estimated_duration) setDuration(suggestion.estimated_duration);
+    if (suggestion.recommended_reward) setReward(suggestion.recommended_reward);
+    if (suggestion.test_type) setTestType(suggestion.test_type);
+    if (suggestion.tasks?.length) {
+      setTasks(suggestion.tasks.map(t => ({ title: t.title, description: t.description || '' })));
+    }
+    if (suggestion.questions?.length) {
+      setQuestions(suggestion.questions.map(q => ({
+        question_text: q.question_text,
+        question_type: (q.question_type as any) || 'open_text',
+        options: q.options || [],
+        required: q.required ?? true,
+        task_index: null,
+      })));
+    }
+    if (suggestion.screener_questions?.length) {
+      setScreenerQuestions(suggestion.screener_questions.map(s => ({
+        question: s.question,
+        expected_answer: s.expected_answer,
+      })));
+    }
+    if (suggestion.target_age) setTargetAge(suggestion.target_age);
+    if (suggestion.target_location) setTargetLocation(suggestion.target_location);
+    if (suggestion.device_targeting?.length) setDeviceTargeting(suggestion.device_targeting);
+    // Jump to Basic Info step so recruiter can review
+    setStep(1);
   };
 
   const handleSubmit = async () => {
@@ -210,6 +245,29 @@ export default function CreateTest() {
       <Helmet><title>Create Test | UserNinjas</title></Helmet>
       <Background3D />
       <Navbar />
+
+      {/* AI Test Creator floating button */}
+      <button
+        onClick={() => setAiChatOpen(true)}
+        className="fixed bottom-6 right-6 z-50 flex items-center gap-2.5 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-white px-4 py-3 shadow-xl shadow-primary/30 hover:shadow-primary/50 hover:scale-105 active:scale-95 transition-all duration-200 border border-primary/30"
+        title="AI Test Creator"
+      >
+        <div className="flex items-center justify-center rounded-lg bg-white/15 p-1">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white" opacity="0.95" />
+            <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.75" />
+            <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+          </svg>
+        </div>
+        <span className="text-sm font-semibold">Build with AI</span>
+        <Wand2 className="h-4 w-4 opacity-80" />
+      </button>
+
+      <AITestCreatorChat
+        open={aiChatOpen}
+        onOpenChange={setAiChatOpen}
+        onApply={handleAIApply}
+      />
       <div className="container mx-auto px-4 pt-24 pb-16 max-w-4xl relative z-10">
         {/* Progress */}
         <div className="flex items-center gap-2 mb-8">

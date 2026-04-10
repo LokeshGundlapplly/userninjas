@@ -71,12 +71,17 @@ import {
   Bell,
   Settings,
   ChevronRight,
-  Layers
+  Layers,
+  Bot,
+  MessageSquare,
+  Clock as ClockIcon
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
 import AIInsightsPanel from '@/components/AIInsightsPanel';
+import AIInterviewReport from '@/components/AIInterviewReport';
+import type { InterviewReport } from '@/hooks/useAIInterviewer';
 
 interface Test {
   id: string;
@@ -122,6 +127,24 @@ const categories = [
   'Other'
 ];
 
+interface AIInterviewSession {
+  id: string;
+  test_id: string;
+  tester_id: string;
+  status: string;
+  eligible: boolean;
+  eligibility_reason: string | null;
+  transcript: Array<{ role: string; content: string }> | null;
+  friction_points: unknown[];
+  insights: unknown[];
+  key_quotes: string[];
+  duration_seconds: number | null;
+  started_at: string | null;
+  ended_at: string | null;
+  created_at: string;
+  tests: { title: string } | null;
+}
+
 const CHART_COLORS = [
   'hsl(37, 95%, 55%)',
   'hsl(230, 60%, 52%)',
@@ -157,6 +180,8 @@ export default function RecruiterDashboard() {
   const [reviewRating, setReviewRating] = useState<{ [key: string]: number }>({});
   const [bulkSummarizing, setBulkSummarizing] = useState(false);
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
+  const [aiInterviewSessions, setAiInterviewSessions] = useState<AIInterviewSession[]>([]);
+  const [viewingSession, setViewingSession] = useState<AIInterviewSession | null>(null);
 
   const summarizeAllTranscripts = async () => {
     const pending = submissions.filter(s => s.transcript && !s.transcript_summary);
@@ -234,6 +259,17 @@ export default function RecruiterDashboard() {
       const testIds = (testsData || []).map(t => t.id);
       const filteredSubmissions = (submissionsData || []).filter(s => testIds.includes(s.test_id));
       setSubmissions(filteredSubmissions);
+
+      if (testIds.length > 0) {
+        const { data: aiSessionsData } = await supabase
+          .from('ai_interview_sessions')
+          .select('*, tests(title)')
+          .in('test_id', testIds)
+          .order('created_at', { ascending: false });
+        setAiInterviewSessions((aiSessionsData as AIInterviewSession[]) || []);
+      } else {
+        setAiInterviewSessions([]);
+      }
     } catch (error) {
       console.error('Error fetching data:', error);
       toast({
@@ -861,6 +897,12 @@ export default function RecruiterDashboard() {
                 <TabsTrigger value="insights" className="rounded-lg text-sm gap-1.5 data-[state=active]:shadow-sm">
                   <Sparkles className="h-3.5 w-3.5" /> AI Insights
                 </TabsTrigger>
+                <TabsTrigger value="ai_interviews" className="rounded-lg text-sm gap-1.5 data-[state=active]:shadow-sm">
+                  <Bot className="h-3.5 w-3.5" /> AI Interviews
+                  {aiInterviewSessions.length > 0 && (
+                    <span className="ml-1 bg-primary/20 text-primary text-[9px] font-bold px-1.5 py-0.5 rounded-full">{aiInterviewSessions.length}</span>
+                  )}
+                </TabsTrigger>
                 <TabsTrigger value="analytics" className="rounded-lg text-sm gap-1.5 data-[state=active]:shadow-sm">
                   <BarChart3 className="h-3.5 w-3.5" /> Analytics
                 </TabsTrigger>
@@ -1182,6 +1224,220 @@ export default function RecruiterDashboard() {
               {/* AI Insights Tab */}
               <TabsContent value="insights" className="space-y-6">
                 <AIInsightsPanel tests={tests} userId={user.id} />
+              </TabsContent>
+
+              {/* AI Interviews Tab */}
+              <TabsContent value="ai_interviews" className="space-y-6">
+                {/* Stats row */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {[
+                    {
+                      label: 'Total Sessions',
+                      value: aiInterviewSessions.length,
+                      icon: Bot,
+                      color: 'text-primary',
+                      bg: 'bg-primary/10',
+                    },
+                    {
+                      label: 'Completed',
+                      value: aiInterviewSessions.filter(s => s.status === 'completed').length,
+                      icon: CheckCircle,
+                      color: 'text-green-500',
+                      bg: 'bg-green-500/10',
+                    },
+                    {
+                      label: 'Profile Matched',
+                      value: aiInterviewSessions.filter(s => s.eligible === true).length,
+                      icon: Target,
+                      color: 'text-blue-500',
+                      bg: 'bg-blue-500/10',
+                    },
+                    {
+                      label: 'Total Friction Points',
+                      value: aiInterviewSessions.reduce((acc, s) => acc + ((s.friction_points as unknown[])?.length || 0), 0),
+                      icon: AlertCircle,
+                      color: 'text-orange-500',
+                      bg: 'bg-orange-500/10',
+                    },
+                  ].map((stat, i) => (
+                    <ScrollReveal key={stat.label} animation="zoom-up" delay={i * 80}>
+                      <Card className="border border-border/50 bg-card shadow-sm spring-card">
+                        <CardContent className="pt-5 pb-5">
+                          <div className="flex items-start justify-between mb-3">
+                            <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
+                            <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center`}>
+                              <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                            </div>
+                          </div>
+                          <p className={`text-2xl font-bold font-display stat-number ${stat.color}`}>{stat.value}</p>
+                        </CardContent>
+                      </Card>
+                    </ScrollReveal>
+                  ))}
+                </div>
+
+                {aiInterviewSessions.length === 0 ? (
+                  <Card className="bg-card border border-border/60 shadow-sm">
+                    <CardContent className="pt-12 pb-12 text-center">
+                      <div className="relative mx-auto mb-5 w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center shadow-lg shadow-primary/20">
+                        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white" opacity="0.95" />
+                          <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.75" />
+                          <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
+                        </svg>
+                      </div>
+                      <p className="text-foreground font-semibold">No AI interview sessions yet.</p>
+                      <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+                        Create an AI Interview type test — testers will speak with UserNinjas AI and their sessions will appear here with profile analysis and friction reports.
+                      </p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-3">
+                    {aiInterviewSessions.map((session) => {
+                      const frictionPoints = (session.friction_points as Array<{ severity: string; title: string; description: string }>) || [];
+                      const insights = (session.insights as Array<{ category: string; recommendation: string; priority: string }>) || [];
+                      const keyQuotes = session.key_quotes || [];
+                      const hasReport = frictionPoints.length > 0 || insights.length > 0;
+                      const durationMin = session.duration_seconds ? Math.round(session.duration_seconds / 60) : null;
+                      const criticalCount = frictionPoints.filter(f => f.severity === 'critical').length;
+                      const majorCount = frictionPoints.filter(f => f.severity === 'major').length;
+                      return (
+                        <Card key={session.id} className={`bg-card border border-border/60 shadow-sm border-l-4 overflow-hidden transition-all duration-300 hover:shadow-lg spring-card ${
+                          session.status === 'completed' ? 'border-l-green-500' :
+                          session.status === 'in_progress' ? 'border-l-blue-500' :
+                          'border-l-muted-foreground/30'
+                        }`}>
+                          <CardContent className="p-5">
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                              <div className="flex-1 min-w-0">
+                                {/* Title row */}
+                                <div className="flex items-center gap-2 mb-1.5 flex-wrap">
+                                  <div className="flex items-center justify-center w-6 h-6 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex-shrink-0">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                                      <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white" opacity="0.95" />
+                                      <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                                    </svg>
+                                  </div>
+                                  <h3 className="font-semibold text-sm truncate">{session.tests?.title || 'Unknown Test'}</h3>
+                                  {getStatusBadge(session.status)}
+                                  {session.eligible === true && (
+                                    <Badge className="bg-green-500/15 text-green-500 border-green-500/30 border text-xs gap-1">
+                                      <CheckCircle className="h-3 w-3" /> Profile Match
+                                    </Badge>
+                                  )}
+                                  {session.eligible === false && (
+                                    <Badge variant="secondary" className="text-xs gap-1">
+                                      <XCircle className="h-3 w-3" /> No Match
+                                    </Badge>
+                                  )}
+                                </div>
+
+                                {/* Meta */}
+                                <p className="text-xs text-muted-foreground mb-2">
+                                  Tester: <span className="font-mono">{session.tester_id.slice(0, 8)}…</span>
+                                  {durationMin !== null && <> · <ClockIcon className="inline h-3 w-3 mx-0.5" />{durationMin} min</>}
+                                  {' · '}{new Date(session.created_at).toLocaleDateString()}
+                                </p>
+
+                                {/* Eligibility reason */}
+                                {session.eligibility_reason && (
+                                  <p className="text-xs text-muted-foreground italic mb-2 bg-muted/40 px-2 py-1 rounded-lg">
+                                    {session.eligibility_reason}
+                                  </p>
+                                )}
+
+                                {/* Friction + insight chips */}
+                                {hasReport && (
+                                  <div className="flex flex-wrap gap-1.5 mb-2">
+                                    {criticalCount > 0 && (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-destructive/15 text-destructive border border-destructive/30 px-2 py-0.5 rounded-full">
+                                        <AlertCircle className="h-3 w-3" /> {criticalCount} critical
+                                      </span>
+                                    )}
+                                    {majorCount > 0 && (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-orange-500/15 text-orange-400 border border-orange-500/30 px-2 py-0.5 rounded-full">
+                                        <AlertCircle className="h-3 w-3" /> {majorCount} major
+                                      </span>
+                                    )}
+                                    {insights.length > 0 && (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-primary/15 text-primary border border-primary/30 px-2 py-0.5 rounded-full">
+                                        <Sparkles className="h-3 w-3" /> {insights.length} insight{insights.length !== 1 ? 's' : ''}
+                                      </span>
+                                    )}
+                                    {keyQuotes.length > 0 && (
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-semibold bg-violet-500/15 text-violet-400 border border-violet-500/30 px-2 py-0.5 rounded-full">
+                                        <MessageSquare className="h-3 w-3" /> {keyQuotes.length} quote{keyQuotes.length !== 1 ? 's' : ''}
+                                      </span>
+                                    )}
+                                  </div>
+                                )}
+
+                                {/* Key quote preview */}
+                                {keyQuotes.length > 0 && (
+                                  <blockquote className="text-xs italic text-muted-foreground border-l-2 border-primary/40 pl-2 line-clamp-2">
+                                    "{keyQuotes[0]}"
+                                  </blockquote>
+                                )}
+
+                                {/* Top friction point preview */}
+                                {!hasReport && session.status === 'completed' && (
+                                  <p className="text-xs text-muted-foreground italic">Session completed — report generating…</p>
+                                )}
+                              </div>
+
+                              {hasReport && (
+                                <Button
+                                  size="sm"
+                                  className="flex-shrink-0 gap-1.5 bg-primary/10 text-primary border border-primary/30 hover:bg-primary hover:text-primary-foreground transition-all"
+                                  variant="outline"
+                                  onClick={() => setViewingSession(session)}
+                                >
+                                  <Sparkles className="h-3.5 w-3.5" />
+                                  Full Analysis
+                                </Button>
+                              )}
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Report dialog */}
+                <Dialog open={!!viewingSession} onOpenChange={(open) => !open && setViewingSession(null)}>
+                  <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader className="pb-2">
+                      <DialogTitle className="flex items-center gap-2.5">
+                        <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white" opacity="0.95" />
+                            <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </div>
+                        <span><span className="text-foreground">User</span><span className="text-primary">Ninjas</span> AI Analysis Report</span>
+                      </DialogTitle>
+                      <DialogDescription className="text-sm">
+                        {viewingSession?.tests?.title} · Tester: {viewingSession?.tester_id.slice(0, 8)}…
+                      </DialogDescription>
+                    </DialogHeader>
+                    {viewingSession && viewingSession.friction_points && (
+                      <AIInterviewReport
+                        testTitle={viewingSession.tests?.title || 'Unknown Test'}
+                        report={{
+                          friction_points: viewingSession.friction_points as InterviewReport['friction_points'],
+                          insights: viewingSession.insights as InterviewReport['insights'],
+                          key_quotes: viewingSession.key_quotes || [],
+                          sentiment: 'neutral',
+                          summary: '',
+                          session_id: viewingSession.id,
+                        }}
+                        onClose={() => setViewingSession(null)}
+                      />
+                    )}
+                  </DialogContent>
+                </Dialog>
               </TabsContent>
 
               {/* Analytics Tab */}
