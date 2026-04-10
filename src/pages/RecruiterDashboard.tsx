@@ -204,12 +204,13 @@ export default function RecruiterDashboard() {
   }, [user, role]);
 
   const fetchData = async () => {
+    if (!user) return;
     setLoading(true);
     try {
       const { data: testsData, error: testsError } = await supabase
         .from('tests')
         .select('*')
-        .eq('recruiter_id', user!.id)
+        .eq('recruiter_id', user.id)
         .order('created_at', { ascending: false });
 
       if (testsError) throw testsError;
