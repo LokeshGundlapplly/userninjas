@@ -30,15 +30,17 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
   
-  const { user, signIn, signUp } = useAuth();
+  const { user, role, signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      navigate('/');
+    if (user && role) {
+      if (role === 'recruiter') navigate('/recruiter', { replace: true });
+      else if (role === 'tester') navigate('/tester', { replace: true });
+      else navigate('/', { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, role, navigate]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string } = {};
@@ -101,16 +103,14 @@ export default function Auth() {
           });
         } else {
           toast({ title: 'Account created!', description: `Welcome to User Ninjas as a ${selectedRole}!` });
-          navigate('/');
+          navigate(selectedRole === 'recruiter' ? '/recruiter' : '/tester', { replace: true });
         }
       } else {
         const { error } = await signIn(email, password);
         if (error) {
           toast({ title: 'Sign in failed', description: 'Invalid email or password.', variant: 'destructive' });
-        } else {
-          toast({ title: 'Welcome back!', description: 'You have successfully signed in.' });
-          navigate('/');
         }
+        // Redirect handled by useEffect once role is resolved
       }
     } catch {
       toast({ title: 'Error', description: 'An unexpected error occurred.', variant: 'destructive' });

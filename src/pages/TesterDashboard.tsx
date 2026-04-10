@@ -517,8 +517,9 @@ export default function TesterDashboard() {
       <main className="min-h-screen pt-20 px-4">
         <div className="container mx-auto max-w-6xl py-8">
           {/* Header */}
-          <div className="rounded-2xl bg-card border border-border/60 p-5 mb-6 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent pointer-events-none" />
+          <ScrollReveal animation="fade-down">
+            <div className="rounded-2xl bg-card border border-border/60 p-5 mb-6 relative overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent pointer-events-none" />
             <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -535,6 +536,7 @@ export default function TesterDashboard() {
               </Button>
             </div>
           </div>
+          </ScrollReveal>
 
           {/* Stats Overview */}
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
@@ -544,19 +546,21 @@ export default function TesterDashboard() {
               { label: 'Completed', value: String(completedTests), Icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', sub: 'Approved tests' },
               { label: 'In Progress', value: String(inProgressTests), Icon: PlayCircle, color: 'text-blue-500', bg: 'bg-blue-500/10', sub: 'Active tests' },
               { label: 'Reputation', value: ratedSubmissions.length > 0 ? averageRating.toFixed(1) : '—', Icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-500/10', sub: `${ratedSubmissions.length} ratings` },
-            ].map(({ label, value, Icon, color, bg, sub }) => (
-              <Card key={label} className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-2">
-                    <p className="text-xs text-muted-foreground font-medium">{label}</p>
-                    <div className={`p-1.5 ${bg} rounded-lg`}>
-                      <Icon className={`h-3.5 w-3.5 ${color}`} />
+            ].map(({ label, value, Icon, color, bg, sub }, i) => (
+              <ScrollReveal key={label} animation="zoom-up" delay={i * 70}>
+                <Card className="bg-card border border-border/60 shadow-sm hover:shadow-lg transition-all spring-card">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-2">
+                      <p className="text-xs text-muted-foreground font-medium">{label}</p>
+                      <div className={`p-1.5 ${bg} rounded-lg`}>
+                        <Icon className={`h-3.5 w-3.5 ${color}`} />
+                      </div>
                     </div>
-                  </div>
-                  <p className="text-xl font-bold">{value}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
-                </CardContent>
-              </Card>
+                    <p className={`text-xl font-bold stat-number ${color}`}>{value}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
             ))}
           </div>
 
@@ -579,7 +583,7 @@ export default function TesterDashboard() {
                       const matchColor = matchScore >= 80 ? 'bg-green-500/15 text-green-400 border-green-500/30' : matchScore >= 60 ? 'bg-primary/15 text-primary border-primary/30' : matchScore >= 40 ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' : 'bg-muted text-muted-foreground border-border';
                       const ringColor = matchScore >= 80 ? 'ring-green-500/30' : matchScore >= 60 ? 'ring-primary/30' : 'ring-border';
                       return (
-                        <Card key={test.id} className={`bg-card border border-border/60 shadow-sm hover-lift ring-2 ${ringColor}`}>
+                        <Card key={test.id} className={`bg-card border border-border/60 shadow-sm transition-all duration-300 spring-card ring-2 ${ringColor}`}>
                           <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                               <Badge className={`${matchColor} border text-xs`}>{matchScore}% — {matchLabel}</Badge>

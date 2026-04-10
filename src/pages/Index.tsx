@@ -1,4 +1,7 @@
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
+import { useAuth } from '@/hooks/useAuth';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import TrustedBy from '@/components/TrustedBy';
@@ -17,6 +20,15 @@ import Background3D from '@/components/Background3D';
 import ChatWidget from '@/components/ChatWidget';
 
 export default function Index() {
+  const { user, role, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading && user && role) {
+      if (role === 'recruiter') navigate('/recruiter', { replace: true });
+      else if (role === 'tester') navigate('/tester', { replace: true });
+    }
+  }, [user, role, loading, navigate]);
   return (
     <>
       <Helmet>

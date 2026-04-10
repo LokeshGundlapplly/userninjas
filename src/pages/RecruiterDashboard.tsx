@@ -644,8 +644,9 @@ export default function RecruiterDashboard() {
         <div className="container mx-auto max-w-6xl py-8 space-y-6">
 
           {/* Dashboard Header */}
-          <div className="relative rounded-2xl overflow-hidden border border-border/50 bg-card">
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent pointer-events-none" />
+          <ScrollReveal animation="fade-down">
+            <div className="relative rounded-2xl overflow-hidden border border-border/50 bg-card">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent pointer-events-none" />
             <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 md:p-8">
               <div>
                 <div className="flex items-center gap-2 mb-1">
@@ -671,7 +672,7 @@ export default function RecruiterDashboard() {
                 </Link>
                 <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button className="gap-2 rounded-xl shadow-lg shadow-primary/20 font-semibold">
+                    <Button className="btn-shimmer gap-2 rounded-xl shadow-lg shadow-primary/20 font-semibold">
                       <Plus className="h-4 w-4" /> New Test
                     </Button>
                   </DialogTrigger>
@@ -726,6 +727,7 @@ export default function RecruiterDashboard() {
               </div>
             </div>
           </div>
+          </ScrollReveal>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -766,72 +768,82 @@ export default function RecruiterDashboard() {
                 bg: 'bg-green-500/10',
                 border: 'border-green-500/20',
               },
-            ].map((stat) => (
-              <Card key={stat.label} className={`border ${stat.border} bg-card shadow-sm hover:shadow-md transition-shadow`}>
-                <CardContent className="pt-5 pb-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
-                    <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center`}>
-                      <stat.icon className={`h-4 w-4 ${stat.color}`} />
+            ].map((stat, i) => (
+              <ScrollReveal key={stat.label} animation="zoom-up" delay={i * 80}>
+                <Card className={`border ${stat.border} bg-card shadow-sm hover:shadow-lg transition-all duration-300 spring-card`}>
+                  <CardContent className="pt-5 pb-5">
+                    <div className="flex items-start justify-between mb-3">
+                      <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
+                      <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
+                        <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                      </div>
                     </div>
-                  </div>
-                  <p className="text-2xl font-bold font-display">{stat.value}</p>
-                  <p className={`text-xs mt-1 ${stat.label === 'Pending Reviews' && pendingReviews > 0 ? 'text-yellow-500' : 'text-muted-foreground'}`}>{stat.sub}</p>
-                </CardContent>
-              </Card>
+                    <p className={`text-2xl font-bold font-display stat-number ${stat.color}`}>{stat.value}</p>
+                    <p className={`text-xs mt-1 ${stat.label === 'Pending Reviews' && pendingReviews > 0 ? 'text-yellow-500' : 'text-muted-foreground'}`}>{stat.sub}</p>
+                  </CardContent>
+                </Card>
+              </ScrollReveal>
             ))}
           </div>
 
           {/* Secondary Stats */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border border-border/50 bg-card shadow-sm">
-              <CardContent className="pt-5 pb-5">
-                <div className="flex items-start justify-between mb-3">
-                  <p className="text-xs font-medium text-muted-foreground">Approval Rate</p>
-                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                    <Target className="h-4 w-4 text-emerald-500" />
+            <ScrollReveal animation="zoom-up" delay={0}>
+              <Card className="border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all spring-card">
+                <CardContent className="pt-5 pb-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-xs font-medium text-muted-foreground">Approval Rate</p>
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                      <Target className="h-4 w-4 text-emerald-500" />
+                    </div>
                   </div>
-                </div>
-                <p className="text-2xl font-bold font-display">{approvalRate}%</p>
-                <Progress value={approvalRate} className="h-1 mt-2" />
-              </CardContent>
-            </Card>
-            <Card className="border border-border/50 bg-card shadow-sm">
-              <CardContent className="pt-5 pb-5">
-                <div className="flex items-start justify-between mb-3">
-                  <p className="text-xs font-medium text-muted-foreground">Avg Rating</p>
-                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                    <Award className="h-4 w-4 text-amber-500" />
+                  <p className="text-2xl font-bold font-display text-emerald-500 stat-number">{approvalRate}%</p>
+                  <Progress value={approvalRate} className="h-1 mt-2" />
+                </CardContent>
+              </Card>
+            </ScrollReveal>
+            <ScrollReveal animation="zoom-up" delay={80}>
+              <Card className="border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all spring-card">
+                <CardContent className="pt-5 pb-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-xs font-medium text-muted-foreground">Avg Rating</p>
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                      <Award className="h-4 w-4 text-amber-500" />
+                    </div>
                   </div>
-                </div>
-                <p className="text-2xl font-bold font-display">{avgRating.toFixed(1)}</p>
-                <StarRating rating={Math.round(avgRating)} size="sm" />
-              </CardContent>
-            </Card>
-            <Card className="border border-border/50 bg-card shadow-sm">
-              <CardContent className="pt-5 pb-5">
-                <div className="flex items-start justify-between mb-3">
-                  <p className="text-xs font-medium text-muted-foreground">Completion Rate</p>
-                  <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                    <Zap className="h-4 w-4 text-violet-500" />
+                  <p className="text-2xl font-bold font-display text-amber-500 stat-number">{avgRating.toFixed(1)}</p>
+                  <StarRating rating={Math.round(avgRating)} size="sm" />
+                </CardContent>
+              </Card>
+            </ScrollReveal>
+            <ScrollReveal animation="zoom-up" delay={160}>
+              <Card className="border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all spring-card">
+                <CardContent className="pt-5 pb-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-xs font-medium text-muted-foreground">Completion Rate</p>
+                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                      <Zap className="h-4 w-4 text-violet-500" />
+                    </div>
                   </div>
-                </div>
-                <p className="text-2xl font-bold font-display">{completionRate}%</p>
-                <Progress value={completionRate} className="h-1 mt-2" />
-              </CardContent>
-            </Card>
-            <Card className="border border-border/50 bg-card shadow-sm">
-              <CardContent className="pt-5 pb-5">
-                <div className="flex items-start justify-between mb-3">
-                  <p className="text-xs font-medium text-muted-foreground">Rejected</p>
-                  <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
-                    <XCircle className="h-4 w-4 text-destructive" />
+                  <p className="text-2xl font-bold font-display text-violet-500 stat-number">{completionRate}%</p>
+                  <Progress value={completionRate} className="h-1 mt-2" />
+                </CardContent>
+              </Card>
+            </ScrollReveal>
+            <ScrollReveal animation="zoom-up" delay={240}>
+              <Card className="border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all spring-card">
+                <CardContent className="pt-5 pb-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-xs font-medium text-muted-foreground">Rejected</p>
+                    <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
+                      <XCircle className="h-4 w-4 text-destructive" />
+                    </div>
                   </div>
-                </div>
-                <p className="text-2xl font-bold font-display">{rejectedCount}</p>
-                <p className="text-xs text-muted-foreground mt-1">{reviewedCount} reviewed total</p>
-              </CardContent>
-            </Card>
+                  <p className="text-2xl font-bold font-display text-destructive stat-number">{rejectedCount}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{reviewedCount} reviewed total</p>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
           </div>
 
           {/* Main Content Tabs */}
@@ -875,7 +887,7 @@ export default function RecruiterDashboard() {
                       const testPending = testSubmissions.filter(s => s.status === 'submitted').length;
                       const fillRate = test.max_testers ? Math.round((testSubmissions.length / test.max_testers) * 100) : 0;
                       return (
-                        <Card key={test.id} className={`bg-card border border-border/60 shadow-sm border-l-4 overflow-hidden ${test.status === 'active' ? 'border-l-primary' : test.status === 'paused' ? 'border-l-yellow-500' : 'border-l-muted-foreground/30'}`}>
+                        <Card key={test.id} className={`bg-card border border-border/60 shadow-sm border-l-4 overflow-hidden transition-all duration-300 hover:shadow-lg spring-card ${test.status === 'active' ? 'border-l-primary' : test.status === 'paused' ? 'border-l-yellow-500' : 'border-l-muted-foreground/30'}`}>
                           <CardContent className="p-5">
                             <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                               <div className="min-w-0 flex-1">
