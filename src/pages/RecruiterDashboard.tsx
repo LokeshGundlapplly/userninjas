@@ -621,6 +621,10 @@ export default function RecruiterDashboard() {
     );
   }
 
+  if (!user) {
+    return null;
+  }
+
   return (
     <>
       <Helmet>
