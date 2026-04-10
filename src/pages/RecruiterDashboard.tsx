@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -66,7 +66,12 @@ import {
   Download,
   FileText as FileTextIcon,
   Sparkles,
-  Play as PlayIcon
+  Play as PlayIcon,
+  LogOut,
+  Bell,
+  Settings,
+  ChevronRight,
+  Layers
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 import StarRating from '@/components/StarRating';
@@ -608,10 +613,10 @@ export default function RecruiterDashboard() {
         <main className="min-h-screen pt-20 px-4">
           <div className="container mx-auto max-w-6xl py-8">
             <div className="animate-pulse space-y-4">
-              <div className="h-8 bg-muted rounded w-1/4" />
+              <div className="h-28 bg-muted rounded-2xl w-full" />
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-32 bg-muted rounded-lg" />
+                  <div key={i} className="h-28 bg-muted rounded-xl" />
                 ))}
               </div>
             </div>
@@ -628,283 +633,224 @@ export default function RecruiterDashboard() {
   return (
     <>
       <Helmet>
-        <title>Recruiter Dashboard - User Ninjas</title>
+        <title>Recruiter Dashboard — User Ninjas</title>
         <meta name="description" content="Manage your tests, review submissions, and track tester engagement." />
       </Helmet>
 
       <Background3D />
       <Navbar />
 
-      <main className="min-h-screen pt-20 px-4">
-        <div className="container mx-auto max-w-6xl py-8">
-          <ScrollReveal animation="fade-up">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-              <h1 className="text-3xl font-display font-bold">
-                Welcome back, <span className="text-gradient">Recruiter</span>
-              </h1>
-              <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                <DialogTrigger asChild>
-                  <Button className="w-full sm:w-auto">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create New Test
+      <main className="min-h-screen pt-20 px-4 pb-16">
+        <div className="container mx-auto max-w-6xl py-8 space-y-6">
+
+          {/* Dashboard Header */}
+          <div className="relative rounded-2xl overflow-hidden border border-border/50 bg-card">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent pointer-events-none" />
+            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 md:p-8">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-semibold text-primary uppercase tracking-widest">Recruiter Dashboard</span>
+                  {pendingReviews > 0 && (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-yellow-500/15 text-yellow-500 border border-yellow-500/30 px-2 py-0.5 rounded-full">
+                      <Bell className="w-3 h-3" /> {pendingReviews} pending
+                    </span>
+                  )}
+                </div>
+                <h1 className="font-display text-2xl md:text-3xl font-bold">
+                  Welcome back, <span className="text-gradient">{user.email?.split('@')[0] || 'Recruiter'}</span>
+                </h1>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {activeTests} active test{activeTests !== 1 ? 's' : ''} · {totalTesters} submission{totalTesters !== 1 ? 's' : ''} · ${totalSpent.toFixed(0)} spent
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link to="/contact">
+                  <Button variant="outline" size="sm" className="gap-2 rounded-xl">
+                    <Settings className="h-4 w-4" /> Settings
                   </Button>
-                </DialogTrigger>
-                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>Create New Test</DialogTitle>
-                    <DialogDescription>
-                      Fill in the details to create a new test for testers.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="title">Test Title *</Label>
-                      <Input
-                        id="title"
-                        placeholder="e.g., Mobile App Usability Test"
-                        value={formData.title}
-                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        id="description"
-                        placeholder="Describe what the test is about..."
-                        value={formData.description}
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                        rows={3}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="requirements">Requirements</Label>
-                      <Textarea
-                        id="requirements"
-                        placeholder="Any specific requirements for testers..."
-                        value={formData.requirements}
-                        onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                        rows={2}
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="reward">Reward ($) *</Label>
-                        <Input
-                          id="reward"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          placeholder="25.00"
-                          value={formData.reward_amount}
-                          onChange={(e) => setFormData({ ...formData, reward_amount: e.target.value })}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="duration">Duration (mins) *</Label>
-                        <Input
-                          id="duration"
-                          type="number"
-                          min="1"
-                          placeholder="30"
-                          value={formData.estimated_duration}
-                          onChange={(e) => setFormData({ ...formData, estimated_duration: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="category">Category</Label>
-                        <Select
-                          value={formData.category}
-                          onValueChange={(value) => setFormData({ ...formData, category: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map(cat => (
-                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="max_testers">Max Testers</Label>
-                        <Input
-                          id="max_testers"
-                          type="number"
-                          min="1"
-                          placeholder="100"
-                          value={formData.max_testers}
-                          onChange={(e) => setFormData({ ...formData, max_testers: e.target.value })}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => { setCreateDialogOpen(false); resetForm(); }}>
-                      Cancel
+                </Link>
+                <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="gap-2 rounded-xl shadow-lg shadow-primary/20 font-semibold">
+                      <Plus className="h-4 w-4" /> New Test
                     </Button>
-                    <Button onClick={handleCreateTest}>Create Test</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                      <DialogTitle>Create New Test</DialogTitle>
+                      <DialogDescription>Fill in the details to create a new test for testers.</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="title">Test Title *</Label>
+                        <Input id="title" placeholder="e.g., Mobile App Usability Test" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea id="description" placeholder="Describe what the test is about..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="requirements">Requirements</Label>
+                        <Textarea id="requirements" placeholder="Any specific requirements for testers..." value={formData.requirements} onChange={(e) => setFormData({ ...formData, requirements: e.target.value })} rows={2} />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="reward">Reward ($) *</Label>
+                          <Input id="reward" type="number" min="0" step="0.01" placeholder="25.00" value={formData.reward_amount} onChange={(e) => setFormData({ ...formData, reward_amount: e.target.value })} />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="duration">Duration (mins) *</Label>
+                          <Input id="duration" type="number" min="1" placeholder="30" value={formData.estimated_duration} onChange={(e) => setFormData({ ...formData, estimated_duration: e.target.value })} />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="category">Category</Label>
+                          <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                            <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                            <SelectContent>{categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="max_testers">Max Testers</Label>
+                          <Input id="max_testers" type="number" min="1" placeholder="100" value={formData.max_testers} onChange={(e) => setFormData({ ...formData, max_testers: e.target.value })} />
+                        </div>
+                      </div>
+                    </div>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => { setCreateDialogOpen(false); resetForm(); }}>Cancel</Button>
+                      <Button onClick={handleCreateTest}>Create Test</Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </div>
             </div>
-          </ScrollReveal>
+          </div>
 
-          {/* Stats Overview - Row 1 */}
-          <ScrollReveal animation="fade-up" delay={0.1}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-sm text-muted-foreground truncate">Active Tests</p>
-                      <p className="text-2xl font-bold">{activeTests}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{tests.length} total</p>
-                    </div>
-                    <div className="p-3 bg-primary/10 rounded-full flex-shrink-0">
-                      <FileText className="h-6 w-6 text-primary" />
+          {/* Stats Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[
+              {
+                label: 'Active Tests',
+                value: activeTests,
+                sub: `${tests.length} total`,
+                icon: Layers,
+                color: 'text-primary',
+                bg: 'bg-primary/10',
+                border: 'border-primary/20',
+              },
+              {
+                label: 'Unique Testers',
+                value: uniqueTesters,
+                sub: `${totalTesters} submissions`,
+                icon: Users,
+                color: 'text-blue-500',
+                bg: 'bg-blue-500/10',
+                border: 'border-blue-500/20',
+              },
+              {
+                label: 'Pending Reviews',
+                value: pendingReviews,
+                sub: pendingReviews > 0 ? '⚠ Needs attention' : 'All up to date',
+                icon: AlertCircle,
+                color: pendingReviews > 0 ? 'text-yellow-500' : 'text-muted-foreground',
+                bg: pendingReviews > 0 ? 'bg-yellow-500/10' : 'bg-secondary',
+                border: pendingReviews > 0 ? 'border-yellow-500/20' : 'border-border/50',
+              },
+              {
+                label: 'Total Spent',
+                value: `$${totalSpent.toFixed(0)}`,
+                sub: `${approvedCount} approved`,
+                icon: DollarSign,
+                color: 'text-green-500',
+                bg: 'bg-green-500/10',
+                border: 'border-green-500/20',
+              },
+            ].map((stat) => (
+              <Card key={stat.label} className={`border ${stat.border} bg-card shadow-sm hover:shadow-md transition-shadow`}>
+                <CardContent className="pt-5 pb-5">
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
+                    <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center`}>
+                      <stat.icon className={`h-4 w-4 ${stat.color}`} />
                     </div>
                   </div>
+                  <p className="text-2xl font-bold font-display">{stat.value}</p>
+                  <p className={`text-xs mt-1 ${stat.label === 'Pending Reviews' && pendingReviews > 0 ? 'text-yellow-500' : 'text-muted-foreground'}`}>{stat.sub}</p>
                 </CardContent>
               </Card>
+            ))}
+          </div>
 
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-sm text-muted-foreground truncate">Unique Testers</p>
-                      <p className="text-2xl font-bold">{uniqueTesters}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{totalTesters} submissions</p>
-                    </div>
-                    <div className="p-3 bg-blue-500/10 rounded-full flex-shrink-0">
-                      <Users className="h-6 w-6 text-blue-500" />
-                    </div>
+          {/* Secondary Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border border-border/50 bg-card shadow-sm">
+              <CardContent className="pt-5 pb-5">
+                <div className="flex items-start justify-between mb-3">
+                  <p className="text-xs font-medium text-muted-foreground">Approval Rate</p>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <Target className="h-4 w-4 text-emerald-500" />
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-sm text-muted-foreground truncate">Pending Reviews</p>
-                      <p className="text-2xl font-bold">{pendingReviews}</p>
-                      {pendingReviews > 0 && (
-                        <p className="text-xs text-yellow-500 mt-1 flex items-center gap-1">
-                          <AlertCircle className="h-3 w-3" /> Needs attention
-                        </p>
-                      )}
-                    </div>
-                    <div className="p-3 bg-yellow-500/10 rounded-full flex-shrink-0">
-                      <Clock className="h-6 w-6 text-yellow-500" />
-                    </div>
+                </div>
+                <p className="text-2xl font-bold font-display">{approvalRate}%</p>
+                <Progress value={approvalRate} className="h-1 mt-2" />
+              </CardContent>
+            </Card>
+            <Card className="border border-border/50 bg-card shadow-sm">
+              <CardContent className="pt-5 pb-5">
+                <div className="flex items-start justify-between mb-3">
+                  <p className="text-xs font-medium text-muted-foreground">Avg Rating</p>
+                  <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                    <Award className="h-4 w-4 text-amber-500" />
                   </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-sm text-muted-foreground truncate">Total Spent</p>
-                      <p className="text-2xl font-bold">${totalSpent.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{approvedCount} approved</p>
-                    </div>
-                    <div className="p-3 bg-green-500/10 rounded-full flex-shrink-0">
-                      <DollarSign className="h-6 w-6 text-green-500" />
-                    </div>
+                </div>
+                <p className="text-2xl font-bold font-display">{avgRating.toFixed(1)}</p>
+                <StarRating rating={Math.round(avgRating)} size="sm" />
+              </CardContent>
+            </Card>
+            <Card className="border border-border/50 bg-card shadow-sm">
+              <CardContent className="pt-5 pb-5">
+                <div className="flex items-start justify-between mb-3">
+                  <p className="text-xs font-medium text-muted-foreground">Completion Rate</p>
+                  <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
+                    <Zap className="h-4 w-4 text-violet-500" />
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          </ScrollReveal>
-
-          {/* Stats Overview - Row 2 */}
-          <ScrollReveal animation="fade-up" delay={0.15}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="min-w-0">
-                      <p className="text-sm text-muted-foreground truncate">Approval Rate</p>
-                      <p className="text-2xl font-bold">{approvalRate}%</p>
-                    </div>
-                    <div className="p-3 bg-emerald-500/10 rounded-full flex-shrink-0">
-                      <Target className="h-6 w-6 text-emerald-500" />
-                    </div>
+                </div>
+                <p className="text-2xl font-bold font-display">{completionRate}%</p>
+                <Progress value={completionRate} className="h-1 mt-2" />
+              </CardContent>
+            </Card>
+            <Card className="border border-border/50 bg-card shadow-sm">
+              <CardContent className="pt-5 pb-5">
+                <div className="flex items-start justify-between mb-3">
+                  <p className="text-xs font-medium text-muted-foreground">Rejected</p>
+                  <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
+                    <XCircle className="h-4 w-4 text-destructive" />
                   </div>
-                  <Progress value={approvalRate} className="h-1.5" />
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-sm text-muted-foreground truncate">Avg Rating</p>
-                      <p className="text-2xl font-bold">{avgRating.toFixed(1)}</p>
-                      <StarRating rating={Math.round(avgRating)} size="sm" />
-                    </div>
-                    <div className="p-3 bg-amber-500/10 rounded-full flex-shrink-0">
-                      <Award className="h-6 w-6 text-amber-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="min-w-0">
-                      <p className="text-sm text-muted-foreground truncate">Completion Rate</p>
-                      <p className="text-2xl font-bold">{completionRate}%</p>
-                    </div>
-                    <div className="p-3 bg-violet-500/10 rounded-full flex-shrink-0">
-                      <Zap className="h-6 w-6 text-violet-500" />
-                    </div>
-                  </div>
-                  <Progress value={completionRate} className="h-1.5" />
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0">
-                      <p className="text-sm text-muted-foreground truncate">Rejected</p>
-                      <p className="text-2xl font-bold">{rejectedCount}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{reviewedCount} reviewed total</p>
-                    </div>
-                    <div className="p-3 bg-destructive/10 rounded-full flex-shrink-0">
-                      <XCircle className="h-6 w-6 text-destructive" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </ScrollReveal>
+                </div>
+                <p className="text-2xl font-bold font-display">{rejectedCount}</p>
+                <p className="text-xs text-muted-foreground mt-1">{reviewedCount} reviewed total</p>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Main Content Tabs */}
-          <ScrollReveal animation="fade-up" delay={0.2}>
-            <Tabs defaultValue="tests" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4 max-w-xl">
-                <TabsTrigger value="tests" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  My Tests
+          <Tabs defaultValue="tests" className="space-y-5">
+              <TabsList className="h-10 bg-secondary/60 border border-border/50 p-1 rounded-xl gap-1">
+                <TabsTrigger value="tests" className="rounded-lg text-sm gap-1.5 data-[state=active]:shadow-sm">
+                  <FileText className="h-3.5 w-3.5" /> My Tests
                 </TabsTrigger>
-                <TabsTrigger value="submissions" className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  Submissions
+                <TabsTrigger value="submissions" className="rounded-lg text-sm gap-1.5 data-[state=active]:shadow-sm">
+                  <Users className="h-3.5 w-3.5" /> Submissions
+                  {pendingReviews > 0 && (
+                    <span className="ml-1 bg-yellow-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{pendingReviews}</span>
+                  )}
                 </TabsTrigger>
-                <TabsTrigger value="insights" className="flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  AI Insights
+                <TabsTrigger value="insights" className="rounded-lg text-sm gap-1.5 data-[state=active]:shadow-sm">
+                  <Sparkles className="h-3.5 w-3.5" /> AI Insights
                 </TabsTrigger>
-                <TabsTrigger value="analytics" className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4" />
-                  Analytics
+                <TabsTrigger value="analytics" className="rounded-lg text-sm gap-1.5 data-[state=active]:shadow-sm">
+                  <BarChart3 className="h-3.5 w-3.5" /> Analytics
                 </TabsTrigger>
               </TabsList>
 
@@ -922,189 +868,97 @@ export default function RecruiterDashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="grid gap-4">
+                  <div className="grid gap-3">
                     {tests.map((test) => {
                       const testSubmissions = submissions.filter(s => s.test_id === test.id);
                       const testApproved = testSubmissions.filter(s => s.status === 'approved').length;
                       const testPending = testSubmissions.filter(s => s.status === 'submitted').length;
                       const fillRate = test.max_testers ? Math.round((testSubmissions.length / test.max_testers) * 100) : 0;
                       return (
-                        <Card key={test.id} className="bg-card border border-border/60 shadow-sm">
-                          <CardHeader className="pb-3">
-                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                        <Card key={test.id} className={`bg-card border border-border/60 shadow-sm border-l-4 overflow-hidden ${test.status === 'active' ? 'border-l-primary' : test.status === 'paused' ? 'border-l-yellow-500' : 'border-l-muted-foreground/30'}`}>
+                          <CardContent className="p-5">
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-3">
                               <div className="min-w-0 flex-1">
-                                <CardTitle className="text-xl truncate">{test.title}</CardTitle>
-                                <CardDescription className="mt-2 line-clamp-2">{test.description}</CardDescription>
-                              </div>
-                              <div className="flex items-center gap-2 flex-shrink-0">
-                                {getStatusBadge(test.status)}
-                                {test.category && (
-                                  <Badge variant="secondary">{test.category}</Badge>
-                                )}
-                              </div>
-                            </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex flex-wrap gap-4 mb-3 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <DollarSign className="h-4 w-4" />
-                                <span className="font-semibold text-foreground">${Number(test.reward_amount).toFixed(2)}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4" />
-                                <span>{test.estimated_duration} mins</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Users className="h-4 w-4" />
-                                <span>{testSubmissions.length} / {test.max_testers} testers</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                                <span>{testApproved} approved</span>
-                              </div>
-                              {testPending > 0 && (
-                                <div className="flex items-center gap-1">
-                                  <AlertCircle className="h-4 w-4 text-yellow-500" />
-                                  <span className="text-yellow-500 font-medium">{testPending} pending</span>
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <h3 className="font-semibold text-base truncate">{test.title}</h3>
+                                  {getStatusBadge(test.status)}
+                                  {test.category && <Badge variant="secondary" className="text-xs">{test.category}</Badge>}
                                 </div>
-                              )}
-                            </div>
-                            {/* Fill rate bar */}
-                            <div className="mb-4">
-                              <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                                <span>Tester capacity</span>
-                                <span>{fillRate}%</span>
+                                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">{test.description}</p>
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground mb-3">
+                                  <span className="flex items-center gap-1"><DollarSign className="h-3.5 w-3.5 text-green-500" /><span className="font-semibold text-foreground">${Number(test.reward_amount).toFixed(2)}</span></span>
+                                  <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{test.estimated_duration} mins</span>
+                                  <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />{testSubmissions.length}/{test.max_testers} testers</span>
+                                  <span className="flex items-center gap-1 text-green-600"><CheckCircle className="h-3.5 w-3.5" />{testApproved} approved</span>
+                                  {testPending > 0 && <span className="flex items-center gap-1 text-yellow-500 font-medium"><AlertCircle className="h-3.5 w-3.5" />{testPending} pending</span>}
+                                </div>
+                                <div>
+                                  <div className="flex justify-between text-xs text-muted-foreground mb-1"><span>Fill rate</span><span className="font-medium">{fillRate}%</span></div>
+                                  <Progress value={fillRate} className="h-1.5" />
+                                </div>
                               </div>
-                              <Progress value={fillRate} className="h-1.5" />
-                            </div>
-                            <div className="flex flex-wrap gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleToggleStatus(test)}
-                              >
-                                {test.status === 'active' ? (
-                                  <>
-                                    <XCircle className="h-4 w-4 mr-1" />
-                                    Pause
-                                  </>
-                                ) : (
-                                  <>
-                                    <CheckCircle className="h-4 w-4 mr-1" />
-                                    Activate
-                                  </>
-                                )}
-                              </Button>
-                              <Dialog open={editingTest?.id === test.id} onOpenChange={(open) => !open && setEditingTest(null)}>
-                                <DialogTrigger asChild>
-                                  <Button variant="outline" size="sm" onClick={() => openEditDialog(test)}>
-                                    <Edit className="h-4 w-4 mr-1" />
-                                    Edit
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-                                  <DialogHeader>
-                                    <DialogTitle>Edit Test</DialogTitle>
-                                    <DialogDescription>
-                                      Update the details of your test.
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <div className="grid gap-4 py-4">
-                                    <div className="space-y-2">
-                                      <Label htmlFor="edit-title">Test Title *</Label>
-                                      <Input
-                                        id="edit-title"
-                                        value={formData.title}
-                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor="edit-description">Description</Label>
-                                      <Textarea
-                                        id="edit-description"
-                                        value={formData.description}
-                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                        rows={3}
-                                      />
-                                    </div>
-                                    <div className="space-y-2">
-                                      <Label htmlFor="edit-requirements">Requirements</Label>
-                                      <Textarea
-                                        id="edit-requirements"
-                                        value={formData.requirements}
-                                        onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
-                                        rows={2}
-                                      />
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div className="space-y-2">
-                                        <Label htmlFor="edit-reward">Reward ($) *</Label>
-                                        <Input
-                                          id="edit-reward"
-                                          type="number"
-                                          min="0"
-                                          step="0.01"
-                                          value={formData.reward_amount}
-                                          onChange={(e) => setFormData({ ...formData, reward_amount: e.target.value })}
-                                        />
-                                      </div>
-                                      <div className="space-y-2">
-                                        <Label htmlFor="edit-duration">Duration (mins) *</Label>
-                                        <Input
-                                          id="edit-duration"
-                                          type="number"
-                                          min="1"
-                                          value={formData.estimated_duration}
-                                          onChange={(e) => setFormData({ ...formData, estimated_duration: e.target.value })}
-                                        />
-                                      </div>
-                                    </div>
-                                    <div className="grid grid-cols-2 gap-4">
-                                      <div className="space-y-2">
-                                        <Label htmlFor="edit-category">Category</Label>
-                                        <Select
-                                          value={formData.category}
-                                          onValueChange={(value) => setFormData({ ...formData, category: value })}
-                                        >
-                                          <SelectTrigger>
-                                            <SelectValue placeholder="Select category" />
-                                          </SelectTrigger>
-                                          <SelectContent>
-                                            {categories.map(cat => (
-                                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                            ))}
-                                          </SelectContent>
-                                        </Select>
-                                      </div>
-                                      <div className="space-y-2">
-                                        <Label htmlFor="edit-max_testers">Max Testers</Label>
-                                        <Input
-                                          id="edit-max_testers"
-                                          type="number"
-                                          min="1"
-                                          value={formData.max_testers}
-                                          onChange={(e) => setFormData({ ...formData, max_testers: e.target.value })}
-                                        />
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <DialogFooter>
-                                    <Button variant="outline" onClick={() => { setEditingTest(null); resetForm(); }}>
-                                      Cancel
+                              <div className="flex sm:flex-col gap-2 flex-shrink-0">
+                                <Button variant="outline" size="sm" className="text-xs" onClick={() => handleToggleStatus(test)}>
+                                  {test.status === 'active' ? <><XCircle className="h-3.5 w-3.5 mr-1" />Pause</> : <><CheckCircle className="h-3.5 w-3.5 mr-1" />Activate</>}
+                                </Button>
+                                <Dialog open={editingTest?.id === test.id} onOpenChange={(open) => !open && setEditingTest(null)}>
+                                  <DialogTrigger asChild>
+                                    <Button variant="outline" size="sm" className="text-xs" onClick={() => openEditDialog(test)}>
+                                      <Edit className="h-3.5 w-3.5 mr-1" />Edit
                                     </Button>
-                                    <Button onClick={handleEditTest}>Save Changes</Button>
-                                  </DialogFooter>
-                                </DialogContent>
-                              </Dialog>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                onClick={() => handleDeleteTest(test.id)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-1" />
-                                Delete
-                              </Button>
+                                  </DialogTrigger>
+                                  <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+                                    <DialogHeader>
+                                      <DialogTitle>Edit Test</DialogTitle>
+                                      <DialogDescription>Update the details of your test.</DialogDescription>
+                                    </DialogHeader>
+                                    <div className="grid gap-4 py-4">
+                                      <div className="space-y-2">
+                                        <Label htmlFor="edit-title">Test Title *</Label>
+                                        <Input id="edit-title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="edit-description">Description</Label>
+                                        <Textarea id="edit-description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
+                                      </div>
+                                      <div className="space-y-2">
+                                        <Label htmlFor="edit-requirements">Requirements</Label>
+                                        <Textarea id="edit-requirements" value={formData.requirements} onChange={(e) => setFormData({ ...formData, requirements: e.target.value })} rows={2} />
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <Label htmlFor="edit-reward">Reward ($) *</Label>
+                                          <Input id="edit-reward" type="number" min="0" step="0.01" value={formData.reward_amount} onChange={(e) => setFormData({ ...formData, reward_amount: e.target.value })} />
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label htmlFor="edit-duration">Duration (mins) *</Label>
+                                          <Input id="edit-duration" type="number" min="1" value={formData.estimated_duration} onChange={(e) => setFormData({ ...formData, estimated_duration: e.target.value })} />
+                                        </div>
+                                      </div>
+                                      <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                          <Label htmlFor="edit-category">Category</Label>
+                                          <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                                            <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+                                            <SelectContent>{categories.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent>
+                                          </Select>
+                                        </div>
+                                        <div className="space-y-2">
+                                          <Label htmlFor="edit-max_testers">Max Testers</Label>
+                                          <Input id="edit-max_testers" type="number" min="1" value={formData.max_testers} onChange={(e) => setFormData({ ...formData, max_testers: e.target.value })} />
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <DialogFooter>
+                                      <Button variant="outline" onClick={() => { setEditingTest(null); resetForm(); }}>Cancel</Button>
+                                      <Button onClick={handleEditTest}>Save Changes</Button>
+                                    </DialogFooter>
+                                  </DialogContent>
+                                </Dialog>
+                                <Button variant="outline" size="sm" className="text-xs text-destructive hover:bg-destructive hover:text-destructive-foreground" onClick={() => handleDeleteTest(test.id)}>
+                                  <Trash2 className="h-3.5 w-3.5 mr-1" />Delete
+                                </Button>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
@@ -1169,70 +1023,42 @@ export default function RecruiterDashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {filteredSubmissions.map((submission) => (
-                      <Card key={submission.id} className="bg-card border border-border/60 shadow-sm">
-                        <CardContent className="pt-6">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                      <Card key={submission.id} className={`bg-card border border-border/60 shadow-sm border-l-4 overflow-hidden ${submission.status === 'submitted' ? 'border-l-yellow-500' : submission.status === 'approved' ? 'border-l-green-500' : submission.status === 'rejected' ? 'border-l-destructive' : 'border-l-muted-foreground/30'}`}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                             <div className="min-w-0 flex-1">
-                              <h3 className="font-semibold truncate">{submission.tests?.title || 'Test'}</h3>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                Tester ID: {submission.tester_id.slice(0, 8)}...
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                Started: {new Date(submission.created_at).toLocaleDateString()}
-                                {submission.submitted_at && (
-                                  <> • Submitted: {new Date(submission.submitted_at).toLocaleDateString()}</>
-                                )}
-                              </p>
-                            </div>
-                            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-                              <div className="flex items-center gap-2">
-                                <span className="font-semibold">
-                                  ${Number(submission.tests?.reward_amount || 0).toFixed(2)}
-                                </span>
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h3 className="font-semibold text-sm truncate">{submission.tests?.title || 'Test'}</h3>
                                 {getStatusBadge(submission.status)}
+                                <span className="text-sm font-semibold text-green-600">${Number(submission.tests?.reward_amount || 0).toFixed(2)}</span>
                               </div>
-                              {submission.status === 'submitted' && (
-                                <div className="flex flex-col gap-2">
-                                  <div className="flex items-center gap-2">
-                                    <span className="text-sm text-muted-foreground">Rate:</span>
-                                    <StarRating
-                                      rating={reviewRating[submission.id] || 0}
-                                      interactive
-                                      onRatingChange={(rating) => 
-                                        setReviewRating(prev => ({ ...prev, [submission.id]: rating }))
-                                      }
-                                    />
-                                  </div>
-                                  <div className="flex gap-2">
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="text-green-500 border-green-500 hover:bg-green-500 hover:text-white"
-                                      onClick={() => handleReviewSubmission(submission.id, 'approved', submission)}
-                                    >
-                                      <CheckCircle className="h-4 w-4 mr-1" />
-                                      Approve
-                                    </Button>
-                                    <Button
-                                      size="sm"
-                                      variant="outline"
-                                      className="text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground"
-                                      onClick={() => handleReviewSubmission(submission.id, 'rejected', submission)}
-                                    >
-                                      <XCircle className="h-4 w-4 mr-1" />
-                                      Reject
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-                              {submission.status === 'approved' && submission.rating && (
-                                <div className="flex items-center gap-1">
-                                  <StarRating rating={submission.rating} size="sm" />
-                                </div>
-                              )}
+                              <p className="text-xs text-muted-foreground">
+                                Tester: {submission.tester_id.slice(0, 8)}...&nbsp;·&nbsp;
+                                Started: {new Date(submission.created_at).toLocaleDateString()}
+                                {submission.submitted_at && <>&nbsp;·&nbsp;Submitted: {new Date(submission.submitted_at).toLocaleDateString()}</>}
+                              </p>
                             </div>
+                            {submission.status === 'submitted' && (
+                              <div className="flex flex-col gap-2 flex-shrink-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-muted-foreground">Rate:</span>
+                                  <StarRating rating={reviewRating[submission.id] || 0} interactive onRatingChange={(rating) => setReviewRating(prev => ({ ...prev, [submission.id]: rating }))} />
+                                </div>
+                                <div className="flex gap-2">
+                                  <Button size="sm" className="flex-1 bg-green-500 hover:bg-green-600 text-white h-8 text-xs" onClick={() => handleReviewSubmission(submission.id, 'approved', submission)}>
+                                    <CheckCircle className="h-3.5 w-3.5 mr-1" />Approve
+                                  </Button>
+                                  <Button size="sm" variant="outline" className="flex-1 text-destructive border-destructive hover:bg-destructive hover:text-destructive-foreground h-8 text-xs" onClick={() => handleReviewSubmission(submission.id, 'rejected', submission)}>
+                                    <XCircle className="h-3.5 w-3.5 mr-1" />Reject
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
+                            {submission.status === 'approved' && submission.rating && (
+                              <div className="flex items-center gap-1 flex-shrink-0"><StarRating rating={submission.rating} size="sm" /></div>
+                            )}
                           </div>
                           {submission.feedback && (
                             <div className="mt-4 p-3 bg-muted/50 rounded-lg">
@@ -1501,7 +1327,6 @@ export default function RecruiterDashboard() {
                 )}
               </TabsContent>
             </Tabs>
-          </ScrollReveal>
         </div>
       </main>
     </>

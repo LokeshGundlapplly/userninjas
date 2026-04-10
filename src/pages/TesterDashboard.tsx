@@ -38,7 +38,8 @@ import {
   Star,
   Target,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Settings
 } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
@@ -491,15 +492,12 @@ export default function TesterDashboard() {
         <Background3D />
         <Navbar />
         <main className="min-h-screen pt-20 px-4">
-          <div className="container mx-auto max-w-6xl py-8">
-            <div className="animate-pulse space-y-4">
-              <div className="h-8 bg-muted rounded w-1/4" />
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="h-32 bg-muted rounded-lg" />
-                ))}
-              </div>
+          <div className="container mx-auto max-w-6xl py-8 space-y-4 animate-pulse">
+            <div className="h-24 bg-muted rounded-2xl" />
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+              {[1,2,3,4,5].map(i => <div key={i} className="h-24 bg-muted rounded-2xl" />)}
             </div>
+            <div className="h-52 bg-muted rounded-2xl" />
           </div>
         </main>
       </>
@@ -518,98 +516,49 @@ export default function TesterDashboard() {
 
       <main className="min-h-screen pt-20 px-4">
         <div className="container mx-auto max-w-6xl py-8">
-          <ScrollReveal animation="fade-up">
-            <div className="flex items-center justify-between mb-8">
-              <h1 className="text-3xl font-display font-bold">
-                Welcome back, <span className="text-gradient">Tester</span>
-              </h1>
-              <Button variant="outline" asChild>
-                <Link to="/tester/profile">View My Profile</Link>
+          {/* Header */}
+          <div className="rounded-2xl bg-card border border-border/60 p-5 mb-6 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent pointer-events-none" />
+            <div className="relative flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <h1 className="text-xl font-bold text-foreground">{user?.email?.split('@')[0] ?? 'Tester'}</h1>
+                  <Badge variant="secondary" className="text-xs">Tester</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {completedTests} completed · ${totalEarnings.toFixed(2)} earned
+                  {pendingEarnings > 0 && <span className="text-yellow-500 font-medium"> · ${pendingEarnings.toFixed(2)} pending</span>}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" asChild>
+                <Link to="/tester/profile"><Settings className="h-4 w-4 mr-1.5" />My Profile</Link>
               </Button>
             </div>
-          </ScrollReveal>
+          </div>
 
           {/* Stats Overview */}
-          <ScrollReveal animation="fade-up" delay={0.1}>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Total Earnings</p>
-                      <p className="text-2xl font-bold">${totalEarnings.toFixed(2)}</p>
-                    </div>
-                    <div className="p-3 bg-primary/10 rounded-full">
-                      <DollarSign className="h-6 w-6 text-primary" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Pending</p>
-                      <p className="text-2xl font-bold">${pendingEarnings.toFixed(2)}</p>
-                    </div>
-                    <div className="p-3 bg-yellow-500/10 rounded-full">
-                      <Clock className="h-6 w-6 text-yellow-500" />
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+            {[
+              { label: 'Total Earned', value: `$${totalEarnings.toFixed(2)}`, Icon: DollarSign, color: 'text-primary', bg: 'bg-primary/10', sub: 'All time' },
+              { label: 'Pending', value: `$${pendingEarnings.toFixed(2)}`, Icon: Clock, color: 'text-yellow-500', bg: 'bg-yellow-500/10', sub: 'Awaiting payout' },
+              { label: 'Completed', value: String(completedTests), Icon: CheckCircle, color: 'text-green-500', bg: 'bg-green-500/10', sub: 'Approved tests' },
+              { label: 'In Progress', value: String(inProgressTests), Icon: PlayCircle, color: 'text-blue-500', bg: 'bg-blue-500/10', sub: 'Active tests' },
+              { label: 'Reputation', value: ratedSubmissions.length > 0 ? averageRating.toFixed(1) : '—', Icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-500/10', sub: `${ratedSubmissions.length} ratings` },
+            ].map(({ label, value, Icon, color, bg, sub }) => (
+              <Card key={label} className="bg-card border border-border/60 shadow-sm">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between mb-2">
+                    <p className="text-xs text-muted-foreground font-medium">{label}</p>
+                    <div className={`p-1.5 ${bg} rounded-lg`}>
+                      <Icon className={`h-3.5 w-3.5 ${color}`} />
                     </div>
                   </div>
+                  <p className="text-xl font-bold">{value}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{sub}</p>
                 </CardContent>
               </Card>
-
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Completed Tests</p>
-                      <p className="text-2xl font-bold">{completedTests}</p>
-                    </div>
-                    <div className="p-3 bg-green-500/10 rounded-full">
-                      <CheckCircle className="h-6 w-6 text-green-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">In Progress</p>
-                      <p className="text-2xl font-bold">{inProgressTests}</p>
-                    </div>
-                    <div className="p-3 bg-blue-500/10 rounded-full">
-                      <PlayCircle className="h-6 w-6 text-blue-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-card border border-border/60 shadow-sm">
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Reputation</p>
-                      <div className="flex items-center gap-2 mt-1">
-                        <StarRating rating={Math.round(averageRating)} size="sm" />
-                        {ratedSubmissions.length > 0 && (
-                          <span className="text-sm text-muted-foreground">
-                            ({averageRating.toFixed(1)})
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    <div className="p-3 bg-yellow-500/10 rounded-full">
-                      <Star className="h-6 w-6 text-yellow-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </ScrollReveal>
+            ))}
+          </div>
 
           {/* Recommended For You */}
           {(() => {
@@ -618,13 +567,12 @@ export default function TesterDashboard() {
               .slice(0, 3);
             if (recommendedTests.length === 0) return null;
             return (
-              <ScrollReveal animation="fade-up" delay={0.15}>
-                <div className="mb-8">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Sparkles className="h-5 w-5 text-primary" />
-                    <h2 className="text-xl font-bold text-foreground">Recommended for You</h2>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-3">
+              <div className="mb-6">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <h2 className="text-base font-semibold text-foreground">Recommended for You</h2>
+                </div>
+                <div className="grid gap-3 md:grid-cols-3">
                     {recommendedTests.map((test) => {
                       const matchScore = (test as any)._matchScore ?? calculateMatchScore(test, testerProfile);
                       const matchLabel = matchScore >= 80 ? 'Excellent Match' : matchScore >= 60 ? 'Good Match' : matchScore >= 40 ? 'Fair Match' : 'Low Match';
@@ -656,31 +604,32 @@ export default function TesterDashboard() {
                         </Card>
                       );
                     })}
-                  </div>
                 </div>
-              </ScrollReveal>
+              </div>
             );
           })()}
 
           {/* Main Content Tabs */}
-          <ScrollReveal animation="fade-up" delay={0.2}>
-            <Tabs defaultValue="available" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-3 max-w-md">
-                <TabsTrigger value="available" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Available
-                </TabsTrigger>
-                <TabsTrigger value="submissions" className="flex items-center gap-2">
-                  <TrendingUp className="h-4 w-4" />
-                  My Tests
-                </TabsTrigger>
-                <TabsTrigger value="earnings" className="flex items-center gap-2">
-                  <Wallet className="h-4 w-4" />
-                  Earnings
-                </TabsTrigger>
-              </TabsList>
+          <Tabs defaultValue="available" className="space-y-5">
+            <TabsList className="h-10 bg-secondary/60 border border-border/50 p-1 rounded-xl gap-1">
+              <TabsTrigger value="available" className="rounded-lg text-sm gap-1.5 data-[state=active]:shadow-sm">
+                <FileText className="h-3.5 w-3.5" /> Available
+                {tests.filter(t => !submissions.some(s => s.test_id === t.id)).length > 0 && (
+                  <span className="ml-1 bg-primary text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">
+                    {tests.filter(t => !submissions.some(s => s.test_id === t.id)).length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="submissions" className="rounded-lg text-sm gap-1.5 data-[state=active]:shadow-sm">
+                <TrendingUp className="h-3.5 w-3.5" /> My Tests
+                {inProgressTests > 0 && <span className="ml-1 bg-yellow-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full">{inProgressTests}</span>}
+              </TabsTrigger>
+              <TabsTrigger value="earnings" className="rounded-lg text-sm gap-1.5 data-[state=active]:shadow-sm">
+                <Wallet className="h-3.5 w-3.5" /> Earnings
+              </TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="available" className="space-y-4">
+              <TabsContent value="available" className="space-y-3">
                 {tests.length === 0 ? (
                   <Card className="bg-card border border-border/60 shadow-sm">
                     <CardContent className="pt-6 text-center">
@@ -690,49 +639,36 @@ export default function TesterDashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="grid gap-4">
+                  <div className="grid gap-3">
                     {tests.map((test) => {
                       const alreadyStarted = submissions.some(s => s.test_id === test.id);
                       const matchScore = (test as any)._matchScore ?? calculateMatchScore(test, testerProfile);
-                      const matchLabel = matchScore >= 80 ? 'Excellent Match' : matchScore >= 60 ? 'Good Match' : matchScore >= 40 ? 'Fair Match' : 'Low Match';
+                      const matchLabel = matchScore >= 80 ? 'Excellent' : matchScore >= 60 ? 'Good Match' : matchScore >= 40 ? 'Fair Match' : 'Low Match';
                       const matchColor = matchScore >= 80 ? 'bg-green-500/15 text-green-400 border-green-500/30' : matchScore >= 60 ? 'bg-primary/15 text-primary border-primary/30' : matchScore >= 40 ? 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30' : 'bg-muted text-muted-foreground border-border';
+                      const leftBorder = alreadyStarted ? 'border-l-muted-foreground/30' : matchScore >= 80 ? 'border-l-green-500' : matchScore >= 60 ? 'border-l-primary' : 'border-l-yellow-500';
                       return (
-                        <Card key={test.id} className="bg-card border border-border/60 shadow-sm hover-lift">
-                          <CardHeader>
-                            <div className="flex items-start justify-between">
-                              <div>
-                                <CardTitle className="text-xl">{test.title}</CardTitle>
-                                <CardDescription className="mt-2">{test.description}</CardDescription>
+                        <Card key={test.id} className={`bg-card border border-border/60 shadow-sm border-l-4 overflow-hidden ${leftBorder}`}>
+                          <CardContent className="p-4">
+                            <div className="flex flex-col sm:flex-row sm:items-start gap-3">
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                  <h3 className="font-semibold text-base">{test.title}</h3>
+                                  <Badge className={`${matchColor} border text-xs`}>{matchScore}% {matchLabel}</Badge>
+                                  {test.category && <Badge variant="secondary" className="text-xs">{test.category}</Badge>}
+                                </div>
+                                <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{test.description}</p>
+                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm">
+                                  <span className="flex items-center gap-1 font-semibold text-green-600"><DollarSign className="h-3.5 w-3.5" />${Number(test.reward_amount).toFixed(2)}</span>
+                                  <span className="flex items-center gap-1 text-muted-foreground"><Clock className="h-3.5 w-3.5" />{test.estimated_duration} mins</span>
+                                </div>
+                                {test.requirements && (
+                                  <p className="text-xs text-muted-foreground mt-2"><span className="font-medium">Requirements:</span> {test.requirements}</p>
+                                )}
                               </div>
-                              <div className="flex flex-col items-end gap-2">
-                                <Badge className={`${matchColor} border text-xs`}>{matchScore}% — {matchLabel}</Badge>
-                                {test.category && <Badge variant="secondary">{test.category}</Badge>}
-                              </div>
+                              <Button size="sm" onClick={() => startTest(test.id)} disabled={alreadyStarted} className="flex-shrink-0 w-full sm:w-auto">
+                                {alreadyStarted ? 'Already Started' : <><PlayCircle className="h-3.5 w-3.5 mr-1.5" />Start Test</>}
+                              </Button>
                             </div>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="flex flex-wrap gap-4 mb-4 text-sm text-muted-foreground">
-                              <div className="flex items-center gap-1">
-                                <DollarSign className="h-4 w-4" />
-                                <span className="font-semibold text-foreground">${Number(test.reward_amount).toFixed(2)}</span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Clock className="h-4 w-4" />
-                                <span>{test.estimated_duration} mins</span>
-                              </div>
-                            </div>
-                            {test.requirements && (
-                              <p className="text-sm text-muted-foreground mb-4">
-                                <strong>Requirements:</strong> {test.requirements}
-                              </p>
-                            )}
-                            <Button 
-                              onClick={() => startTest(test.id)} 
-                              disabled={alreadyStarted}
-                              className="w-full sm:w-auto"
-                            >
-                              {alreadyStarted ? 'Already Started' : 'Start Test'}
-                            </Button>
                           </CardContent>
                         </Card>
                       );
@@ -741,7 +677,7 @@ export default function TesterDashboard() {
                 )}
               </TabsContent>
 
-              <TabsContent value="submissions" className="space-y-4">
+              <TabsContent value="submissions" className="space-y-3">
                 {submissions.length === 0 ? (
                   <Card className="bg-card border border-border/60 shadow-sm">
                     <CardContent className="pt-6 text-center">
@@ -751,41 +687,33 @@ export default function TesterDashboard() {
                     </CardContent>
                   </Card>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {submissions.map((submission) => (
-                      <Card key={submission.id} className="bg-card border border-border/60 shadow-sm">
-                        <CardContent className="pt-6">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                            <div className="flex-1">
-                              <h3 className="font-semibold">{submission.tests?.title || 'Test'}</h3>
-                              <p className="text-sm text-muted-foreground">
+                      <Card key={submission.id} className={`bg-card border border-border/60 shadow-sm border-l-4 overflow-hidden ${submission.status === 'in_progress' ? 'border-l-yellow-500' : submission.status === 'submitted' ? 'border-l-blue-500' : submission.status === 'approved' ? 'border-l-green-500' : 'border-l-destructive'}`}>
+                        <CardContent className="p-4">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h3 className="font-semibold text-sm">{submission.tests?.title || 'Test'}</h3>
+                                {getStatusBadge(submission.status)}
+                                <span className="text-sm font-semibold text-green-600">${Number(submission.tests?.reward_amount || 0).toFixed(2)}</span>
+                              </div>
+                              <p className="text-xs text-muted-foreground">
                                 Started {new Date(submission.created_at).toLocaleDateString()}
-                                {submission.submitted_at && (
-                                  <> • Submitted {new Date(submission.submitted_at).toLocaleDateString()}</>
-                                )}
+                                {submission.submitted_at && <> · Submitted {new Date(submission.submitted_at).toLocaleDateString()}</>}
                               </p>
                               {submission.feedback && submission.status !== 'in_progress' && (
-                                <p className="text-sm text-muted-foreground mt-2 italic">
-                                  "{submission.feedback.substring(0, 100)}{submission.feedback.length > 100 ? '...' : ''}"
-                                </p>
+                                <p className="text-xs text-muted-foreground mt-1.5 italic line-clamp-1">"{submission.feedback}"</p>
+                              )}
+                              {submission.rating && submission.status === 'approved' && (
+                                <div className="mt-1.5"><StarRating rating={submission.rating} size="sm" /></div>
                               )}
                             </div>
-                            <div className="flex items-center gap-3">
-                              <span className="font-semibold whitespace-nowrap">
-                                ${Number(submission.tests?.reward_amount || 0).toFixed(2)}
-                              </span>
-                              {getStatusBadge(submission.status)}
-                              {submission.status === 'in_progress' && (
-                                <Button 
-                                  size="sm" 
-                                  onClick={() => openSubmitDialog(submission)}
-                                  className="flex items-center gap-2"
-                                >
-                                  <Send className="h-4 w-4" />
-                                  Submit
-                                </Button>
-                              )}
-                            </div>
+                            {submission.status === 'in_progress' && (
+                              <Button size="sm" onClick={() => openSubmitDialog(submission)} className="flex items-center gap-1.5 flex-shrink-0">
+                                <Send className="h-3.5 w-3.5" />Submit
+                              </Button>
+                            )}
                           </div>
                         </CardContent>
                       </Card>
@@ -851,7 +779,6 @@ export default function TesterDashboard() {
                 )}
               </TabsContent>
             </Tabs>
-          </ScrollReveal>
         </div>
       </main>
 

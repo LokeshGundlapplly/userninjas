@@ -1,49 +1,131 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import NinjaLogo from './NinjaLogo';
-import { Twitter, Linkedin, Github } from 'lucide-react';
+import { Twitter, Linkedin, Github, Mail, Shield, Award, Lock, ArrowRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const footerLinks = {
   Product: [
     { label: 'Features', href: '/features' },
     { label: 'Pricing', href: '/#pricing' },
     { label: 'How It Works', href: '/#how-it-works' },
+    { label: 'Research Methods', href: '/#research-methods' },
     { label: 'Integrations', href: '/#' },
+    { label: 'Changelog', href: '/#' },
   ],
   Resources: [
+    { label: 'UX Research Blog', href: '/#' },
+    { label: 'Templates Library', href: '/#' },
+    { label: 'Research Glossary', href: '/#' },
+    { label: 'Community', href: '/#' },
     { label: 'Documentation', href: '/#' },
-    { label: 'FAQs', href: '/#' },
     { label: 'API Reference', href: '/#' },
-    { label: 'Blog', href: '/#' },
+  ],
+  Compare: [
+    { label: 'vs Maze', href: '/#' },
+    { label: 'vs UserTesting', href: '/#' },
+    { label: 'vs Playbook UX', href: '/#' },
+    { label: 'vs UXtweak', href: '/#' },
+    { label: 'vs Lookback', href: '/#' },
   ],
   Company: [
     { label: 'About', href: '/about' },
     { label: 'Contact', href: '/contact' },
     { label: 'Careers', href: '/#' },
+    { label: 'Press Kit', href: '/#' },
     { label: 'Legal', href: '/#' },
   ],
   Account: [
+    { label: 'Sign Up Free', href: '/auth' },
     { label: 'Login', href: '/auth' },
-    { label: 'Register', href: '/auth' },
-    { label: 'Dashboard', href: '/recruiter' },
+    { label: 'Recruiter Dashboard', href: '/recruiter' },
+    { label: 'Tester Dashboard', href: '/tester' },
     { label: 'Join as Tester', href: '/auth' },
   ],
 };
 
+const trustBadges = [
+  { icon: Shield, label: 'SOC 2 Type II' },
+  { icon: Lock, label: 'GDPR Compliant' },
+  { icon: Award, label: 'G2 Leader 2026' },
+];
+
 export default function Footer() {
+  const [email, setEmail] = useState('');
+  const [subscribed, setSubscribed] = useState(false);
+
+  const handleSubscribe = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (email.trim()) {
+      setSubscribed(true);
+      setEmail('');
+    }
+  };
+
   return (
-    <footer className="border-t border-border/40 py-14 bg-secondary/20">
+    <footer className="border-t border-border/30 pt-16 pb-8">
       <div className="container mx-auto px-4">
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-10">
+
+        {/* Newsletter bar */}
+        <div className="rounded-2xl bg-card border border-border/50 p-6 md:p-8 mb-14 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="text-center md:text-left">
+            <h3 className="font-display font-bold text-base mb-1">Stay sharp on UX research</h3>
+            <p className="text-sm text-muted-foreground">Weekly tips, templates, and research case studies. No spam, ever.</p>
+          </div>
+          {subscribed ? (
+            <div className="flex items-center gap-2 text-sm font-semibold text-primary">
+              <span className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-xs">✓</span>
+              You're subscribed!
+            </div>
+          ) : (
+            <form onSubmit={handleSubscribe} className="flex gap-2 w-full md:w-auto">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Enter your work email"
+                required
+                className="flex-1 md:w-64 h-10 px-4 rounded-xl bg-background border border-border/60 text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary/50"
+              />
+              <Button type="submit" size="sm" className="h-10 px-5 rounded-xl gap-1.5 shrink-0">
+                Subscribe <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </form>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-7 gap-10 mb-12">
           {/* Logo & Description */}
           <div className="col-span-2">
-            <NinjaLogo className="mb-4" />
-            <p className="text-sm text-muted-foreground max-w-xs leading-relaxed mb-6">
-              The fastest, most affordable way to test your product with real users and get actionable insights.
+            <NinjaLogo className="mb-5" />
+            <p className="text-sm text-muted-foreground max-w-xs leading-relaxed mb-5">
+              The fastest, most affordable way to test your product with real users and get actionable insights in hours, not weeks.
             </p>
-            <div className="flex gap-3">
-              {[Twitter, Linkedin, Github].map((Icon, i) => (
-                <a key={i} href="#" className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary/80 transition-colors">
-                  <Icon className="w-4 h-4" />
+
+            {/* Trust badges */}
+            <div className="flex flex-wrap gap-2 mb-5">
+              {trustBadges.map((badge) => (
+                <div key={badge.label} className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-secondary/60 text-xs text-muted-foreground">
+                  <badge.icon className="w-3 h-3 text-primary shrink-0" />
+                  {badge.label}
+                </div>
+              ))}
+            </div>
+
+            <div className="flex gap-2.5">
+              {[
+                { Icon: Twitter, href: '#', label: 'Twitter' },
+                { Icon: Linkedin, href: '#', label: 'LinkedIn' },
+                { Icon: Github, href: '#', label: 'GitHub' },
+                { Icon: Mail, href: 'mailto:hello@userninjas.io', label: 'Email' },
+              ].map(({ Icon, href, label }) => (
+                <a
+                  key={label}
+                  href={href}
+                  aria-label={label}
+                  className="w-8 h-8 rounded-lg bg-secondary/60 flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                >
+                  <Icon className="w-3.5 h-3.5" />
                 </a>
               ))}
             </div>
@@ -69,14 +151,15 @@ export default function Footer() {
           ))}
         </div>
 
-        <div className="mt-12 pt-8 border-t border-border/40 flex flex-col md:flex-row justify-between items-center gap-4">
+        {/* Bottom bar */}
+        <div className="pt-8 border-t border-border/30 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-muted-foreground">
-            © {new Date().getFullYear()} User Ninjas. All rights reserved.
+            © {new Date().getFullYear()} User Ninjas. All rights reserved. Built for research-driven product teams.
           </p>
           <div className="flex gap-6 text-xs text-muted-foreground">
-            <a href="#" className="hover:text-foreground transition-colors">Privacy Policy</a>
-            <a href="#" className="hover:text-foreground transition-colors">Terms of Service</a>
-            <a href="#" className="hover:text-foreground transition-colors">Cookie Policy</a>
+            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-foreground transition-colors">Terms of Service</Link>
+            <Link to="/cookies" className="hover:text-foreground transition-colors">Cookie Policy</Link>
           </div>
         </div>
       </div>

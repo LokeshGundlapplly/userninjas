@@ -78,24 +78,24 @@ const logos = [
 
 export default function TrustedBy() {
   return (
-    <section className="py-16 border-y border-border/30 bg-secondary/20">
+    <section className="py-14 border-y border-border/30">
       <div className="container mx-auto px-4">
         <ScrollReveal animation="fade-up">
-          <p className="text-center text-xs font-semibold tracking-[0.25em] text-muted-foreground mb-10 uppercase">
-            Powering research at world-class companies
+          <p className="text-center text-xs font-semibold tracking-[0.2em] text-muted-foreground/60 mb-10 uppercase">
+            Trusted by product teams at
           </p>
         </ScrollReveal>
 
         <div className="relative overflow-hidden">
           {/* Fade edges */}
-          <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-secondary/20 to-transparent z-10 pointer-events-none" />
-          <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-secondary/20 to-transparent z-10 pointer-events-none" />
+          <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
+          <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
 
-          <div className="flex animate-[scroll_25s_linear_infinite] gap-14 md:gap-20 items-center">
+          <div className="flex animate-[scroll_30s_linear_infinite] gap-16 md:gap-24 items-center">
             {[...logos, ...logos].map((logo, i) => (
               <div
                 key={`${logo.name}-${i}`}
-                className="flex items-center gap-2.5 opacity-40 hover:opacity-70 transition-opacity duration-300 cursor-default shrink-0 text-foreground"
+                className="flex items-center gap-2.5 opacity-30 hover:opacity-60 transition-opacity duration-300 cursor-default shrink-0 text-foreground"
               >
                 {logo.svg}
               </div>

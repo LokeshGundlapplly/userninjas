@@ -3,11 +3,14 @@ import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import TrustedBy from '@/components/TrustedBy';
 import MissionProtocol from '@/components/MissionProtocol';
+import ResearchMethods from '@/components/ResearchMethods';
 import Features from '@/components/Features';
 import Capabilities from '@/components/Capabilities';
 import Testimonials from '@/components/Testimonials';
 import Pricing from '@/components/Pricing';
+import ComparisonTable from '@/components/ComparisonTable';
 import FAQ from '@/components/FAQ';
+import TesterCTA from '@/components/TesterCTA';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import Background3D from '@/components/Background3D';
@@ -28,11 +31,14 @@ export default function Index() {
         <Hero />
         <TrustedBy />
         <MissionProtocol />
+        <ResearchMethods />
         <Features />
         <Capabilities />
         <Testimonials />
         <Pricing />
+        <ComparisonTable />
         <FAQ />
+        <TesterCTA />
         <CTA />
       </main>
 
