@@ -1343,7 +1343,7 @@ export default function RecruiterDashboard() {
 
               {/* AI Insights Tab */}
               <TabsContent value="insights" className="space-y-6">
-                <AIInsightsPanel tests={tests} userId={user!.id} />
+                <AIInsightsPanel tests={tests} userId={user.id} />
               </TabsContent>
 
               {/* Analytics Tab */}
