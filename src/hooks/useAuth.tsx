@@ -34,6 +34,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setTimeout(() => {
             fetchUserRole(session.user.id);
           }, 0);
+
+          // Send welcome email when user confirms their email
+          if (event === 'SIGNED_IN' && session.user.email_confirmed_at) {
+            const meta = session.user.user_metadata;
+            if (meta?.welcome_email_sent !== true) {
+              sendEmailNotification('welcome', session.user.email!, {
+                name: meta?.full_name || session.user.email!.split('@')[0],
+                role: meta?.role || 'tester',
+              });
+              // Mark so we don't resend on every sign-in
+              supabase.auth.updateUser({ data: { welcome_email_sent: true } });
+            }
+          }
         } else {
           setRole(null);
         }
@@ -109,13 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       },
     });
-    // Send welcome email (non-blocking)
-    if (!error) {
-      sendEmailNotification('welcome', email, {
-        name: fullName,
-        role: role,
-      });
-    }
+    // Welcome email is sent after email confirmation (see onAuthStateChange)
     return { error: error as Error | null };
   };
 

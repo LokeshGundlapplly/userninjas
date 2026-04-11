@@ -103,13 +103,27 @@ export default function Auth() {
             variant: 'destructive',
           });
         } else {
-          toast({ title: 'Account created!', description: `Welcome to User Ninjas as a ${selectedRole}!` });
-          navigate(selectedRole === 'recruiter' ? '/recruiter' : '/tester', { replace: true });
+          toast({
+            title: 'Check your email ✉️',
+            description: 'We sent you a confirmation link. Please verify your email to activate your account.',
+            duration: 10000,
+          });
+          setIsSignUp(false);
         }
       } else {
         const { error } = await signIn(email, password);
         if (error) {
-          toast({ title: 'Sign in failed', description: 'Invalid email or password.', variant: 'destructive' });
+          const msg = error.message?.toLowerCase() || '';
+          if (msg.includes('email not confirmed') || msg.includes('not confirmed')) {
+            toast({
+              title: 'Email not verified',
+              description: 'Please check your inbox and click the confirmation link before signing in.',
+              variant: 'destructive',
+              duration: 8000,
+            });
+          } else {
+            toast({ title: 'Sign in failed', description: 'Invalid email or password.', variant: 'destructive' });
+          }
         }
         // Redirect handled by useEffect once role is resolved
       }
