@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Background3D from '@/components/Background3D';
+import RecruiterChat from '@/components/RecruiterChat';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -74,7 +75,12 @@ import {
   Layers,
   Bot,
   MessageSquare,
-  Clock as ClockIcon
+  Clock as ClockIcon,
+  PanelRightOpen,
+  PanelRightClose,
+  Maximize2,
+  Minimize2,
+  Monitor,
 } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPie, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
 import StarRating from '@/components/StarRating';
@@ -82,6 +88,7 @@ import ScrollReveal from '@/components/ScrollReveal';
 import AIInsightsPanel from '@/components/AIInsightsPanel';
 import AIInterviewReport from '@/components/AIInterviewReport';
 import type { InterviewReport } from '@/hooks/useAIInterviewer';
+import type { TestSuggestion } from '@/components/AITestCreatorChat';
 
 interface Test {
   id: string;
@@ -182,6 +189,8 @@ export default function RecruiterDashboard() {
   const [bulkProgress, setBulkProgress] = useState({ done: 0, total: 0 });
   const [aiInterviewSessions, setAiInterviewSessions] = useState<AIInterviewSession[]>([]);
   const [viewingSession, setViewingSession] = useState<AIInterviewSession | null>(null);
+  const [dashboardOpen, setDashboardOpen] = useState(false);
+  const [chatSize, setChatSize] = useState<'compact' | 'medium' | 'full'>('medium');
 
   const summarizeAllTranscripts = async () => {
     const pending = submissions.filter(s => s.transcript && !s.transcript_summary);
@@ -326,6 +335,16 @@ export default function RecruiterDashboard() {
         title: 'Test created!',
         description: 'Your test has been published and is now available to testers.',
       });
+
+      // Send email notification to recruiter (non-blocking)
+      supabase.functions.invoke('send-email', {
+        body: {
+          type: 'test_created',
+          to: user!.email!,
+          data: { name: user!.user_metadata?.full_name || 'Recruiter', test_title: formData.title },
+        },
+      }).catch(() => {});
+
       setCreateDialogOpen(false);
       resetForm();
       fetchData();
@@ -676,213 +695,119 @@ export default function RecruiterDashboard() {
       <Background3D />
       <Navbar />
 
-      <main className="min-h-screen pt-20 px-4 pb-16">
-        <div className="container mx-auto max-w-6xl py-8 space-y-6">
+      {/* Chat-first layout with centered chat + dashboard side panel */}
+      <main className={`min-h-screen pt-16 flex flex-col items-center transition-all duration-300 ${dashboardOpen ? 'lg:mr-[560px]' : ''}`}>
+        {/* ── Size & Dashboard Toggle Bar ── */}
+        <div className="w-full flex items-center justify-center gap-2 px-4 py-2 border-b border-border/40 bg-card/30 backdrop-blur-sm">
+          <div className="flex items-center gap-1 bg-secondary/60 rounded-lg p-0.5 border border-border/40">
+            <button
+              onClick={() => setChatSize('compact')}
+              title="Compact"
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                chatSize === 'compact'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Minimize2 className="h-3 w-3" /> Compact
+            </button>
+            <button
+              onClick={() => setChatSize('medium')}
+              title="Medium"
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                chatSize === 'medium'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Monitor className="h-3 w-3" /> Medium
+            </button>
+            <button
+              onClick={() => setChatSize('full')}
+              title="Full width"
+              className={`flex items-center gap-1 px-2.5 py-1.5 rounded-md text-xs font-medium transition-all ${
+                chatSize === 'full'
+                  ? 'bg-background text-foreground shadow-sm'
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              <Maximize2 className="h-3 w-3" /> Full
+            </button>
+          </div>
+          <div className="ml-auto">
+            <Button
+              size="sm"
+              variant="outline"
+              className="gap-1.5 rounded-lg text-xs h-8 border-border/60"
+              onClick={() => setDashboardOpen((v) => !v)}
+            >
+              {dashboardOpen ? <PanelRightClose className="h-3.5 w-3.5" /> : <PanelRightOpen className="h-3.5 w-3.5" />}
+              {dashboardOpen ? 'Hide Dashboard' : 'Dashboard'}
+            </Button>
+          </div>
+        </div>
 
-          {/* Dashboard Header */}
-          <ScrollReveal animation="fade-down">
-            <div className="relative rounded-2xl overflow-hidden border border-border/50 bg-card">
-              <div className="absolute inset-0 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent pointer-events-none" />
-            <div className="relative flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 md:p-8">
+        {/* ── Chat Pane ── */}
+        <div
+          className={`flex flex-col min-w-0 w-full transition-all duration-300 flex-1 ${
+            chatSize === 'compact'
+              ? 'max-w-lg'
+              : chatSize === 'medium'
+              ? 'max-w-3xl'
+              : 'max-w-full'
+          }`}
+        >
+          <RecruiterChat />
+        </div>
+
+        {/* ── Dashboard Side Panel ── */}
+        <aside
+          className={`fixed top-16 right-0 bottom-0 w-full lg:w-[560px] bg-background/95 backdrop-blur-md border-l border-border/60 overflow-y-auto transition-transform duration-300 z-40 ${
+            dashboardOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+        >
+          <div className="p-6 space-y-6 max-w-full">
+            {/* Header */}
+            <div className="flex items-center justify-between">
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-semibold text-primary uppercase tracking-widest">Recruiter Dashboard</span>
-                  {pendingReviews > 0 && (
-                    <span className="inline-flex items-center gap-1 text-[10px] font-bold bg-yellow-500/15 text-yellow-500 border border-yellow-500/30 px-2 py-0.5 rounded-full">
-                      <Bell className="w-3 h-3" /> {pendingReviews} pending
-                    </span>
-                  )}
-                </div>
-                <h1 className="font-display text-2xl md:text-3xl font-bold">
-                  Welcome back, <span className="text-gradient">{user.email?.split('@')[0] || 'Recruiter'}</span>
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {activeTests} active test{activeTests !== 1 ? 's' : ''} · {totalTesters} submission{totalTesters !== 1 ? 's' : ''} · ${totalSpent.toFixed(0)} spent
+                <p className="text-xs font-semibold text-primary uppercase tracking-widest">Dashboard</p>
+                <h2 className="text-lg font-bold">
+                  Welcome, <span className="text-gradient">{user.email?.split('@')[0] || 'Recruiter'}</span>
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {activeTests} active · {totalTesters} submissions · ${totalSpent.toFixed(0)} spent
                 </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Link to="/contact">
-                  <Button variant="outline" size="sm" className="gap-2 rounded-xl">
-                    <Settings className="h-4 w-4" /> Settings
+              <div className="flex gap-2">
+                <Link to="/recruiter/create-test">
+                  <Button size="sm" className="btn-shimmer gap-1.5 rounded-xl shadow-md shadow-primary/20 font-semibold">
+                    <Plus className="h-3.5 w-3.5" /> New Test
                   </Button>
                 </Link>
-                <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="btn-shimmer gap-2 rounded-xl shadow-lg shadow-primary/20 font-semibold">
-                      <Plus className="h-4 w-4" /> New Test
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
-                    <DialogHeader>
-                      <DialogTitle>Create New Test</DialogTitle>
-                      <DialogDescription>Fill in the details to create a new test for testers.</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="title">Test Title *</Label>
-                        <Input id="title" placeholder="e.g., Mobile App Usability Test" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea id="description" placeholder="Describe what the test is about..." value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={3} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="requirements">Requirements</Label>
-                        <Textarea id="requirements" placeholder="Any specific requirements for testers..." value={formData.requirements} onChange={(e) => setFormData({ ...formData, requirements: e.target.value })} rows={2} />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="reward">Reward ($) *</Label>
-                          <Input id="reward" type="number" min="0" step="0.01" placeholder="25.00" value={formData.reward_amount} onChange={(e) => setFormData({ ...formData, reward_amount: e.target.value })} />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="duration">Duration (mins) *</Label>
-                          <Input id="duration" type="number" min="1" placeholder="30" value={formData.estimated_duration} onChange={(e) => setFormData({ ...formData, estimated_duration: e.target.value })} />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="category">Category</Label>
-                          <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
-                            <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
-                            <SelectContent>{categories.map(cat => <SelectItem key={cat} value={cat}>{cat}</SelectItem>)}</SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="max_testers">Max Testers</Label>
-                          <Input id="max_testers" type="number" min="1" placeholder="100" value={formData.max_testers} onChange={(e) => setFormData({ ...formData, max_testers: e.target.value })} />
-                        </div>
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button variant="outline" onClick={() => { setCreateDialogOpen(false); resetForm(); }}>Cancel</Button>
-                      <Button onClick={handleCreateTest}>Create Test</Button>
-                    </DialogFooter>
-                  </DialogContent>
-                </Dialog>
               </div>
             </div>
-          </div>
-          </ScrollReveal>
 
-          {/* Stats Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {[
-              {
-                label: 'Active Tests',
-                value: activeTests,
-                sub: `${tests.length} total`,
-                icon: Layers,
-                color: 'text-primary',
-                bg: 'bg-primary/10',
-                border: 'border-primary/20',
-              },
-              {
-                label: 'Unique Testers',
-                value: uniqueTesters,
-                sub: `${totalTesters} submissions`,
-                icon: Users,
-                color: 'text-blue-500',
-                bg: 'bg-blue-500/10',
-                border: 'border-blue-500/20',
-              },
-              {
-                label: 'Pending Reviews',
-                value: pendingReviews,
-                sub: pendingReviews > 0 ? '⚠ Needs attention' : 'All up to date',
-                icon: AlertCircle,
-                color: pendingReviews > 0 ? 'text-yellow-500' : 'text-muted-foreground',
-                bg: pendingReviews > 0 ? 'bg-yellow-500/10' : 'bg-secondary',
-                border: pendingReviews > 0 ? 'border-yellow-500/20' : 'border-border/50',
-              },
-              {
-                label: 'Total Spent',
-                value: `$${totalSpent.toFixed(0)}`,
-                sub: `${approvedCount} approved`,
-                icon: DollarSign,
-                color: 'text-green-500',
-                bg: 'bg-green-500/10',
-                border: 'border-green-500/20',
-              },
-            ].map((stat, i) => (
-              <ScrollReveal key={stat.label} animation="zoom-up" delay={i * 80}>
-                <Card className={`border ${stat.border} bg-card shadow-sm hover:shadow-lg transition-all duration-300 spring-card`}>
-                  <CardContent className="pt-5 pb-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <p className="text-xs font-medium text-muted-foreground">{stat.label}</p>
-                      <div className={`w-8 h-8 rounded-lg ${stat.bg} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
-                        <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                      </div>
+            {/* Quick Stats */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: 'Active Tests', value: activeTests, color: 'text-primary', icon: Layers, bg: 'bg-primary/10' },
+                { label: 'Pending Reviews', value: pendingReviews, color: pendingReviews > 0 ? 'text-yellow-500' : 'text-muted-foreground', icon: AlertCircle, bg: pendingReviews > 0 ? 'bg-yellow-500/10' : 'bg-secondary' },
+                { label: 'Unique Testers', value: uniqueTesters, color: 'text-blue-500', icon: Users, bg: 'bg-blue-500/10' },
+                { label: 'Total Spent', value: `$${totalSpent.toFixed(0)}`, color: 'text-green-500', icon: DollarSign, bg: 'bg-green-500/10' },
+              ].map(s => (
+                <Card key={s.label} className="border border-border/50 shadow-sm">
+                  <CardContent className="p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className={`w-6 h-6 rounded-md ${s.bg} flex items-center justify-center`}><s.icon className={`h-3 w-3 ${s.color}`} /></div>
+                      <p className="text-[11px] text-muted-foreground">{s.label}</p>
                     </div>
-                    <p className={`text-2xl font-bold font-display stat-number ${stat.color}`}>{stat.value}</p>
-                    <p className={`text-xs mt-1 ${stat.label === 'Pending Reviews' && pendingReviews > 0 ? 'text-yellow-500' : 'text-muted-foreground'}`}>{stat.sub}</p>
+                    <p className={`text-lg font-bold ${s.color}`}>{s.value}</p>
                   </CardContent>
                 </Card>
-              </ScrollReveal>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          {/* Secondary Stats */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <ScrollReveal animation="zoom-up" delay={0}>
-              <Card className="border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all spring-card">
-                <CardContent className="pt-5 pb-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <p className="text-xs font-medium text-muted-foreground">Approval Rate</p>
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                      <Target className="h-4 w-4 text-emerald-500" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold font-display text-emerald-500 stat-number">{approvalRate}%</p>
-                  <Progress value={approvalRate} className="h-1 mt-2" />
-                </CardContent>
-              </Card>
-            </ScrollReveal>
-            <ScrollReveal animation="zoom-up" delay={80}>
-              <Card className="border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all spring-card">
-                <CardContent className="pt-5 pb-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <p className="text-xs font-medium text-muted-foreground">Avg Rating</p>
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                      <Award className="h-4 w-4 text-amber-500" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold font-display text-amber-500 stat-number">{avgRating.toFixed(1)}</p>
-                  <StarRating rating={Math.round(avgRating)} size="sm" />
-                </CardContent>
-              </Card>
-            </ScrollReveal>
-            <ScrollReveal animation="zoom-up" delay={160}>
-              <Card className="border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all spring-card">
-                <CardContent className="pt-5 pb-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <p className="text-xs font-medium text-muted-foreground">Completion Rate</p>
-                    <div className="w-8 h-8 rounded-lg bg-violet-500/10 flex items-center justify-center">
-                      <Zap className="h-4 w-4 text-violet-500" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold font-display text-violet-500 stat-number">{completionRate}%</p>
-                  <Progress value={completionRate} className="h-1 mt-2" />
-                </CardContent>
-              </Card>
-            </ScrollReveal>
-            <ScrollReveal animation="zoom-up" delay={240}>
-              <Card className="border border-border/50 bg-card shadow-sm hover:shadow-lg transition-all spring-card">
-                <CardContent className="pt-5 pb-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <p className="text-xs font-medium text-muted-foreground">Rejected</p>
-                    <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center">
-                      <XCircle className="h-4 w-4 text-destructive" />
-                    </div>
-                  </div>
-                  <p className="text-2xl font-bold font-display text-destructive stat-number">{rejectedCount}</p>
-                  <p className="text-xs text-muted-foreground mt-1">{reviewedCount} reviewed total</p>
-                </CardContent>
-              </Card>
-            </ScrollReveal>
-          </div>
-
-          {/* Main Content Tabs */}
+            {/* Main Content Tabs */}
           <Tabs defaultValue="tests" className="space-y-5">
               <TabsList className="h-10 bg-secondary/60 border border-border/50 p-1 rounded-xl gap-1">
                 <TabsTrigger value="tests" className="rounded-lg text-sm gap-1.5 data-[state=active]:shadow-sm">
@@ -1595,7 +1520,8 @@ export default function RecruiterDashboard() {
                 )}
               </TabsContent>
             </Tabs>
-        </div>
+          </div>
+        </aside>
       </main>
     </>
   );

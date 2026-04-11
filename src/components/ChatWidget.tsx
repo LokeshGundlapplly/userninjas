@@ -58,7 +58,7 @@ export default function ChatWidget() {
     setEscalated(true);
     setMessages(prev => [...prev, {
       role: 'assistant',
-      content: "I've escalated this to our team! 🙋 A human agent will review your messages and get back to you. You can also reach us at **contact@userninjas.com** or visit our [Contact page](/contact)."
+      content: "I've escalated this to our team! 🙋 A human agent will review your messages and get back to you. You can also reach us at **contact@userninjas.in** or visit our [Contact page](/contact)."
     }]);
   };
 

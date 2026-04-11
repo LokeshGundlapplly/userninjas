@@ -6,6 +6,7 @@ import Background3D from '@/components/Background3D';
 import ScrollReveal from '@/components/ScrollReveal';
 import { Helmet } from 'react-helmet-async';
 import { Clock, ArrowRight, BookOpen, TrendingUp, Lightbulb, Users } from 'lucide-react';
+import { toast } from 'sonner';
 
 const categories = ['All', 'Research Tips', 'Product Updates', 'Case Studies', 'AI & Analysis', 'Industry Trends'];
 
@@ -183,7 +184,7 @@ export default function Blog() {
           {/* Featured post */}
           {featured && (
             <ScrollReveal animation="fade-up" delay={150}>
-              <div className={`rounded-2xl bg-gradient-to-br ${featured.gradient} border border-border/50 p-8 md:p-10 mb-8 hover:shadow-lg transition-shadow cursor-pointer group`}>
+              <Link to="/auth" className={`rounded-2xl bg-gradient-to-br ${featured.gradient} border border-border/50 p-8 md:p-10 mb-8 hover:shadow-lg transition-shadow cursor-pointer group block`}>
                 <div className="max-w-3xl">
                   <div className="flex items-center gap-2 mb-4">
                     <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs font-semibold border border-primary/20">{featured.category}</span>
@@ -208,7 +209,7 @@ export default function Blog() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             </ScrollReveal>
           )}
 
@@ -218,7 +219,7 @@ export default function Blog() {
               const Icon = categoryIcons[post.category] ?? BookOpen;
               return (
                 <ScrollReveal key={post.id} animation="fade-up" delay={i * 60}>
-                  <div className="group rounded-2xl bg-card border border-border/60 overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all cursor-pointer h-full flex flex-col">
+                  <Link to="/auth" className="group rounded-2xl bg-card border border-border/60 overflow-hidden hover:border-primary/30 hover:shadow-lg transition-all cursor-pointer h-full flex flex-col block">
                     <div className={`h-36 bg-gradient-to-br ${post.gradient} flex items-center justify-center`}>
                       <Icon className="w-12 h-12 text-white/30" />
                     </div>
@@ -241,7 +242,7 @@ export default function Blog() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </Link>
                 </ScrollReveal>
               );
             })}
@@ -249,7 +250,10 @@ export default function Blog() {
 
           {/* Load more */}
           <div className="text-center mt-12">
-            <button className="px-8 py-3 rounded-xl border border-border/60 bg-card text-sm font-semibold hover:bg-secondary/40 transition-colors">
+            <button
+              className="px-8 py-3 rounded-xl border border-border/60 bg-card text-sm font-semibold hover:bg-secondary/40 transition-colors"
+              onClick={() => toast.info('More articles coming soon!', { description: 'Stay tuned for more UX research content.' })}
+            >
               Load More Articles
             </button>
           </div>
@@ -259,7 +263,7 @@ export default function Blog() {
             <div className="mt-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 p-8 md:p-12 text-center max-w-3xl mx-auto">
               <h3 className="font-display text-2xl font-bold mb-3">Get insights in your inbox</h3>
               <p className="text-muted-foreground mb-6">Weekly UX research tips and case studies. No fluff, unsubscribe anytime.</p>
-              <form className="flex gap-2 max-w-md mx-auto" onSubmit={e => e.preventDefault()}>
+              <form className="flex gap-2 max-w-md mx-auto" onSubmit={e => { e.preventDefault(); const input = (e.target as HTMLFormElement).querySelector('input') as HTMLInputElement; if (input?.value) { toast.success("You're subscribed!", { description: 'Weekly UX research tips delivered to your inbox.' }); input.value = ''; } }}>
                 <input type="email" placeholder="your@email.com" required className="flex-1 h-11 px-4 rounded-xl bg-background border border-border/60 text-sm focus:outline-none focus:ring-2 focus:ring-primary/30" />
                 <button type="submit" className="px-5 h-11 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors whitespace-nowrap">Subscribe</button>
               </form>

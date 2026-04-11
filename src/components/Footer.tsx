@@ -114,9 +114,9 @@ export default function Footer() {
 
             <div className="flex gap-2.5">
               {[
-                { Icon: Twitter, href: '#', label: 'Twitter' },
-                { Icon: Linkedin, href: '#', label: 'LinkedIn' },
-                { Icon: Github, href: '#', label: 'GitHub' },
+                { Icon: Twitter, href: 'https://twitter.com/userninjas', label: 'Twitter' },
+                { Icon: Linkedin, href: 'https://linkedin.com/company/userninjas', label: 'LinkedIn' },
+                { Icon: Github, href: 'https://github.com/userninjas', label: 'GitHub' },
                 { Icon: Mail, href: 'mailto:hello@userninjas.io', label: 'Email' },
               ].map(({ Icon, href, label }) => (
                 <a

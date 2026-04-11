@@ -70,11 +70,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const sendEmailNotification = async (type: string, to: string, data: Record<string, unknown>) => {
+    try {
+      await supabase.functions.invoke('send-email', {
+        body: { type, to, data },
+      });
+    } catch (e) {
+      console.error('Email notification failed (non-blocking):', e);
+    }
+  };
+
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+    // Send sign-in alert email (non-blocking)
+    if (!error) {
+      sendEmailNotification('sign_in_alert', email, {
+        name: email.split('@')[0],
+        timestamp: new Date().toLocaleString(),
+      });
+    }
     return { error: error as Error | null };
   };
 
@@ -92,6 +109,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         },
       },
     });
+    // Send welcome email (non-blocking)
+    if (!error) {
+      sendEmailNotification('welcome', email, {
+        name: fullName,
+        role: role,
+      });
+    }
     return { error: error as Error | null };
   };
 

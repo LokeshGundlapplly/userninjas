@@ -39,12 +39,12 @@ serve(async (req) => {
   }
 
   try {
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+    const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY is not configured");
+    if (!GROQ_API_KEY) throw new Error("GROQ_API_KEY is not configured");
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -135,24 +135,15 @@ serve(async (req) => {
       });
     }
 
-    // Add current user message (with optional frame)
+    // Add current user message (with optional frame note — Groq text-only model)
     if (message || frame_base64) {
-      const contentParts: Array<{ type: string; text?: string; image_url?: { url: string } }> = [];
-
-      if (frame_base64) {
-        contentParts.push({
-          type: "image_url",
-          image_url: { url: `data:image/jpeg;base64,${frame_base64}` },
-        });
-      }
-
-      if (message) {
-        contentParts.push({ type: "text", text: message });
+      if (message && frame_base64) {
+        geminiMessages.push({ role: "user", content: `[Screen capture shared] ${message}` });
+      } else if (message) {
+        geminiMessages.push({ role: "user", content: message });
       } else if (frame_base64) {
-        contentParts.push({ type: "text", text: "[Screen capture sent — no verbal response yet]" });
+        geminiMessages.push({ role: "user", content: "[Screen capture sent — no verbal response yet]" });
       }
-
-      geminiMessages.push({ role: "user", content: contentParts as any });
     }
 
     // Time-budget context for the AI
@@ -185,14 +176,14 @@ serve(async (req) => {
       ? "\n\nIMPORTANT: This session has had sufficient exchanges. After your next response, set should_end to true and provide a warm, professional closing statement thanking the participant and explaining next steps."
       : "";
 
-    const aiResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const aiResponse = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${GROQ_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-lite",
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: fullSystemPrompt + timeContext + endHint },
           ...(isFirstMessage ? [] : geminiMessages),

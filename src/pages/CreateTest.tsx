@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { supabase } from '@/integrations/supabase/client';
@@ -156,6 +156,19 @@ export default function CreateTest() {
     setStep(1);
   };
 
+  // If the recruiter started from the dashboard AI chat, prefill from stored suggestion
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('ai_test_suggestion');
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as TestSuggestion;
+      handleAIApply(parsed);
+      sessionStorage.removeItem('ai_test_suggestion');
+    } catch (err) {
+      console.error('Failed to load AI test suggestion from sessionStorage', err);
+    }
+  }, []);
+
   const handleSubmit = async () => {
     if (!title.trim()) {
       toast({ title: 'Title required', variant: 'destructive' });
@@ -230,6 +243,16 @@ export default function CreateTest() {
       }
 
       toast({ title: 'Test created successfully!' });
+
+      // Send email notification to recruiter (non-blocking)
+      supabase.functions.invoke('send-email', {
+        body: {
+          type: 'test_created',
+          to: user.email!,
+          data: { name: user.user_metadata?.full_name || 'Recruiter', test_title: title.trim() },
+        },
+      }).catch(() => {});
+
       navigate('/recruiter');
     } catch (err: any) {
       toast({ title: 'Error creating test', description: err.message, variant: 'destructive' });

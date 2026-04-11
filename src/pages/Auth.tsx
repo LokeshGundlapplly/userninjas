@@ -38,6 +38,7 @@ export default function Auth() {
     if (user && role) {
       if (role === 'recruiter') navigate('/recruiter', { replace: true });
       else if (role === 'tester') navigate('/tester', { replace: true });
+      else if (role === 'admin') navigate('/admin', { replace: true });
       else navigate('/', { replace: true });
     }
   }, [user, role, navigate]);

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import Background3D from '@/components/Background3D';
@@ -139,6 +140,7 @@ const difficultyColor = {
 };
 
 export default function Templates() {
+  const navigate = useNavigate();
   const [active, setActive] = useState('All');
   const [search, setSearch] = useState('');
 
@@ -239,7 +241,10 @@ export default function Templates() {
                           <span className="font-semibold text-foreground">{template.rating}</span>
                           <span>· {template.uses}</span>
                         </div>
-                        <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-colors">
+                        <button
+                          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary/10 text-primary text-xs font-semibold hover:bg-primary hover:text-primary-foreground transition-colors"
+                          onClick={() => navigate('/auth')}
+                        >
                           <Download className="w-3.5 h-3.5" /> Use template
                         </button>
                       </div>

@@ -11,10 +11,11 @@ import Background3D from '@/components/Background3D';
 import ScrollReveal from '@/components/ScrollReveal';
 import { Helmet } from 'react-helmet-async';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const contactChannels = [
-  { icon: Building2, title: 'For Recruiters & Clients', description: 'Sales, Enterprise Plans, and Support', email: 'support@recurteruserninjas.com' },
-  { icon: Users, title: 'For Testers & Ninjas', description: 'Payouts, Account issues, and Disputes', email: 'support@userninjas.com' },
+  { icon: Building2, title: 'For Recruiters & Clients', description: 'Sales, Enterprise Plans, and Support', email: 'recruiter@userninjas.in' },
+  { icon: Users, title: 'For Testers & Ninjas', description: 'Payouts, Account issues, and Disputes', email: 'support@userninjas.in' },
 ];
 
 const subjects = ['General Inquiry', 'Enterprise Sales', 'Technical Support', 'Partnership', 'Other'];
@@ -22,10 +23,23 @@ const subjects = ['General Inquiry', 'Enterprise Sales', 'Technical Support', 'P
 export default function Contact() {
   const [formData, setFormData] = useState({ firstName: '', lastName: '', email: '', subject: '', message: '' });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Message sent! We'll get back to you soon.");
-    setFormData({ firstName: '', lastName: '', email: '', subject: '', message: '' });
+    const { error } = await supabase.from('contact_submissions').insert([
+      {
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        subject: formData.subject,
+        message: formData.message,
+      },
+    ]);
+    if (error) {
+      toast.error('Something went wrong. Please try again.');
+    } else {
+      toast.success("Message sent! We'll get back to you soon.");
+      setFormData({ firstName: '', lastName: '', email: '', subject: '', message: '' });
+    }
   };
 
   return (

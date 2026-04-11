@@ -56,10 +56,10 @@ export default function Hero() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Link to="/contact">
+              <Link to="/features">
                 <Button size="lg" variant="outline" className="px-8 h-12 text-base font-semibold rounded-xl gap-2 border-border/60 w-full sm:w-auto hover:bg-secondary/60">
                   <Play className="h-4 w-4 fill-current" />
-                  Watch 2-min Demo
+                  See All Features
                 </Button>
               </Link>
             </div>
@@ -117,7 +117,7 @@ export default function Hero() {
                 <div className="flex-1 flex justify-center">
                   <div className="flex items-center gap-2 h-6 px-4 rounded-full bg-secondary/80 text-xs text-muted-foreground w-48">
                     <span className="w-2 h-2 rounded-full bg-accent/70 shrink-0" />
-                    app.userninjas.com
+                    app.userninjas.in
                   </div>
                 </div>
                 <div className="flex gap-1.5 opacity-50">

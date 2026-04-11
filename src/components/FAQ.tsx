@@ -4,6 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
+import { Link } from 'react-router-dom';
 import ScrollReveal from './ScrollReveal';
 
 const faqs = [
@@ -61,7 +62,7 @@ export default function FAQ() {
             </h2>
             <p className="text-muted-foreground text-lg">
               Can't find what you're looking for?{' '}
-              <a href="/contact" className="text-primary hover:underline font-medium">Talk to our team →</a>
+              <Link to="/contact" className="text-primary hover:underline font-medium">Talk to our team →</Link>
             </p>
           </div>
         </ScrollReveal>

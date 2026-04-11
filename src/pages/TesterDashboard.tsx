@@ -48,6 +48,8 @@ import ScreenRecorder from '@/components/ScreenRecorder';
 import AIInterviewerModal from '@/components/AIInterviewerModal';
 import AIInterviewReport from '@/components/AIInterviewReport';
 import { useAIInterviewer } from '@/hooks/useAIInterviewer';
+import ScreenerGate from '@/components/ScreenerGate';
+import TesterSurveyFlow from '@/components/TesterSurveyFlow';
 
 interface Test {
   id: string;
@@ -272,6 +274,14 @@ export default function TesterDashboard() {
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
   const [recordingTranscript, setRecordingTranscript] = useState('');
 
+  // Screener gate state
+  const [screenerTest, setScreenerTest] = useState<Test | null>(null);
+  const [screenerDialogOpen, setScreenerDialogOpen] = useState(false);
+
+  // Survey flow state
+  const [surveyTest, setSurveyTest] = useState<{ testId: string; submissionId: string } | null>(null);
+  const [surveyDialogOpen, setSurveyDialogOpen] = useState(false);
+
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
@@ -354,15 +364,43 @@ export default function TesterDashboard() {
     }
   };
 
+  // Start test flow — route through screener gate first
+  const initiateTest = (test: Test) => {
+    const alreadyStarted = submissions.some(s => s.test_id === test.id);
+    if (alreadyStarted) {
+      toast({ title: 'Already started', description: 'You have already started this test.', variant: 'destructive' });
+      return;
+    }
+    setScreenerTest(test);
+    setScreenerDialogOpen(true);
+  };
+
+  const handleScreenerPass = async () => {
+    if (!screenerTest) return;
+    setScreenerDialogOpen(false);
+
+    // For AI interview type, the AIInterviewButton handles its own flow
+    if (screenerTest.test_type === 'ai_interview') {
+      setScreenerTest(null);
+      return;
+    }
+
+    // Create submission
+    await startTest(screenerTest.id);
+    setScreenerTest(null);
+  };
+
   const startTest = async (testId: string) => {
     try {
-      const { error } = await supabase
+      const { data: insertedData, error } = await supabase
         .from('test_submissions')
         .insert({
           test_id: testId,
           tester_id: user!.id,
           status: 'in_progress',
-        });
+        })
+        .select()
+        .single();
 
       if (error) {
         if (error.code === '23505') {
@@ -374,13 +412,37 @@ export default function TesterDashboard() {
         } else {
           throw error;
         }
-      } else {
-        toast({
-          title: 'Test started!',
-          description: 'Good luck with your test.',
-        });
-        fetchData();
+        return;
       }
+
+      toast({
+        title: 'Test started!',
+        description: 'Good luck with your test.',
+      });
+
+      // Notify recruiter of new submission (non-blocking)
+      const matchedTest = tests.find(t => t.id === testId);
+      if (matchedTest) {
+        supabase.functions.invoke('send-email', {
+          body: {
+            type: 'new_submission',
+            to_user_id: matchedTest.recruiter_id,
+            data: {
+              name: 'Recruiter',
+              tester_name: user!.user_metadata?.full_name || 'A tester',
+              test_title: matchedTest.title,
+            },
+          },
+        }).catch(() => {});
+      }
+
+      // If it's a survey, open survey flow immediately
+      if (matchedTest?.test_type === 'survey' && insertedData) {
+        setSurveyTest({ testId, submissionId: insertedData.id });
+        setSurveyDialogOpen(true);
+      }
+
+      fetchData();
     } catch (error) {
       console.error('Error starting test:', error);
       toast({
@@ -677,9 +739,16 @@ export default function TesterDashboard() {
                       return (
                         <Card key={test.id} className={`bg-card border border-border/60 shadow-sm transition-all duration-300 spring-card ring-2 ${ringColor}`}>
                           <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between gap-2">
                               <Badge className={`${matchColor} border text-xs`}>{matchScore}% — {matchLabel}</Badge>
-                              {test.category && <Badge variant="secondary" className="text-xs">{test.category}</Badge>}
+                              <div className="flex items-center gap-1.5">
+                                {test.test_type && (
+                                  <Badge variant="outline" className="text-xs capitalize">
+                                    {(test.test_type || 'unmoderated').replace('_', ' ')}
+                                  </Badge>
+                                )}
+                                {test.category && <Badge variant="secondary" className="text-xs">{test.category}</Badge>}
+                              </div>
                             </div>
                             <CardTitle className="text-lg mt-2">{test.title}</CardTitle>
                             <CardDescription className="line-clamp-2 text-sm">{test.description}</CardDescription>
@@ -694,10 +763,12 @@ export default function TesterDashboard() {
                               </span>
                             </div>
                             <div className="flex gap-2">
-                              <Button size="sm" className="flex-1" onClick={() => startTest(test.id)}>
+                              <Button size="sm" className="flex-1" onClick={() => initiateTest(test)}>
                                 Start Test <ArrowRight className="h-3.5 w-3.5 ml-1" />
                               </Button>
-                              <AIInterviewButton testId={test.id} testTitle={test.title} estimatedDuration={test.estimated_duration} />
+                              {test.test_type === 'ai_interview' && (
+                                <AIInterviewButton testId={test.id} testTitle={test.title} estimatedDuration={test.estimated_duration} />
+                              )}
                             </div>
                           </CardContent>
                         </Card>
@@ -753,6 +824,11 @@ export default function TesterDashboard() {
                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
                                   <h3 className="font-semibold text-base">{test.title}</h3>
                                   <Badge className={`${matchColor} border text-xs`}>{matchScore}% {matchLabel}</Badge>
+                                  {test.test_type && (
+                                    <Badge variant="outline" className="text-xs capitalize">
+                                      {(test.test_type || 'unmoderated').replace('_', ' ')}
+                                    </Badge>
+                                  )}
                                   {test.category && <Badge variant="secondary" className="text-xs">{test.category}</Badge>}
                                 </div>
                                 <p className="text-sm text-muted-foreground line-clamp-2 mb-2">{test.description}</p>
@@ -765,10 +841,12 @@ export default function TesterDashboard() {
                                 )}
                               </div>
                               <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                                <Button size="sm" onClick={() => startTest(test.id)} disabled={alreadyStarted} className="w-full sm:w-auto">
+                                <Button size="sm" onClick={() => initiateTest(test)} disabled={alreadyStarted} className="w-full sm:w-auto">
                                   {alreadyStarted ? 'Already Started' : <><PlayCircle className="h-3.5 w-3.5 mr-1.5" />Start Test</>}
                                 </Button>
-                                {!alreadyStarted && <AIInterviewButton testId={test.id} testTitle={test.title} estimatedDuration={test.estimated_duration} />}
+                                {!alreadyStarted && test.test_type === 'ai_interview' && (
+                                  <AIInterviewButton testId={test.id} testTitle={test.title} estimatedDuration={test.estimated_duration} />
+                                )}
                               </div>
                             </div>
                           </CardContent>
@@ -811,11 +889,26 @@ export default function TesterDashboard() {
                                 <div className="mt-1.5"><StarRating rating={submission.rating} size="sm" /></div>
                               )}
                             </div>
-                            {submission.status === 'in_progress' && (
-                              <Button size="sm" onClick={() => openSubmitDialog(submission)} className="flex items-center gap-1.5 flex-shrink-0">
-                                <Send className="h-3.5 w-3.5" />Submit
-                              </Button>
-                            )}
+                            {submission.status === 'in_progress' && (() => {
+                              const testForSub = tests.find(t => t.id === submission.test_id);
+                              const isSurvey = testForSub?.test_type === 'survey';
+                              return (
+                                <div className="flex gap-2 flex-shrink-0">
+                                  {isSurvey ? (
+                                    <Button size="sm" onClick={() => {
+                                      setSurveyTest({ testId: submission.test_id, submissionId: submission.id });
+                                      setSurveyDialogOpen(true);
+                                    }} className="flex items-center gap-1.5">
+                                      <FileText className="h-3.5 w-3.5" />Take Survey
+                                    </Button>
+                                  ) : (
+                                    <Button size="sm" onClick={() => openSubmitDialog(submission)} className="flex items-center gap-1.5">
+                                      <Send className="h-3.5 w-3.5" />Submit
+                                    </Button>
+                                  )}
+                                </div>
+                              );
+                            })()}
                           </div>
                         </CardContent>
                       </Card>
@@ -1014,6 +1107,62 @@ export default function TesterDashboard() {
               )}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Screener Gate Dialog */}
+      <Dialog open={screenerDialogOpen} onOpenChange={(open) => {
+        setScreenerDialogOpen(open);
+        if (!open) setScreenerTest(null);
+      }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Eligibility Screener</DialogTitle>
+            <DialogDescription>
+              Checking if you match the requirements for "{screenerTest?.title}".
+            </DialogDescription>
+          </DialogHeader>
+          {screenerTest && (
+            <ScreenerGate
+              testId={screenerTest.id}
+              testTitle={screenerTest.title}
+              onEligible={handleScreenerPass}
+              onCancel={() => {
+                setScreenerDialogOpen(false);
+                setScreenerTest(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Survey Flow Dialog */}
+      <Dialog open={surveyDialogOpen} onOpenChange={(open) => {
+        setSurveyDialogOpen(open);
+        if (!open) setSurveyTest(null);
+      }}>
+        <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Survey Questions</DialogTitle>
+            <DialogDescription>
+              Answer the questions below to complete this survey.
+            </DialogDescription>
+          </DialogHeader>
+          {surveyTest && (
+            <TesterSurveyFlow
+              testId={surveyTest.testId}
+              submissionId={surveyTest.submissionId}
+              onComplete={() => {
+                setSurveyDialogOpen(false);
+                setSurveyTest(null);
+                fetchData();
+              }}
+              onCancel={() => {
+                setSurveyDialogOpen(false);
+                setSurveyTest(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </>
