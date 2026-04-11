@@ -117,8 +117,8 @@ export function useAIInterviewer({ testId, estimatedDuration, onError }: UseAIIn
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    const { data, error: insertErr } = await supabase
-      .from('ai_interview_sessions')
+    const { data, error: insertErr } = await (supabase
+      .from as any)('ai_interview_sessions')
       .insert({
         test_id: testId,
         tester_id: user.id,
@@ -358,8 +358,8 @@ export function useAIInterviewer({ testId, estimatedDuration, onError }: UseAIIn
 
     // Mark session as abandoned if ending early
     if (phase === 'active' && transcript.length < 4) {
-      await supabase
-        .from('ai_interview_sessions')
+      await (supabase
+        .from as any)('ai_interview_sessions')
         .update({ status: 'abandoned' })
         .eq('id', sessionId);
       stopScreenCapture();
