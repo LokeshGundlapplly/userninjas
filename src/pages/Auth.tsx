@@ -143,10 +143,9 @@ export default function Auth() {
           });
           return;
         }
-        // Sign out immediately so user can't access anything until OTP verified
-        await supabase.auth.signOut();
-        // Send OTP
+        // Send OTP while still authenticated, then sign out
         await sendOtp(email, fullName || email.split('@')[0]);
+        await supabase.auth.signOut();
       } else {
         // Verify password first
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -154,10 +153,9 @@ export default function Auth() {
           toast({ title: 'Sign in failed', description: 'Invalid email or password.', variant: 'destructive' });
           return;
         }
-        // Password correct — sign out and require OTP
-        await supabase.auth.signOut();
-        // Send OTP
+        // Send OTP while still authenticated, then sign out
         await sendOtp(email, email.split('@')[0]);
+        await supabase.auth.signOut();
       }
       // Move to OTP step
       setOtp(['', '', '', '', '', '']);
