@@ -261,8 +261,8 @@ export default function RecruiterDashboard() {
       setSubmissions(filteredSubmissions);
 
       if (testIds.length > 0) {
-        const { data: aiSessionsData } = await supabase
-          .from('ai_interview_sessions')
+        const { data: aiSessionsData } = await (supabase
+          .from as any)('ai_interview_sessions')
           .select('*, tests(title)')
           .in('test_id', testIds)
           .order('created_at', { ascending: false });
