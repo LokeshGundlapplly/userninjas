@@ -198,7 +198,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Authorization": `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "User Ninjas <support@userninjas.in>",
+        from: Deno.env.get("FROM_EMAIL") || "User Ninjas <onboarding@resend.dev>",
         to: [profile.email],
         subject: isApproved
           ? `🎉 Your test "${testTitle}" was approved!`
