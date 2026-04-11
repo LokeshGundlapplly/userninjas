@@ -8,6 +8,7 @@ import TrustedBy from '@/components/TrustedBy';
 import MissionProtocol from '@/components/MissionProtocol';
 import ResearchMethods from '@/components/ResearchMethods';
 import Features from '@/components/Features';
+import ProductDemo from '@/components/ProductDemo';
 import Capabilities from '@/components/Capabilities';
 import Testimonials from '@/components/Testimonials';
 import Pricing from '@/components/Pricing';
@@ -45,6 +46,7 @@ export default function Index() {
         <MissionProtocol />
         <ResearchMethods />
         <Features />
+        <ProductDemo />
         <Capabilities />
         <Testimonials />
         <Pricing />
