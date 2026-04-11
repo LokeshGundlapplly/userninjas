@@ -117,7 +117,7 @@ export default function Footer() {
                 { Icon: Twitter, href: 'https://twitter.com/userninjas', label: 'Twitter' },
                 { Icon: Linkedin, href: 'https://linkedin.com/company/userninjas', label: 'LinkedIn' },
                 { Icon: Github, href: 'https://github.com/userninjas', label: 'GitHub' },
-                { Icon: Mail, href: 'mailto:hello@userninjas.io', label: 'Email' },
+                { Icon: Mail, href: 'mailto:hello@userninjas.in', label: 'Email' },
               ].map(({ Icon, href, label }) => (
                 <a
                   key={label}

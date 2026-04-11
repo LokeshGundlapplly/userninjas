@@ -196,8 +196,8 @@ export default function Cookies() {
           <div className="rounded-2xl bg-primary/5 border border-primary/15 p-8 text-center">
             <h3 className="font-display text-lg font-bold mb-2">Cookie questions?</h3>
             <p className="text-sm text-muted-foreground mb-4">Contact our privacy team for any questions about our cookie practices.</p>
-            <a href="mailto:privacy@userninjas.io" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
-              privacy@userninjas.io
+            <a href="mailto:privacy@userninjas.in" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+              privacy@userninjas.in
             </a>
           </div>
         </div>

@@ -21,7 +21,7 @@ const sections = [
     title: '2. User Accounts',
     content: [
       { subtitle: 'Registration', text: 'You agree to provide accurate, current, and complete information when registering. You are responsible for maintaining the confidentiality of your password and for all activities that occur under your account.' },
-      { subtitle: 'Account Security', text: 'You must immediately notify us at security@userninjas.io of any unauthorised use of your account or any other security breach. We are not liable for any loss arising from your failure to safeguard your credentials.' },
+      { subtitle: 'Account Security', text: 'You must immediately notify us at security@userninjas.in of any unauthorised use of your account or any other security breach. We are not liable for any loss arising from your failure to safeguard your credentials.' },
       { subtitle: 'One Account Per Person', text: 'Each natural person may hold only one Tester account. Creating multiple tester accounts to claim multiple payouts is a material breach of these Terms and may result in permanent suspension and forfeiture of earnings.' },
       { subtitle: 'Account Termination', text: 'We reserve the right to suspend or terminate accounts that violate these Terms, engage in fraudulent activity, or cause harm to other users, with or without prior notice depending on severity.' },
     ],
@@ -78,7 +78,7 @@ const sections = [
     title: '7. Governing Law & Disputes',
     content: [
       { subtitle: 'Governing Law', text: 'These Terms are governed by the laws of the State of Delaware, USA, without regard to conflict of law principles, except to the extent that local mandatory law applies in your jurisdiction.' },
-      { subtitle: 'Dispute Resolution', text: 'Disputes shall first be attempted to be resolved informally by contacting legal@userninjas.io. If not resolved within 60 days, disputes shall be submitted to binding arbitration under the AAA Commercial Arbitration Rules, except you may bring qualifying claims in small claims court.' },
+      { subtitle: 'Dispute Resolution', text: 'Disputes shall first be attempted to be resolved informally by contacting legal@userninjas.in. If not resolved within 60 days, disputes shall be submitted to binding arbitration under the AAA Commercial Arbitration Rules, except you may bring qualifying claims in small claims court.' },
       { subtitle: 'Class Action Waiver', text: 'You agree to resolve any disputes individually and waive any right to bring or participate in a class-action lawsuit, class-wide arbitration, or any other consolidated action.' },
       { subtitle: 'EU Users', text: 'Consumer protection laws in your local jurisdiction may give you rights that cannot be waived by contract. Nothing in these Terms limits rights you have under applicable EU/EEA consumer protection law.' },
     ],
@@ -90,7 +90,7 @@ const sections = [
     content: [
       { subtitle: 'Notification', text: 'We will provide at least 30 days\' notice of material changes to these Terms via email and in-app notification. Minor changes (such as clarifications) may be made without notice.' },
       { subtitle: 'Continued Use', text: 'Your continued use of the Platform after the effective date of revised Terms constitutes acceptance of the new Terms. If you do not agree to the revised Terms, you must stop using the Platform and delete your account.' },
-      { subtitle: 'Contact', text: 'Questions about these Terms: legal@userninjas.io. Registered address: User Ninjas, Inc., 2261 Market Street #5039, San Francisco, CA 94114, USA.' },
+      { subtitle: 'Contact', text: 'Questions about these Terms: legal@userninjas.in. Registered address: User Ninjas, Inc., 2261 Market Street #5039, San Francisco, CA 94114, USA.' },
     ],
   },
 ];
@@ -136,7 +136,7 @@ export default function Terms() {
             <div className="flex gap-3">
               <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
               <p className="text-sm text-foreground/80 leading-relaxed">
-                <strong>Summary:</strong> User Ninjas connects product teams with real users for UX research. Recruiters pay to run tests; testers get paid to participate. Both parties must act in good faith. Fraudulent behaviour leads to immediate termination. Questions? legal@userninjas.io.
+                <strong>Summary:</strong> User Ninjas connects product teams with real users for UX research. Recruiters pay to run tests; testers get paid to participate. Both parties must act in good faith. Fraudulent behaviour leads to immediate termination. Questions? legal@userninjas.in.
               </p>
             </div>
           </div>
@@ -167,8 +167,8 @@ export default function Terms() {
           <div className="mt-14 rounded-2xl bg-primary/5 border border-primary/15 p-8 text-center">
             <h3 className="font-display text-lg font-bold mb-2">Legal questions?</h3>
             <p className="text-sm text-muted-foreground mb-4">Our legal team typically responds within 2 business days.</p>
-            <a href="mailto:legal@userninjas.io" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
-              Email legal@userninjas.io
+            <a href="mailto:legal@userninjas.in" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+              Email legal@userninjas.in
             </a>
           </div>
         </div>

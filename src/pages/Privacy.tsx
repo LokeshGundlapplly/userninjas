@@ -73,10 +73,10 @@ const sections = [
     title: '5. Your Rights',
     content: [
       { subtitle: 'Access & Portability', text: 'You can request a copy of all personal data we hold about you in a structured, machine-readable format, free of charge, once per 12-month period.' },
-      { subtitle: 'Correction', text: 'You can update most of your account information directly in your profile settings. For other corrections, email privacy@userninjas.io.' },
-      { subtitle: 'Deletion ("Right to be Forgotten")', text: 'You can request deletion of your account and associated data via Settings → Account → Delete Account, or by emailing privacy@userninjas.io.' },
+      { subtitle: 'Correction', text: 'You can update most of your account information directly in your profile settings. For other corrections, email privacy@userninjas.in.' },
+      { subtitle: 'Deletion ("Right to be Forgotten")', text: 'You can request deletion of your account and associated data via Settings → Account → Delete Account, or by emailing privacy@userninjas.in.' },
       { subtitle: 'Objection & Restriction', text: 'Under GDPR, you have the right to object to or restrict certain processing of your data, particularly for direct marketing purposes.' },
-      { subtitle: 'CCPA Rights', text: 'California residents have additional rights under the CCPA, including the right to know, delete, and opt out of sale (we do not sell data). Contact privacy@userninjas.io to exercise California rights.' },
+      { subtitle: 'CCPA Rights', text: 'California residents have additional rights under the CCPA, including the right to know, delete, and opt out of sale (we do not sell data). Contact privacy@userninjas.in to exercise California rights.' },
     ],
   },
   {
@@ -106,7 +106,7 @@ const sections = [
     icon: Bell,
     title: '8. Contact & Updates',
     content: [
-      { subtitle: 'Privacy Officer', text: 'Questions, requests, or complaints: privacy@userninjas.io. We respond within 30 days for all GDPR/CCPA requests and within 5 business days for general inquiries.' },
+      { subtitle: 'Privacy Officer', text: 'Questions, requests, or complaints: privacy@userninjas.in. We respond within 30 days for all GDPR/CCPA requests and within 5 business days for general inquiries.' },
       { subtitle: 'Policy Updates', text: 'We will notify you by email and in-app notification at least 30 days before material changes take effect. The date at the top of this page reflects the most recent revision.' },
       { subtitle: 'Supervisory Authority', text: 'EU/EEA residents may lodge a complaint with their local data protection authority if they believe their rights have been infringed.' },
     ],
@@ -188,8 +188,8 @@ export default function Privacy() {
           <div className="mt-14 rounded-2xl bg-primary/5 border border-primary/15 p-8 text-center">
             <h3 className="font-display text-lg font-bold mb-2">Questions about your privacy?</h3>
             <p className="text-sm text-muted-foreground mb-4">Our privacy team is available to answer any questions you have.</p>
-            <a href="mailto:privacy@userninjas.io" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
-              Email privacy@userninjas.io
+            <a href="mailto:privacy@userninjas.in" className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-semibold hover:bg-primary/90 transition-colors">
+              Email privacy@userninjas.in
             </a>
           </div>
         </div>
