@@ -124,8 +124,7 @@ export default function Auth() {
     setIsLoading(true);
     try {
       if (isSignUp) {
-        // Create account (Supabase will NOT auto-confirm since we handle OTP ourselves)
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -133,7 +132,10 @@ export default function Auth() {
             data: { full_name: fullName, role: selectedRole },
           },
         });
-        if (error) {
+        // "Error sending confirmation email" is non-fatal — Supabase created the user
+        // but its built-in mailer failed. We send our own OTP instead.
+        const isFatalError = error && !error.message.includes('confirmation email');
+        if (isFatalError) {
           toast({
             title: error.message.includes('already registered') ? 'Account exists' : 'Sign up failed',
             description: error.message.includes('already registered')
