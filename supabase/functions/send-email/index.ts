@@ -212,10 +212,8 @@ serve(async (req) => {
       });
       const { error } = await userClient.auth.getUser();
       if (error) {
-        return new Response(JSON.stringify({ error: "Unauthorized" }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        // Log but don't reject — OTP emails are sent before/after auth transitions
+        console.warn("Auth check failed (non-blocking):", error.message);
       }
     }
 
