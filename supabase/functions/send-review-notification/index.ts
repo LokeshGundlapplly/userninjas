@@ -124,10 +124,13 @@ const handler = async (req: Request): Promise<Response> => {
     const testerName = profile.full_name || "Tester";
 
     const LOGO_BLOCK = `
-      <div style="margin: 0 auto 16px auto; width: 56px; height: 56px; background: rgba(255,255,255,0.15); border-radius: 14px; display: inline-flex; align-items: center; justify-content: center;">
-        <img src="https://userninjas.in/logo.png" alt="User Ninjas" width="36" height="36" style="display: block;" onerror="this.style.display='none';this.nextElementSibling.style.display='inline-block'" />
-        <svg style="display:none" width="36" height="36" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L2 7L12 12L22 7L12 2Z" fill="#fff" opacity="0.9"/><path d="M2 17L12 22L22 17" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.7"/><path d="M2 12L12 17L22 12" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/></svg>
-      </div>
+      <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto 16px auto;">
+        <tr>
+          <td align="center" style="width: 56px; height: 56px; background: rgba(255,255,255,0.15); border-radius: 14px;">
+            <img src="https://www.userninjas.in/logo.png" alt="User Ninjas" width="40" height="40" style="display: block; border: 0; border-radius: 8px;" />
+          </td>
+        </tr>
+      </table>
       <p style="color: #e0e7ff; font-size: 13px; font-weight: 600; letter-spacing: 1px; margin: 0 0 12px 0;">USER NINJAS</p>`;
 
     const FOUNDER_BLOCK = `
@@ -147,7 +150,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     const FOOTER = `
       <div style="background: #f9fafb; padding: 20px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
-        <p style="font-size: 13px; color: #9ca3af; margin: 0;">&copy; ${new Date().getFullYear()} User Ninjas &middot; <a href="https://userninjas.in/privacy" style="color: #6366f1; text-decoration: none;">Privacy</a> &middot; <a href="https://userninjas.in/terms" style="color: #6366f1; text-decoration: none;">Terms</a></p>
+        <p style="font-size: 13px; color: #9ca3af; margin: 0;">&copy; ${new Date().getFullYear()} User Ninjas &middot; <a href="https://www.userninjas.in/privacy" style="color: #6366f1; text-decoration: none;">Privacy</a> &middot; <a href="https://www.userninjas.in/terms" style="color: #6366f1; text-decoration: none;">Terms</a></p>
       </div>`;
 
     const emailHtml = isApproved
@@ -164,7 +167,7 @@ const handler = async (req: Request): Promise<Response> => {
             ${reviewerFeedback ? `<div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;"><p style="margin: 0; font-size: 14px; color: #4b5563;"><strong>Reviewer Feedback:</strong></p><p style="margin: 8px 0 0 0; font-style: italic; color: #4b5563;">"${reviewerFeedback}"</p></div>` : ""}
             <p style="font-size: 15px; color: #4b5563;">Thank you for your valuable contribution! Keep up the great work.</p>
             <div style="text-align: center; margin: 24px 0;">
-              <a href="https://userninjas.in/tester" style="display: inline-block; background: #10b981; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">View Dashboard →</a>
+              <a href="https://www.userninjas.in/tester" style="display: inline-block; background: #10b981; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">View Dashboard →</a>
             </div>
           </div>
           ${FOUNDER_BLOCK}
@@ -183,7 +186,7 @@ const handler = async (req: Request): Promise<Response> => {
             ${reviewerFeedback ? `<div style="background: #f3f4f6; padding: 16px; border-radius: 8px; margin: 16px 0;"><p style="margin: 0; font-size: 14px; color: #4b5563;"><strong>Reviewer Feedback:</strong></p><p style="margin: 8px 0 0 0; font-style: italic; color: #4b5563;">"${reviewerFeedback}"</p></div>` : ""}
             <p style="font-size: 15px; color: #4b5563;">Don't be discouraged! Check out other available tests and try again.</p>
             <div style="text-align: center; margin: 24px 0;">
-              <a href="https://userninjas.in/tester" style="display: inline-block; background: #6366f1; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Browse Tests →</a>
+              <a href="https://www.userninjas.in/tester" style="display: inline-block; background: #6366f1; color: #ffffff; padding: 14px 32px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 15px;">Browse Tests →</a>
             </div>
           </div>
           ${FOUNDER_BLOCK}
