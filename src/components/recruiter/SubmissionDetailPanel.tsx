@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import StarRating from '@/components/StarRating';
 import {
   Play, FileText, Sparkles, ChevronDown, ChevronUp,
-  Image, MessageSquare, HelpCircle,
+  Image, MessageSquare, HelpCircle, User, MapPin, Smartphone, Heart,
 } from 'lucide-react';
 
 interface QuestionAnswer {
@@ -42,6 +42,16 @@ interface SubmissionDetailPanelProps {
   isSummarizing?: boolean;
 }
 
+interface TesterProfileSummary {
+  full_name: string | null;
+  age: number | null;
+  gender: string | null;
+  location: string | null;
+  bio: string | null;
+  devices: string[] | null;
+  interests: string[] | null;
+}
+
 export default function SubmissionDetailPanel({
   submission,
   testTitle,
@@ -53,10 +63,19 @@ export default function SubmissionDetailPanel({
   const [loading, setLoading] = useState(true);
   const [showAnswers, setShowAnswers] = useState(true);
   const [showTranscript, setShowTranscript] = useState(false);
+  const [testerProfile, setTesterProfile] = useState<TesterProfileSummary | null>(null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
+
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('full_name, age, gender, location, bio, devices, interests')
+        .eq('user_id', submission.tester_id)
+        .maybeSingle();
+      setTesterProfile((profileData as TesterProfileSummary) || null);
+
       // Fetch answers then their questions
       const { data: ansData } = await supabase
         .from('question_answers')
@@ -89,6 +108,55 @@ export default function SubmissionDetailPanel({
   return (
     <div className="space-y-4 pt-3">
       <Separator />
+
+      {/* Tester profile summary */}
+      {testerProfile && (
+        <div>
+          <div className="flex items-center gap-2 mb-2">
+            <User className="h-4 w-4 text-primary" />
+            <p className="text-sm font-semibold">Tester Profile</p>
+          </div>
+          <div className="p-3 bg-secondary/30 rounded-lg border border-border/30 space-y-2">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+              <span className="font-medium">{testerProfile.full_name || 'Anonymous tester'}</span>
+              {testerProfile.age && <span className="text-muted-foreground">Age {testerProfile.age}</span>}
+              {testerProfile.gender && <span className="text-muted-foreground capitalize">{testerProfile.gender}</span>}
+              {testerProfile.location && (
+                <span className="text-muted-foreground inline-flex items-center gap-1">
+                  <MapPin className="h-3 w-3" />
+                  {testerProfile.location}
+                </span>
+              )}
+            </div>
+
+            {testerProfile.devices && testerProfile.devices.length > 0 && (
+              <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                <Smartphone className="h-3.5 w-3.5 mt-0.5" />
+                <div className="flex flex-wrap gap-1">
+                  {testerProfile.devices.map((device) => (
+                    <Badge key={device} variant="outline" className="text-[10px]">{device}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {testerProfile.interests && testerProfile.interests.length > 0 && (
+              <div className="flex items-start gap-2 text-xs text-muted-foreground">
+                <Heart className="h-3.5 w-3.5 mt-0.5" />
+                <div className="flex flex-wrap gap-1">
+                  {testerProfile.interests.map((interest) => (
+                    <Badge key={interest} variant="secondary" className="text-[10px]">{interest}</Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {testerProfile.bio && (
+              <p className="text-xs text-muted-foreground italic">"{testerProfile.bio}"</p>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Feedback */}
       {submission.feedback && (

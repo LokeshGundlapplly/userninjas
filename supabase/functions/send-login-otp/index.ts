@@ -69,8 +69,9 @@ serve(async (req) => {
 
   try {
     const { email } = await req.json();
+    const normalizedEmail = String(email || "").trim().toLowerCase();
 
-    if (!email) {
+    if (!normalizedEmail) {
       return new Response(JSON.stringify({ error: "email is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -92,7 +93,9 @@ serve(async (req) => {
       throw userError;
     }
 
-    const user = userData.users.find((u) => u.email === email && u.email_confirmed_at);
+    const user = userData.users.find(
+      (u) => u.email?.toLowerCase() === normalizedEmail && u.email_confirmed_at
+    );
     if (!user) {
       return new Response(
         JSON.stringify({ error: "User not found or email not confirmed" }),
@@ -104,11 +107,14 @@ serve(async (req) => {
     const otp = String(Math.floor(100000 + Math.random() * 900000));
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString(); // 10 min expiry
 
+    // Keep only one active OTP per email.
+    await supabase.from("login_otps").delete().eq("email", normalizedEmail);
+
     // Store OTP in database
     const { error: insertError } = await supabase
       .from("login_otps")
       .insert({
-        email,
+        email: normalizedEmail,
         otp,
         expires_at: expiresAt,
       });
@@ -118,7 +124,7 @@ serve(async (req) => {
     }
 
     // Send OTP via Resend email
-    await sendOTPEmail(email, otp);
+    await sendOTPEmail(normalizedEmail, otp);
 
     return new Response(
       JSON.stringify({ success: true, message: "OTP sent to email" }),

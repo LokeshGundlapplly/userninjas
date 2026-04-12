@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Users, Briefcase, Mail, Lock, User, ArrowRight, RotateCw } from 'lucide-react';
+import { Users, Briefcase, Mail, Lock, User, ArrowRight, RotateCw, ShieldCheck } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Background3D from '@/components/Background3D';
 
@@ -18,7 +18,7 @@ const passwordSchema = z.string().min(6, 'Password must be at least 6 characters
 const nameSchema = z.string().min(2, 'Name must be at least 2 characters');
 
 type UserRole = 'tester' | 'recruiter';
-type AuthStep = 'form' | 'confirm' | 'forgot';
+type AuthStep = 'form' | 'confirm' | 'forgot' | 'otp';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -30,21 +30,24 @@ export default function Auth() {
   const [isLoading, setIsLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
+  const [otpCode, setOtpCode] = useState('');
+  const [otpResendCooldown, setOtpResendCooldown] = useState(0);
 
 
   const { user, role, signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Redirect authenticated users
+  // Redirect authenticated users (blocked during OTP verification)
   useEffect(() => {
+    if (step === 'otp') return;
     if (user && role) {
       if (role === 'recruiter') navigate('/recruiter', { replace: true });
       else if (role === 'tester') navigate('/tester', { replace: true });
       else if (role === 'admin') navigate('/admin', { replace: true });
       else navigate('/', { replace: true });
     }
-  }, [user, role, navigate]);
+  }, [user, role, navigate, step]);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -52,6 +55,13 @@ export default function Auth() {
     const t = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
     return () => clearTimeout(t);
   }, [resendCooldown]);
+
+  // OTP resend cooldown timer
+  useEffect(() => {
+    if (otpResendCooldown <= 0) return;
+    const t = setTimeout(() => setOtpResendCooldown(otpResendCooldown - 1), 1000);
+    return () => clearTimeout(t);
+  }, [otpResendCooldown]);
 
   const validateForm = () => {
     const newErrors: { email?: string; password?: string; name?: string } = {};
@@ -141,6 +151,7 @@ export default function Auth() {
         setPassword('');
         setFullName('');
       } else {
+        // Step 1: Verify password credentials
         const { error } = await signIn(email, password);
         if (error) {
           const msg = error.message || 'An unexpected error occurred';
@@ -148,11 +159,31 @@ export default function Auth() {
           return;
         }
 
-        // Session is now active — onAuthStateChange will redirect
-        toast({
-          title: 'Signed in successfully',
-          description: 'Redirecting to your dashboard...',
-        });
+        // Step 2: Immediately sign out to prevent redirect race condition.
+        // The session will be re-created after successful OTP verification.
+        await supabase.auth.signOut();
+
+        // Step 3: Send OTP for second-factor verification
+        try {
+          const { data: otpData, error: otpError } = await supabase.functions.invoke('send-login-otp', {
+            body: { email },
+          });
+          if (otpError) throw otpError;
+          if (otpData?.error) throw new Error(otpData.error);
+
+          setStep('otp');
+          setOtpResendCooldown(60);
+          toast({
+            title: 'Verification code sent',
+            description: 'Check your email for the 6-digit code.',
+          });
+        } catch (otpErr: any) {
+          toast({
+            title: 'Could not send verification code',
+            description: otpErr.message || 'Please try again.',
+            variant: 'destructive',
+          });
+        }
       }
     } catch {
       toast({ title: 'Error', description: 'An unexpected error occurred.', variant: 'destructive' });
@@ -189,12 +220,89 @@ export default function Auth() {
     }
   };
 
+  // ─── OTP Verification ───
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (otpCode.length !== 6) {
+      toast({ title: 'Invalid code', description: 'Please enter the 6-digit code.', variant: 'destructive' });
+      return;
+    }
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-login-otp', {
+        body: { email, otp: otpCode },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      // OTP verified — re-sign-in to create session (was signed out after password check)
+      const { error: signInError } = await signIn(email, password);
+      if (signInError) throw new Error(signInError.message || 'Failed to complete sign in');
+
+      toast({ title: 'Verified!', description: 'Redirecting to your dashboard...' });
+
+      // Fetch role and navigate directly
+      const { data: { session: activeSession } } = await supabase.auth.getSession();
+      if (activeSession?.user) {
+        const { data: roleRows } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', activeSession.user.id);
+        const roles = (roleRows || []).map((r: any) => r.role as string);
+        const userRole = roles.includes('admin') ? 'admin' : roles[0];
+        if (userRole === 'recruiter') navigate('/recruiter', { replace: true });
+        else if (userRole === 'tester') navigate('/tester', { replace: true });
+        else if (userRole === 'admin') navigate('/admin', { replace: true });
+        else navigate('/', { replace: true });
+      } else {
+        setStep('form'); // fallback to useEffect
+      }
+    } catch (err: any) {
+      toast({
+        title: 'Verification failed',
+        description: err.message || 'Invalid or expired code. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (otpResendCooldown > 0) return;
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-login-otp', {
+        body: { email },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setOtpResendCooldown(60);
+      setOtpCode('');
+      toast({ title: 'New code sent', description: `Check ${email} for the fresh 6-digit code.` });
+    } catch {
+      toast({ title: 'Failed to resend', description: 'Please try again in a moment.', variant: 'destructive' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleCancelOtp = async () => {
+    // User was already signed out after password verification
+    setStep('form');
+    setOtpCode('');
+    toast({ title: 'Sign in cancelled', description: 'Please sign in again to continue.' });
+  };
+
   const pageTitle = step === 'forgot' ? 'Reset your password'
     : step === 'confirm' ? 'Confirm your email'
+    : step === 'otp' ? 'Verify your identity'
     : isSignUp ? 'Create your account' : 'Welcome back';
 
   const pageSubtitle = step === 'forgot' ? "Enter your email and we'll send you a reset link"
     : step === 'confirm' ? `Use the link we sent to ${email} to activate your account`
+    : step === 'otp' ? `Enter the 6-digit code sent to ${email}`
     : isSignUp ? 'Join User Ninjas as a tester or recruiter' : 'Sign in to continue to your dashboard';
 
   return (
@@ -273,6 +381,68 @@ export default function Auth() {
                     <br />
                     <button type="button" onClick={() => { setStep('form'); setIsSignUp(false); }} className="text-sm text-muted-foreground hover:text-primary transition-colors">
                       ← Back to sign in
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* ─── OTP VERIFICATION ─── */}
+              {step === 'otp' && (
+                <div className="space-y-6">
+                  <div className="flex justify-center">
+                    <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <ShieldCheck className="w-8 h-8 text-primary" />
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-border/60 bg-muted/30 px-5 py-4 text-sm text-muted-foreground text-center leading-6">
+                    We've sent a 6-digit verification code to <strong className="text-foreground">{email}</strong>. Enter it below to complete your sign-in.
+                  </div>
+
+                  <form onSubmit={handleVerifyOtp} className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="otpCode" className="text-sm">Verification Code</Label>
+                      <Input
+                        id="otpCode"
+                        type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
+                        maxLength={6}
+                        placeholder="000000"
+                        value={otpCode}
+                        onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        className="text-center text-2xl tracking-[0.5em] font-mono h-14"
+                        autoFocus
+                        autoComplete="one-time-code"
+                      />
+                    </div>
+                    <Button
+                      type="submit"
+                      className="w-full bg-foreground text-background hover:bg-foreground/90 rounded-xl gap-2 h-11"
+                      disabled={isLoading || otpCode.length !== 6}
+                    >
+                      {isLoading ? 'Verifying...' : 'Verify & Sign In'}
+                      {!isLoading && <ArrowRight className="h-4 w-4" />}
+                    </Button>
+                  </form>
+
+                  <div className="text-center space-y-2">
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={otpResendCooldown > 0 || isLoading}
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
+                    >
+                      <RotateCw className="w-3.5 h-3.5" />
+                      {otpResendCooldown > 0 ? `Resend code in ${otpResendCooldown}s` : 'Resend code'}
+                    </button>
+                    <br />
+                    <button
+                      type="button"
+                      onClick={handleCancelOtp}
+                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                    >
+                      ← Cancel sign in
                     </button>
                   </div>
                 </div>

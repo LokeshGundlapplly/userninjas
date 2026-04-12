@@ -101,7 +101,7 @@ export default function TesterProfile() {
   useEffect(() => {
     if (!authLoading && !user) {
       navigate('/auth');
-    } else if (!authLoading && role !== 'tester') {
+    } else if (!authLoading && user && role && role !== 'tester') {
       navigate('/');
       toast({
         title: 'Access denied',
@@ -312,40 +312,113 @@ export default function TesterProfile() {
 
       <main className="min-h-screen pt-20 px-4 pb-12">
         <div className="container mx-auto max-w-6xl py-8">
-          {/* Header */}
+          {/* Back Navigation */}
           <ScrollReveal animation="fade-up">
-            <div className="flex items-center gap-4 mb-8">
-              <Button variant="ghost" size="icon" asChild>
-                <Link to="/tester">
-                  <ArrowLeft className="h-5 w-5" />
+            <div className="flex items-center gap-3 mb-6">
+              <Button variant="ghost" size="sm" asChild>
+                <Link to="/tester" className="flex items-center gap-1.5 text-muted-foreground hover:text-foreground">
+                  <ArrowLeft className="h-4 w-4" /> Back to Dashboard
                 </Link>
               </Button>
-              <div>
-                <h1 className="text-3xl font-display font-bold">
-                  {profile?.full_name || 'Tester'}'s <span className="text-gradient">Profile</span>
-                </h1>
-                <p className="text-muted-foreground">
-                  Member since {profile?.created_at ? format(new Date(profile.created_at), 'MMMM yyyy') : 'N/A'}
-                </p>
-              </div>
-              <div className="ml-auto">
-                {!editing ? (
-                  <Button variant="outline" size="sm" onClick={startEditing}>
-                    <Edit className="h-4 w-4 mr-2" /> Edit Profile
-                  </Button>
-                ) : (
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setEditing(false)}>
-                      <X className="h-4 w-4 mr-1" /> Cancel
-                    </Button>
-                    <Button size="sm" onClick={saveProfile} disabled={saving}>
-                      <Save className="h-4 w-4 mr-1" /> {saving ? 'Saving...' : 'Save'}
-                    </Button>
-                  </div>
-                )}
-              </div>
             </div>
           </ScrollReveal>
+
+          {/* Hero Profile Card */}
+          <ScrollReveal animation="fade-up" delay={0.05}>
+            <Card className="bg-card border border-border/60 shadow-sm mb-6">
+              <CardContent className="pt-6 pb-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
+                  {/* Avatar */}
+                  <div className="relative shrink-0">
+                    <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary to-purple-600 flex items-center justify-center shadow-lg">
+                      <span className="text-2xl font-bold text-white">
+                        {(profile?.full_name || user?.email || 'T').charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div className="absolute -bottom-2 -right-2 bg-green-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                      {completedTests >= 50 ? 'Expert' : completedTests >= 20 ? 'Pro' : completedTests >= 5 ? 'Rising' : 'New'}
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      <h1 className="text-2xl font-display font-bold">{profile?.full_name || 'Tester'}</h1>
+                      {ratedSubmissions.length > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
+                          <span className="text-sm font-semibold">{averageRating.toFixed(1)}</span>
+                          <span className="text-xs text-muted-foreground">({ratedSubmissions.length} reviews)</span>
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-3">
+                      {user?.email} · Member since {profile?.created_at ? format(new Date(profile.created_at), 'MMMM yyyy') : 'N/A'}
+                      {profile?.location && <> · <MapPin className="h-3 w-3 inline mx-0.5" />{profile.location}</>}
+                    </p>
+                    {profile?.bio && <p className="text-sm text-muted-foreground italic mb-3 max-w-xl">"{profile.bio}"</p>}
+
+                    {/* Profile completeness */}
+                    {(() => {
+                      const fields = [profile?.full_name, profile?.age, profile?.gender, profile?.location, profile?.bio, profile?.devices?.length, profile?.interests?.length];
+                      const filled = fields.filter(Boolean).length;
+                      const pct = Math.round((filled / fields.length) * 100);
+                      return (
+                        <div className="flex items-center gap-3 max-w-xs">
+                          <Progress value={pct} className="flex-1 h-1.5" />
+                          <span className="text-xs text-muted-foreground whitespace-nowrap">{pct}% complete</span>
+                        </div>
+                      );
+                    })()}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="shrink-0">
+                    {!editing ? (
+                      <Button variant="outline" size="sm" onClick={startEditing}>
+                        <Edit className="h-4 w-4 mr-1.5" /> Edit Profile
+                      </Button>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm" onClick={() => setEditing(false)}>
+                          <X className="h-4 w-4 mr-1" /> Cancel
+                        </Button>
+                        <Button size="sm" onClick={saveProfile} disabled={saving}>
+                          <Save className="h-4 w-4 mr-1" /> {saving ? 'Saving...' : 'Save'}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </ScrollReveal>
+
+          {/* Recruiter Preview Banner */}
+          {!editing && (
+            <ScrollReveal animation="fade-up" delay={0.08}>
+              <Card className="bg-gradient-to-r from-primary/5 to-purple-500/5 border border-primary/20 shadow-sm mb-6">
+                <CardContent className="py-4 px-5">
+                  <div className="flex items-start gap-3">
+                    <div className="p-2 bg-primary/10 rounded-lg shrink-0"><User className="h-4 w-4 text-primary" /></div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground mb-0.5">Recruiter view of your profile</p>
+                      <p className="text-xs text-muted-foreground">This is what recruiters see when matching you to studies. Complete your demographics to appear in more test opportunities.</p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {profile?.devices?.map(d => <Badge key={d} variant="outline" className="text-xs">{d}</Badge>)}
+                        {profile?.interests?.slice(0, 4).map(i => <Badge key={i} variant="secondary" className="text-xs">{i}</Badge>)}
+                        {profile?.gender && <Badge variant="outline" className="text-xs capitalize">{profile.gender}</Badge>}
+                        {profile?.age && <Badge variant="outline" className="text-xs">Age {profile.age}</Badge>}
+                        {(!profile?.devices?.length && !profile?.interests?.length && !profile?.gender && !profile?.age) && (
+                          <button onClick={startEditing} className="text-xs text-primary hover:underline">Add demographic info →</button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </ScrollReveal>
+          )}
 
           {/* Demographics Edit Section */}
           {editing && (

@@ -221,7 +221,7 @@ export default function RecruiterDashboard() {
   // ─── Auth Guard ───────────────────────────────────────────
   useEffect(() => {
     if (!authLoading && !user) navigate('/auth');
-    else if (!authLoading && role !== 'recruiter') {
+    else if (!authLoading && user && role && role !== 'recruiter') {
       navigate('/');
       toast({ title: 'Access denied', description: 'This dashboard is only for recruiters.', variant: 'destructive' });
     }

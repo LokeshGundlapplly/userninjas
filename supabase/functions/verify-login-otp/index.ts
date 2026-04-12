@@ -13,8 +13,10 @@ serve(async (req) => {
 
   try {
     const { email, otp } = await req.json();
+    const normalizedEmail = String(email || "").trim().toLowerCase();
+    const normalizedOtp = String(otp || "").trim();
 
-    if (!email || !otp) {
+    if (!normalizedEmail || !normalizedOtp) {
       return new Response(JSON.stringify({ error: "email and otp are required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -34,8 +36,8 @@ serve(async (req) => {
     const { data: otpRecord, error: queryError } = await supabase
       .from("login_otps")
       .select("*")
-      .eq("email", email)
-      .eq("otp", otp)
+      .eq("email", normalizedEmail)
+      .eq("otp", normalizedOtp)
       .gt("expires_at", new Date().toISOString())
       .order("created_at", { ascending: false })
       .limit(1)
@@ -53,7 +55,7 @@ serve(async (req) => {
 
     // Mark OTP as verified in user metadata
     const { data: userData } = await supabase.auth.admin.listUsers();
-    const user = userData?.users.find((u) => u.email === email);
+    const user = userData?.users.find((u) => u.email?.toLowerCase() === normalizedEmail);
 
     if (!user) {
       return new Response(JSON.stringify({ error: "User not found" }), {

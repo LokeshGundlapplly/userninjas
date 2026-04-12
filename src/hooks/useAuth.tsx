@@ -32,7 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Defer role fetching to avoid deadlock
         if (session?.user) {
           setTimeout(() => {
-            fetchUserRole(session.user.id);
+            fetchUserRole(session.user);
           }, 0);
         } else {
           setRole(null);
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        await fetchUserRole(session.user.id);
+        await fetchUserRole(session.user);
       }
       setLoading(false);
     });
@@ -53,7 +53,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserRole = async (userId: string) => {
+  const resolveRole = (candidate: unknown): AppRole => {
+    if (candidate === 'recruiter' || candidate === 'admin') return candidate;
+    return 'tester';
+  };
+
+  const fetchUserRole = async (authUser: User) => {
+    const userId = authUser.id;
+
+    // Ensure profile row exists; this is a safety net if signup trigger failed.
+    await supabase
+      .from('profiles')
+      .upsert(
+        {
+          user_id: userId,
+          email: authUser.email ?? null,
+          full_name: (authUser.user_metadata?.full_name as string | undefined) ?? null,
+        },
+        { onConflict: 'user_id' }
+      );
+
     const { data, error } = await supabase
       .from('user_roles')
       .select('role')
@@ -67,7 +86,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setRole(roles[0]);
       }
+      return;
     }
+
+    // Safety net: create role if missing so redirects and permissions work.
+    const fallbackRole = resolveRole(authUser.user_metadata?.role);
+    const { error: insertRoleError } = await supabase
+      .from('user_roles')
+      .insert({ user_id: userId, role: fallbackRole });
+
+    if (!insertRoleError) {
+      setRole(fallbackRole);
+      return;
+    }
+
+    // If role insertion raced with trigger/client, retry fetch once.
+    const { data: retryData } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', userId);
+
+    if (retryData && retryData.length > 0) {
+      const roles = retryData.map((d: any) => d.role as AppRole);
+      setRole(roles.includes('admin') ? 'admin' : roles[0]);
+      return;
+    }
+
+    // Final fallback keeps user functional instead of stuck with null role.
+    setRole(fallbackRole);
   };
 
   const signIn = async (email: string, password: string) => {

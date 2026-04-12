@@ -18,8 +18,9 @@ import {
   ArrowLeft, ArrowRight, Plus, Trash2, GripVertical,
   Monitor, Smartphone, Tablet, Globe, Video, FileText,
   MessageSquare, ClipboardList, Layers, Eye, Shuffle, BookOpen,
-  Target, Users, Zap, Bot, Wand2
+  Target, Users, Zap, Bot, Wand2, Calendar, Clock, Link2
 } from 'lucide-react';
+import { format } from 'date-fns';
 import AITestCreatorChat, { type TestSuggestion } from '@/components/AITestCreatorChat';
 
 const TEST_TYPES = [
@@ -85,6 +86,10 @@ export default function CreateTest() {
   // Step 3: Questions
   const [questions, setQuestions] = useState<QuestionItem[]>([]);
 
+  // Moderated session fields
+  const [meetingLink, setMeetingLink] = useState('');
+  const [timeSlots, setTimeSlots] = useState<{ date: string; startTime: string; endTime: string }[]>([]);
+
   // Step 4: Targeting
   const [targetAge, setTargetAge] = useState('');
   const [targetLocation, setTargetLocation] = useState('');
@@ -92,11 +97,21 @@ export default function CreateTest() {
   const [browserTargeting, setBrowserTargeting] = useState<string[]>([]);
   const [screenerQuestions, setScreenerQuestions] = useState<ScreenerQuestion[]>([]);
 
-  if (authLoading) return null;
-  if (!user || role !== 'recruiter') {
-    navigate('/auth');
-    return null;
-  }
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    } else if (!authLoading && user && role && role !== 'recruiter') {
+      navigate('/');
+      toast({
+        title: 'Access denied',
+        description: 'Only recruiters can create tests.',
+        variant: 'destructive',
+      });
+    }
+  }, [authLoading, user, role, navigate, toast]);
+
+  if (authLoading || (user && !role)) return null;
+  if (!user || role !== 'recruiter') return null;
 
   const addTask = () => setTasks([...tasks, { title: '', description: '' }]);
   const removeTask = (i: number) => setTasks(tasks.filter((_, idx) => idx !== i));
@@ -189,6 +204,7 @@ export default function CreateTest() {
           max_testers: maxTesters,
           test_type: testType,
           prototype_url: prototypeUrl.trim() || null,
+          meeting_link: testType === 'moderated' && meetingLink.trim() ? meetingLink.trim() : null,
           target_audience: { age: targetAge, location: targetLocation } as any,
           screener_questions: screenerQuestions.filter(s => s.question.trim()) as any,
           device_targeting: deviceTargeting,
@@ -240,6 +256,22 @@ export default function CreateTest() {
             sort_order: i,
           })));
         if (qError) throw qError;
+      }
+
+      // Insert moderated study time slots
+      if (testType === 'moderated' && timeSlots.length > 0) {
+        const validSlots = timeSlots.filter(s => s.date && s.startTime && s.endTime);
+        if (validSlots.length > 0) {
+          const { error: slotError } = await supabase
+            .from('study_slots')
+            .insert(validSlots.map(s => ({
+              test_id: test.id,
+              start_time: new Date(`${s.date}T${s.startTime}`).toISOString(),
+              end_time: new Date(`${s.date}T${s.endTime}`).toISOString(),
+              status: 'available',
+            })));
+          if (slotError) console.error('Failed to insert time slots:', slotError);
+        }
       }
 
       toast({ title: 'Test created successfully!' });
@@ -375,6 +407,51 @@ export default function CreateTest() {
                 <div className="space-y-2">
                   <Label>Prototype / Website URL</Label>
                   <Input value={prototypeUrl} onChange={e => setPrototypeUrl(e.target.value)} placeholder="https://figma.com/proto/..." />
+                </div>
+              )}
+
+              {/* Moderated session fields */}
+              {testType === 'moderated' && (
+                <div className="space-y-6 p-4 border border-primary/20 bg-primary/5 rounded-xl">
+                  <div className="flex items-center gap-2 text-primary">
+                    <Video className="h-5 w-5" />
+                    <h3 className="font-semibold">Live Session Setup</h3>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-1.5"><Link2 className="h-4 w-4" /> Meeting Link</Label>
+                    <Input value={meetingLink} onChange={e => setMeetingLink(e.target.value)} placeholder="https://zoom.us/j/... or https://meet.google.com/..." />
+                    <p className="text-xs text-muted-foreground">Zoom, Google Meet, or Microsoft Teams link for the live session</p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <Label className="flex items-center gap-1.5"><Calendar className="h-4 w-4" /> Available Time Slots</Label>
+                    <p className="text-xs text-muted-foreground">Add the dates and times testers can book for their session</p>
+                    {timeSlots.map((slot, i) => (
+                      <div key={i} className="flex items-center gap-2 p-3 bg-background rounded-lg border border-border/60">
+                        <div className="flex-1 grid grid-cols-3 gap-2">
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Date</Label>
+                            <Input type="date" value={slot.date} onChange={e => { const u = [...timeSlots]; u[i].date = e.target.value; setTimeSlots(u); }} />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">Start</Label>
+                            <Input type="time" value={slot.startTime} onChange={e => { const u = [...timeSlots]; u[i].startTime = e.target.value; setTimeSlots(u); }} />
+                          </div>
+                          <div>
+                            <Label className="text-xs text-muted-foreground">End</Label>
+                            <Input type="time" value={slot.endTime} onChange={e => { const u = [...timeSlots]; u[i].endTime = e.target.value; setTimeSlots(u); }} />
+                          </div>
+                        </div>
+                        <Button variant="ghost" size="icon" onClick={() => setTimeSlots(timeSlots.filter((_, idx) => idx !== i))} className="text-destructive shrink-0">
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button variant="outline" size="sm" onClick={() => setTimeSlots([...timeSlots, { date: '', startTime: '', endTime: '' }])}>
+                      <Plus className="h-4 w-4 mr-1" /> Add Time Slot
+                    </Button>
+                  </div>
                 </div>
               )}
             </CardContent>
@@ -597,6 +674,24 @@ export default function CreateTest() {
                 {browserTargeting.length > 0 && <Badge variant="outline">{browserTargeting.join(', ')}</Badge>}
                 {screenerQuestions.filter(s => s.question.trim()).length > 0 && <Badge variant="outline">{screenerQuestions.filter(s => s.question.trim()).length} screener(s)</Badge>}
               </div>
+
+              {testType === 'moderated' && (
+                <div className="p-4 rounded-lg bg-primary/5 border border-primary/20 space-y-3">
+                  <p className="text-sm font-medium flex items-center gap-2"><Video className="h-4 w-4 text-primary" /> Live Session Details</p>
+                  {meetingLink && <div className="p-3 rounded-lg bg-muted/50"><p className="text-xs text-muted-foreground">Meeting Link</p><p className="text-sm truncate">{meetingLink}</p></div>}
+                  {timeSlots.filter(s => s.date && s.startTime).length > 0 && (
+                    <div className="p-3 rounded-lg bg-muted/50">
+                      <p className="text-xs text-muted-foreground mb-2">Time Slots ({timeSlots.filter(s => s.date).length})</p>
+                      <div className="space-y-1">
+                        {timeSlots.filter(s => s.date && s.startTime).map((s, i) => (
+                          <p key={i} className="text-sm">{s.date} · {s.startTime} – {s.endTime}</p>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {!meetingLink && timeSlots.length === 0 && <p className="text-sm text-muted-foreground">No meeting link or time slots added yet.</p>}
+                </div>
+              )}
             </CardContent>
           </Card>
         )}

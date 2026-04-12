@@ -59,8 +59,21 @@ export default function SurveyBuilder() {
     if (!authLoading && user && role === 'recruiter') fetchSurveys();
   }, [authLoading, user, role]);
 
-  if (authLoading) return null;
-  if (!user || role !== 'recruiter') { navigate('/auth'); return null; }
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    } else if (!authLoading && user && role && role !== 'recruiter') {
+      navigate('/');
+      toast({
+        title: 'Access denied',
+        description: 'Only recruiters can manage surveys.',
+        variant: 'destructive',
+      });
+    }
+  }, [authLoading, user, role, navigate, toast]);
+
+  if (authLoading || (user && !role)) return null;
+  if (!user || role !== 'recruiter') return null;
 
   async function fetchSurveys() {
     setLoading(true);
