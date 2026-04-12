@@ -19,6 +19,7 @@ const nameSchema = z.string().min(2, 'Name must be at least 2 characters');
 
 type UserRole = 'tester' | 'recruiter';
 type AuthStep = 'form' | 'confirm' | 'forgot' | 'otp';
+type OtpMethod = 'edge' | 'supabase';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -32,6 +33,7 @@ export default function Auth() {
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
   const [otpCode, setOtpCode] = useState('');
   const [otpResendCooldown, setOtpResendCooldown] = useState(0);
+  const [otpMethod, setOtpMethod] = useState<OtpMethod>('edge');
 
 
   const { user, role, signIn, signUp } = useAuth();
@@ -104,6 +106,30 @@ export default function Auth() {
   };
 
   // ─── Sign In / Sign Up ───
+  const sendOtpCode = async (targetEmail: string): Promise<OtpMethod> => {
+    // Primary path: custom edge function
+    try {
+      const { data: otpData, error: otpError } = await supabase.functions.invoke('send-login-otp', {
+        body: { email: targetEmail },
+      });
+      if (otpError) throw otpError;
+      if (otpData?.error) throw new Error(otpData.error);
+      return 'edge';
+    } catch {
+      // Fallback path: Supabase built-in email OTP
+      const { error: fallbackError } = await supabase.auth.signInWithOtp({
+        email: targetEmail,
+        options: {
+          shouldCreateUser: false,
+        },
+      });
+      if (fallbackError) {
+        throw fallbackError;
+      }
+      return 'supabase';
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -165,22 +191,21 @@ export default function Auth() {
 
         // Step 3: Send OTP for second-factor verification
         try {
-          const { data: otpData, error: otpError } = await supabase.functions.invoke('send-login-otp', {
-            body: { email },
-          });
-          if (otpError) throw otpError;
-          if (otpData?.error) throw new Error(otpData.error);
+          const method = await sendOtpCode(email);
 
+          setOtpMethod(method);
           setStep('otp');
           setOtpResendCooldown(60);
           toast({
             title: 'Verification code sent',
-            description: 'Check your email for the 6-digit code.',
+            description: method === 'edge'
+              ? 'Check your email for the 6-digit code.'
+              : 'Check your email for the Supabase verification code.',
           });
         } catch (otpErr: any) {
           toast({
             title: 'Could not send verification code',
-            description: otpErr.message || 'Please try again.',
+            description: otpErr?.message || 'Please try again.',
             variant: 'destructive',
           });
         }
@@ -229,15 +254,24 @@ export default function Auth() {
     }
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('verify-login-otp', {
-        body: { email, otp: otpCode },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      if (otpMethod === 'edge') {
+        const { data, error } = await supabase.functions.invoke('verify-login-otp', {
+          body: { email, otp: otpCode },
+        });
+        if (error) throw error;
+        if (data?.error) throw new Error(data.error);
 
-      // OTP verified — re-sign-in to create session (was signed out after password check)
-      const { error: signInError } = await signIn(email, password);
-      if (signInError) throw new Error(signInError.message || 'Failed to complete sign in');
+        // OTP verified — re-sign-in to create session (was signed out after password check)
+        const { error: signInError } = await signIn(email, password);
+        if (signInError) throw new Error(signInError.message || 'Failed to complete sign in');
+      } else {
+        const { error: verifyError } = await supabase.auth.verifyOtp({
+          email,
+          token: otpCode,
+          type: 'email',
+        });
+        if (verifyError) throw verifyError;
+      }
 
       toast({ title: 'Verified!', description: 'Redirecting to your dashboard...' });
 
@@ -272,17 +306,17 @@ export default function Auth() {
     if (otpResendCooldown > 0) return;
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('send-login-otp', {
-        body: { email },
-      });
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      const method = await sendOtpCode(email);
+      setOtpMethod(method);
 
       setOtpResendCooldown(60);
       setOtpCode('');
-      toast({ title: 'New code sent', description: `Check ${email} for the fresh 6-digit code.` });
-    } catch {
-      toast({ title: 'Failed to resend', description: 'Please try again in a moment.', variant: 'destructive' });
+      toast({
+        title: 'New code sent',
+        description: `Check ${email} for the fresh verification code.`,
+      });
+    } catch (err: any) {
+      toast({ title: 'Failed to resend', description: err?.message || 'Please try again in a moment.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
