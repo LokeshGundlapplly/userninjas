@@ -69,7 +69,7 @@ const features = [
 
 export default function Features() {
   return (
-    <section className="py-28">
+    <section className="py-28 section-soft-divider">
       <div className="container mx-auto px-4">
         <ScrollReveal animation="fade-up">
           <div className="text-center mb-16">
@@ -87,12 +87,14 @@ export default function Features() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 max-w-6xl mx-auto">
           {features.map((feature, index) => (
             <ScrollReveal key={feature.title} animation="fade-up" delay={index * 70}>
-              <div className={`group p-6 rounded-2xl bg-card border border-border/50 ${feature.border} hover:shadow-2xl transition-all duration-300 h-full glow-card spring-card`}>
-                <div className={`w-12 h-12 rounded-2xl ${feature.color} flex items-center justify-center mb-5 group-hover:scale-110 group-hover:rotate-3 icon-glow transition-all duration-300`}>
-                  <feature.icon className="w-5 h-5" />
+              <div className="tilt-card h-full">
+                <div className={`tilt-card-inner group p-6 rounded-2xl bg-card border border-border/50 ${feature.border} hover:shadow-2xl transition-all duration-300 h-full glow-card lift-glow spotlight-card`}>
+                  <div className={`w-12 h-12 rounded-2xl ${feature.color} flex items-center justify-center mb-5 group-hover:scale-110 group-hover:rotate-3 icon-glow transition-all duration-300`}>
+                    <feature.icon className="w-5 h-5" />
+                  </div>
+                  <h3 className="font-display text-base font-bold mb-2.5">{feature.title}</h3>
+                  <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
                 </div>
-                <h3 className="font-display text-base font-bold mb-2.5">{feature.title}</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
               </div>
             </ScrollReveal>
           ))}
@@ -100,15 +102,15 @@ export default function Features() {
 
         {/* Bottom stat strip */}
         <ScrollReveal animation="fade-up" delay={500}>
-          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 p-8 rounded-2xl bg-secondary/30 border border-border/40 max-w-4xl mx-auto">
+          <div className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-6 p-8 rounded-2xl bg-card/60 border border-border/40 max-w-4xl mx-auto backdrop-blur-sm shadow-sm">
             {[
               { value: '120K+', label: 'Verified Testers' },
               { value: '50+', label: 'Targeting Filters' },
               { value: '99.8%', label: 'Platform Uptime' },
               { value: '<24h', label: 'Avg. Turnaround' },
             ].map((s) => (
-              <div key={s.label} className="text-center">
-                <p className="font-display text-2xl font-bold text-primary">{s.value}</p>
+              <div key={s.label} className="text-center group">
+                <p className="font-display text-2xl font-bold text-gradient group-hover:text-glow transition-all">{s.value}</p>
                 <p className="text-xs text-muted-foreground mt-1">{s.label}</p>
               </div>
             ))}

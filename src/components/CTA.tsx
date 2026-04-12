@@ -14,8 +14,8 @@ export default function CTA() {
   return (
     <section className="py-28 bg-secondary/20">
       <div className="container mx-auto px-4">
-        <ScrollReveal animation="scale">
-          <div className="relative max-w-5xl mx-auto rounded-3xl overflow-hidden group">
+        <ScrollReveal animation="zoom-up">
+          <div className="relative max-w-5xl mx-auto rounded-3xl overflow-hidden group noise-overlay">
             {/* Animated Aurora sweeps */}
             <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-[hsl(var(--teal))]" />
             <div className="absolute inset-0 overflow-hidden opacity-0 group-hover:opacity-100 transition-opacity duration-700">
@@ -61,13 +61,13 @@ export default function CTA() {
 
                 <div className="flex flex-col sm:flex-row gap-3 justify-center mb-10">
                   <Link to="/auth">
-                    <Button size="lg" className="bg-white text-primary hover:bg-white/95 px-10 h-12 text-base font-semibold rounded-xl gap-2 shadow-2xl w-full sm:w-auto">
+                    <Button size="lg" className="btn-magnetic bg-white text-primary hover:bg-white/95 px-10 h-12 text-base font-semibold rounded-xl gap-2 shadow-2xl w-full sm:w-auto">
                       Start Free Trial — No Credit Card
                       <ArrowRight className="h-4 w-4" />
                     </Button>
                   </Link>
                   <Link to="/contact">
-                    <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 px-10 h-12 text-base font-semibold rounded-xl w-full sm:w-auto">
+                    <Button size="lg" variant="outline" className="btn-magnetic border-white/30 text-white hover:bg-white/10 px-10 h-12 text-base font-semibold rounded-xl w-full sm:w-auto">
                       Book a Demo
                     </Button>
                   </Link>

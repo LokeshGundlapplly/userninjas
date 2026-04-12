@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/hooks/useAuth';
+import { useSpotlightCards } from '@/hooks/useSpotlightCards';
 import Navbar from '@/components/Navbar';
 import Hero from '@/components/Hero';
 import TrustedBy from '@/components/TrustedBy';
@@ -19,10 +20,14 @@ import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import Background3D from '@/components/Background3D';
 import ChatWidget from '@/components/ChatWidget';
+import ScrollProgress from '@/components/ScrollProgress';
+import VideoShowcase from '@/components/VideoShowcase';
+import PageTransition from '@/components/PageTransition';
 
 export default function Index() {
   const { user, role, loading } = useAuth();
   const navigate = useNavigate();
+  useSpotlightCards();
 
   useEffect(() => {
     if (!loading && user && role) {
@@ -38,22 +43,26 @@ export default function Index() {
       </Helmet>
 
       <Background3D />
+      <ScrollProgress />
       <Navbar />
       
       <main>
-        <Hero />
-        <TrustedBy />
-        <MissionProtocol />
-        <ResearchMethods />
-        <Features />
-        <ProductDemo />
-        <Capabilities />
-        <Testimonials />
-        <Pricing />
-        <ComparisonTable />
-        <FAQ />
-        <TesterCTA />
-        <CTA />
+        <PageTransition>
+          <Hero />
+          <TrustedBy />
+          <MissionProtocol />
+          <ResearchMethods />
+          <Features />
+          <ProductDemo />
+          <Capabilities />
+          <VideoShowcase />
+          <Testimonials />
+          <Pricing />
+          <ComparisonTable />
+          <FAQ />
+          <TesterCTA />
+          <CTA />
+        </PageTransition>
       </main>
 
       <Footer />

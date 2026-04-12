@@ -54,7 +54,7 @@ export default function ProductDemo() {
         {/* Video Player Mockup */}
         <ScrollReveal animation="scale" delay={100}>
           <div className="max-w-4xl mx-auto mb-20">
-            <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl group">
+            <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl group hover:shadow-primary/10 transition-shadow duration-500">
               {/* Video placeholder with gradient */}
               <div className="aspect-video bg-gradient-to-br from-foreground/[0.03] to-foreground/[0.08] dark:from-card dark:to-card/80 relative flex items-center justify-center">
                 {/* Grid overlay */}
@@ -112,7 +112,7 @@ export default function ProductDemo() {
                     <div className="hidden lg:block absolute top-8 left-[calc(100%+0.25rem)] w-[calc(100%-2rem)] h-px border-t border-dashed border-border" />
                   )}
 
-                  <div className="p-6 rounded-2xl border border-border/50 bg-card/50 hover:border-primary/20 hover:bg-card transition-all duration-300">
+                  <div className="p-6 rounded-2xl border border-border/50 bg-card/50 hover:border-primary/20 hover:bg-card transition-all duration-300 lift-glow spotlight-card">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
                         <step.icon className="w-5 h-5 text-primary" />

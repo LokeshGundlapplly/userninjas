@@ -58,12 +58,15 @@ export default function MissionProtocol() {
 
         <div className="max-w-5xl mx-auto relative">
           {/* Connecting line */}
-          <div className="hidden lg:block absolute top-16 left-0 right-0 h-px bg-gradient-to-r from-transparent via-border/60 to-transparent" />
+          <div className="hidden lg:block absolute top-16 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
+          <div className="hidden lg:block absolute top-[63px] left-0 right-0 overflow-hidden">
+            <div className="h-px gradient-line opacity-30" />
+          </div>
 
           <div className="grid lg:grid-cols-3 gap-8 lg:gap-6">
             {steps.map((step, index) => (
               <ScrollReveal key={step.title} animation="fade-up" delay={index * 120}>
-                <div className={`relative group p-6 rounded-2xl bg-card border ${step.borderColor} hover:shadow-xl transition-all duration-300 hover:-translate-y-0.5 h-full`}>
+                <div className={`relative group p-6 rounded-2xl bg-card border ${step.borderColor} hover:shadow-xl transition-all duration-300 hover:-translate-y-1 h-full lift-glow spotlight-card`}>
                   <div className="flex items-start gap-4 mb-5">
                     <div className={`relative w-14 h-14 rounded-2xl bg-gradient-to-br ${step.color} border border-border/40 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform duration-300`}>
                       <step.icon className={`w-6 h-6 ${step.iconColor}`} />

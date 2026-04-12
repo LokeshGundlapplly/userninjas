@@ -100,7 +100,7 @@ export default function ResearchMethods() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-6xl mx-auto">
           {methods.map((method, index) => (
             <ScrollReveal key={method.title} animation="fade-up" delay={index * 60}>
-              <div className={`group p-5 rounded-2xl bg-card border border-border/50 ${method.border} hover:shadow-xl transition-all duration-300 h-full hover:-translate-y-0.5`}>
+              <div className={`group p-5 rounded-2xl bg-card border border-border/50 ${method.border} hover:shadow-xl transition-all duration-300 h-full hover:-translate-y-1 lift-glow spotlight-card`}>
                 <div className="flex items-start justify-between mb-4">
                   <div className={`w-10 h-10 rounded-xl ${method.color} flex items-center justify-center group-hover:scale-110 transition-transform duration-300`}>
                     <method.icon className="w-5 h-5" />

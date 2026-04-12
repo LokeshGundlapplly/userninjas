@@ -37,7 +37,7 @@ export default function Capabilities() {
           <div className="grid lg:grid-cols-5 gap-6">
             {/* Session recording card — wider */}
             <ScrollReveal animation="fade-up" delay={100} className="lg:col-span-3">
-              <div className="rounded-2xl bg-card border border-border/50 p-6 h-full hover:border-primary/25 hover:shadow-xl transition-all duration-300">
+              <div className="rounded-2xl bg-card border border-border/50 p-6 h-full hover:border-primary/25 hover:shadow-xl transition-all duration-300 lift-glow spotlight-card">
                 <div className="aspect-video rounded-xl bg-gradient-to-br from-secondary/80 to-secondary/40 border border-border/30 mb-5 flex items-center justify-center relative overflow-hidden">
                   <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent/5" />
                   <div className="absolute top-3 left-3 right-3 flex items-center justify-between">
@@ -84,7 +84,7 @@ export default function Capabilities() {
 
             {/* AI insights — narrower */}
             <ScrollReveal animation="fade-up" delay={200} className="lg:col-span-2 flex flex-col gap-5">
-              <div className="rounded-2xl bg-card border border-border/50 p-6 flex-1 hover:border-accent/25 hover:shadow-xl transition-all duration-300">
+              <div className="rounded-2xl bg-card border border-border/50 p-6 flex-1 hover:border-accent/25 hover:shadow-xl transition-all duration-300 lift-glow spotlight-card">
                 <div className="p-4 rounded-xl bg-gradient-to-br from-primary/8 to-accent/5 border border-primary/15 mb-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Sparkles className="w-4 h-4 text-primary" />
@@ -100,7 +100,7 @@ export default function Capabilities() {
                 </p>
               </div>
 
-              <div className="rounded-2xl bg-card border border-border/50 p-6 flex-1 hover:border-accent/25 hover:shadow-xl transition-all duration-300">
+              <div className="rounded-2xl bg-card border border-border/50 p-6 flex-1 hover:border-accent/25 hover:shadow-xl transition-all duration-300 lift-glow spotlight-card">
                 <div className="space-y-2 mb-4">
                   {[
                     { name: 'Anna S.', text: '"Step 3 checkout was super confusing"', tag: 'Negative', tagColor: 'bg-destructive/10 text-destructive' },
@@ -128,7 +128,7 @@ export default function Capabilities() {
           <ScrollReveal animation="fade-up" delay={300}>
             <div className="grid sm:grid-cols-3 gap-4">
               {platformStats.map((stat) => (
-                <div key={stat.label} className="rounded-2xl bg-card border border-border/50 p-5 flex items-center gap-4 hover:border-primary/20 hover:shadow-md transition-all">
+                <div key={stat.label} className="rounded-2xl bg-card border border-border/50 p-5 flex items-center gap-4 hover:border-primary/20 hover:shadow-md transition-all spotlight-card hover:-translate-y-0.5 duration-300">
                   <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
                     <stat.icon className="w-5 h-5 text-primary" />
                   </div>

@@ -52,7 +52,7 @@ const faqs = [
 
 export default function FAQ() {
   return (
-    <section className="py-28">
+    <section className="py-28 section-soft-divider">
       <div className="container mx-auto px-4 max-w-3xl">
         <ScrollReveal animation="fade-up">
           <div className="text-center mb-10">
@@ -73,9 +73,9 @@ export default function FAQ() {
               <AccordionItem
                 key={index}
                 value={`item-${index}`}
-                className="bg-card rounded-2xl px-6 border border-border/50 data-[state=open]:border-primary/25 data-[state=open]:shadow-md transition-all duration-200"
+                className="bg-card rounded-2xl px-6 border border-border/50 data-[state=open]:border-primary/25 data-[state=open]:shadow-lg data-[state=open]:shadow-primary/5 data-[state=open]:bg-card transition-all duration-300"
               >
-                <AccordionTrigger className="text-left font-semibold text-sm hover:text-primary transition-colors py-5 hover:no-underline">
+                <AccordionTrigger className="text-left font-semibold text-sm hover:text-primary transition-colors py-5 hover:no-underline [&[data-state=open]>svg]:text-primary">
                   {faq.question}
                 </AccordionTrigger>
                 <AccordionContent className="text-sm text-muted-foreground pb-5 leading-relaxed">

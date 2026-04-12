@@ -1,81 +1,50 @@
 export default function Background3D() {
   return (
-    <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
-      {/* Base mesh gradient */}
-      <div className="absolute inset-0 mesh-gradient" />
-
-      {/* Aurora bands — slowly drifting color washes */}
-      <div
-        className="absolute w-[140%] h-[45%] -left-[20%] top-[0%] blur-[100px] opacity-[0.07]"
-        style={{
-          background: 'linear-gradient(95deg, transparent 0%, hsl(262,83%,58%) 35%, hsl(173,58%,39%) 65%, transparent 100%)',
-          animation: 'float-slow 14s ease-in-out infinite',
-          transform: 'rotate(-6deg)',
-        }}
-      />
-      <div
-        className="absolute w-[140%] h-[35%] -left-[20%] bottom-[10%] blur-[110px] opacity-[0.05]"
-        style={{
-          background: 'linear-gradient(95deg, transparent 0%, hsl(37,95%,55%) 30%, hsl(230,60%,52%) 70%, transparent 100%)',
-          animation: 'float-slow 18s ease-in-out infinite 3s reverse',
-          transform: 'rotate(4deg)',
-        }}
-      />
-
-      {/* Primary large orb — top left */}
-      <div
-        className="absolute rounded-full blur-[160px]"
-        style={{
-          width: '650px', height: '650px',
-          background: 'hsl(262, 83%, 62%)',
-          top: '2%', left: '8%',
-          opacity: 0.065,
-          animation: 'float-slow 9s ease-in-out infinite',
-        }}
-      />
-      {/* Teal orb — right middle */}
-      <div
-        className="absolute rounded-full blur-[130px]"
-        style={{
-          width: '500px', height: '500px',
-          background: 'hsl(173, 58%, 44%)',
-          top: '40%', right: '5%',
-          opacity: 0.05,
-          animation: 'float-slow 11s ease-in-out infinite 2s',
-        }}
-      />
-      {/* Gold orb — bottom center */}
-      <div
-        className="absolute rounded-full blur-[100px]"
-        style={{
-          width: '380px', height: '380px',
-          background: 'hsl(37, 95%, 60%)',
-          bottom: '12%', left: '38%',
-          opacity: 0.04,
-          animation: 'float-slow 7s ease-in-out infinite 1s',
-        }}
-      />
-      {/* Indigo orb — mid left */}
-      <div
-        className="absolute rounded-full blur-[90px]"
-        style={{
-          width: '260px', height: '260px',
-          background: 'hsl(230, 60%, 55%)',
-          top: '58%', left: '12%',
-          opacity: 0.035,
-          animation: 'float-slow 13s ease-in-out infinite 4s',
-        }}
-      />
+    <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden noise-overlay">
+      <div className="absolute inset-0 bg-background" />
 
       {/* Subtle grid */}
       <div
-        className="absolute inset-0 opacity-[0.018]"
+        className="absolute inset-0 opacity-[0.04]"
         style={{
-          backgroundImage: 'linear-gradient(hsl(230, 25%, 20%) 1px, transparent 1px), linear-gradient(90deg, hsl(230, 25%, 20%) 1px, transparent 1px)',
+          backgroundImage:
+            'linear-gradient(hsl(var(--foreground) / 0.12) 1px, transparent 1px), linear-gradient(90deg, hsl(var(--foreground) / 0.12) 1px, transparent 1px)',
           backgroundSize: '64px 64px',
+        }}
+      />
+
+      {/* Animated gradient orbs */}
+      <div
+        className="absolute -top-[20%] -left-[10%] w-[600px] h-[600px] rounded-full opacity-[0.07] floating"
+        style={{
+          background: 'radial-gradient(circle, hsl(243 75% 59%), transparent 70%)',
+          filter: 'blur(80px)',
+        }}
+      />
+      <div
+        className="absolute -top-[10%] -right-[5%] w-[500px] h-[500px] rounded-full opacity-[0.05] floating-slow"
+        style={{
+          background: 'radial-gradient(circle, hsl(270 76% 72%), transparent 70%)',
+          filter: 'blur(80px)',
+          animationDelay: '-3s',
+        }}
+      />
+      <div
+        className="absolute -bottom-[15%] left-[30%] w-[700px] h-[700px] rounded-full opacity-[0.04] floating"
+        style={{
+          background: 'radial-gradient(circle, hsl(172 66% 50%), transparent 70%)',
+          filter: 'blur(100px)',
+          animationDelay: '-5s',
+        }}
+      />
+
+      {/* Top vignette */}
+      <div
+        className="absolute inset-0 opacity-30"
+        style={{
+          background: 'radial-gradient(ellipse at 50% 0%, hsl(var(--background)) 0%, transparent 60%)',
         }}
       />
     </div>
   );
 }
-

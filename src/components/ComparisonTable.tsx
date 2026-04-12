@@ -54,11 +54,11 @@ export default function ComparisonTable() {
         </ScrollReveal>
 
         <ScrollReveal animation="fade-up" delay={150}>
-          <div className="max-w-4xl mx-auto rounded-2xl border border-border/50 bg-card overflow-hidden shadow-xl">
+          <div className="max-w-4xl mx-auto rounded-2xl border border-border/50 bg-card overflow-hidden shadow-xl hover:shadow-2xl transition-shadow duration-500">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="border-b border-border/40 bg-secondary/30">
+                  <tr className="border-b border-border/40 bg-gradient-to-r from-secondary/30 via-secondary/20 to-secondary/30">
                     <th className="text-left py-5 px-5 text-sm font-semibold text-muted-foreground w-48">Feature</th>
                     {competitors.map((name, i) => (
                       <th key={name} className={`py-5 px-5 text-center ${i === 0 ? 'bg-primary/8' : ''}`}>

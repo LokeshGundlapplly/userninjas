@@ -97,7 +97,7 @@ export default function Pricing() {
           <div className="text-center mb-14">
             <p className="text-xs font-semibold text-primary tracking-widest uppercase mb-4">Pricing</p>
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-5">
-              Simple, transparent pricing
+              Simple, <span className="text-gradient">transparent</span> pricing
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto mb-3">
               Teams that run research with User Ninjas ship products 2× faster. Start free, scale as you grow.
@@ -106,7 +106,7 @@ export default function Pricing() {
               14-day free trial on all plans · No credit card required
             </p>
 
-            <div className="inline-flex items-center p-1.5 rounded-xl bg-card border border-border/50 shadow-sm gap-1">
+            <div className="inline-flex items-center p-1.5 rounded-xl bg-card border border-border/50 shadow-sm gap-1 backdrop-blur-sm">
               <button
                 onClick={() => setIsAnnual(false)}
                 className={`px-5 py-2 rounded-lg text-sm font-semibold transition-all duration-300 ${
@@ -130,14 +130,14 @@ export default function Pricing() {
           </div>
         </ScrollReveal>
 
-        <div className="grid md:grid-cols-3 gap-5 items-start">
+        <div className="grid md:grid-cols-3 gap-5 items-stretch">
           {tiers.map((tier, index) => (
-            <ScrollReveal key={tier.name} animation="fade-up" delay={index * 100}>
+            <ScrollReveal key={tier.name} animation="fade-up" delay={index * 100} className="h-full">
               <div
                 className={`relative rounded-2xl p-7 h-full flex flex-col transition-all duration-300 ${
                   tier.popular
                     ? 'bg-primary text-primary-foreground shadow-2xl shadow-primary/25 gradient-border scale-[1.02]'
-                    : 'bg-card border border-border/50 hover:border-primary/20 hover:shadow-xl spring-card'
+                    : 'bg-card border border-border/50 hover:border-primary/20 hover:shadow-xl lift-glow spotlight-card'
                 }`}
               >
                 {tier.popular && (
@@ -193,7 +193,7 @@ export default function Pricing() {
 
                 <Link to={tier.name === 'Enterprise' ? '/contact' : '/auth'}>
                   <Button
-                    className={`w-full rounded-xl gap-2 font-semibold h-11 ${
+                    className={`w-full rounded-xl gap-2 font-semibold h-11 btn-magnetic ${
                       tier.popular
                         ? 'bg-background text-foreground hover:bg-background/90 shadow-lg'
                         : tier.name === 'Enterprise'

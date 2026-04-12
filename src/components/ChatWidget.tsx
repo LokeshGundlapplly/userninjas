@@ -16,8 +16,15 @@ export default function ChatWidget() {
   const [loading, setLoading] = useState(false);
   const [escalated, setEscalated] = useState(false);
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(true);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const suggestions = [
+    'How does pricing work?',
+    'What types of tests can I run?',
+    'How fast do I get results?',
+  ];
 
   useEffect(() => {
     if (open && messages.length === 0) {
@@ -151,14 +158,18 @@ export default function ChatWidget() {
           className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary/80 text-primary-foreground shadow-xl shadow-primary/25 flex items-center justify-center hover:scale-110 hover:shadow-2xl hover:shadow-primary/30 transition-all duration-300 group"
           aria-label="Open chat"
         >
-          <MessageCircle className="w-6 h-6 group-hover:rotate-12 transition-transform" />
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="group-hover:scale-110 transition-transform duration-300">
+            <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="currentColor" opacity="0.9"/>
+            <path d="M2 17L12 22L22 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.7"/>
+            <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.85"/>
+          </svg>
           <span className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full border-2 border-background animate-pulse" />
         </button>
       )}
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-4rem)] rounded-2xl border border-border/50 bg-background/95 backdrop-blur-xl shadow-2xl shadow-primary/10 flex flex-col overflow-hidden animate-fade-in">
+        <div className="fixed bottom-6 right-6 z-50 w-[380px] max-w-[calc(100vw-2rem)] h-[520px] max-h-[calc(100vh-4rem)] rounded-2xl border border-border/50 bg-background/95 backdrop-blur-xl shadow-2xl shadow-primary/10 flex flex-col overflow-hidden" style={{ animation: 'chat-panel-in 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}>
           {/* Header with gradient */}
           <div className="flex items-center justify-between px-4 py-3.5 bg-gradient-to-r from-primary/10 via-primary/5 to-accent/10 border-b border-border/40">
             <div className="flex items-center gap-2.5">
@@ -189,7 +200,7 @@ export default function ChatWidget() {
                     ? 'bg-gradient-to-br from-primary to-primary/85 text-primary-foreground shadow-sm shadow-primary/20'
                     : 'bg-secondary/60 text-foreground border border-border/30'
                 }`}>
-                  <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_strong]:font-semibold">
+                  <div className={`prose prose-sm dark:prose-invert max-w-none [&_p]:m-0 [&_a]:text-primary [&_a]:underline [&_strong]:font-semibold ${loading && msg.role === 'assistant' && i === messages.length - 1 ? 'ai-cursor' : ''}`}>
                     <ReactMarkdown>{msg.content}</ReactMarkdown>
                   </div>
                 </div>
@@ -207,9 +218,9 @@ export default function ChatWidget() {
                 </div>
                 <div className="bg-secondary/60 border border-border/30 rounded-2xl px-4 py-3">
                   <div className="flex gap-1.5">
-                    <span className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                    <span className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                    <span className="w-2 h-2 bg-primary/40 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                    <span className="w-2 h-2 bg-primary/50 rounded-full animate-typing-dots" style={{ animationDelay: '0ms' }} />
+                    <span className="w-2 h-2 bg-primary/50 rounded-full animate-typing-dots" style={{ animationDelay: '200ms' }} />
+                    <span className="w-2 h-2 bg-primary/50 rounded-full animate-typing-dots" style={{ animationDelay: '400ms' }} />
                   </div>
                 </div>
               </div>
@@ -226,6 +237,22 @@ export default function ChatWidget() {
                 <ArrowRight className="w-3 h-3" />
                 Talk to a human
               </button>
+            </div>
+          )}
+
+          {/* Smart suggestions */}
+          {showSuggestions && messages.length <= 1 && !loading && (
+            <div className="px-3 pb-1 flex flex-wrap gap-1.5">
+              {suggestions.map((s, i) => (
+                <button
+                  key={s}
+                  onClick={() => { setInput(s); setShowSuggestions(false); }}
+                  className="suggestion-chip"
+                  style={{ animation: `suggestion-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) ${i * 80}ms forwards`, opacity: 0 }}
+                >
+                  {s}
+                </button>
+              ))}
             </div>
           )}
 

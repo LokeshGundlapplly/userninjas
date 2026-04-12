@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { z } from 'zod';
@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Users, Briefcase, Mail, Lock, User, ArrowRight, ShieldCheck, RotateCw } from 'lucide-react';
+import { Users, Briefcase, Mail, Lock, User, ArrowRight, RotateCw } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Background3D from '@/components/Background3D';
 
@@ -18,7 +18,7 @@ const passwordSchema = z.string().min(6, 'Password must be at least 6 characters
 const nameSchema = z.string().min(2, 'Name must be at least 2 characters');
 
 type UserRole = 'tester' | 'recruiter';
-type AuthStep = 'form' | 'otp' | 'forgot';
+type AuthStep = 'form' | 'confirm' | 'forgot';
 
 export default function Auth() {
   const [isSignUp, setIsSignUp] = useState(false);
@@ -27,13 +27,12 @@ export default function Auth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string }>({});
-  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
-  
-  const { user, role } = useAuth();
+
+
+  const { user, role, signIn, signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -68,29 +67,6 @@ export default function Auth() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // ─── Send OTP via our edge function ───
-  const sendOtp = async (targetEmail: string, name: string) => {
-    const code = Math.floor(100000 + Math.random() * 900000).toString();
-    sessionStorage.setItem('un_otp', code);
-    sessionStorage.setItem('un_otp_ts', Date.now().toString());
-    await supabase.functions.invoke('send-email', {
-      body: { type: 'otp', to: targetEmail, data: { name, otp: code } },
-    });
-  };
-
-  // ─── Verify OTP ───
-  const verifyOtp = (entered: string): boolean => {
-    const stored = sessionStorage.getItem('un_otp');
-    const ts = parseInt(sessionStorage.getItem('un_otp_ts') || '0', 10);
-    if (!stored || Date.now() - ts > 10 * 60 * 1000) return false; // 10 min expiry
-    return entered === stored;
-  };
-
-  const clearOtpStorage = () => {
-    sessionStorage.removeItem('un_otp');
-    sessionStorage.removeItem('un_otp_ts');
-  };
-
   // ─── Forgot Password ───
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,53 +93,67 @@ export default function Auth() {
     }
   };
 
-  // ─── Step 1: Submit email + password → send OTP ───
+  // ─── Sign In / Sign Up ───
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
     setIsLoading(true);
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: { full_name: fullName, role: selectedRole },
-          },
-        });
-        // "Error sending confirmation email" is non-fatal — Supabase created the user
-        // but its built-in mailer failed. We send our own OTP instead.
-        const isFatalError = error && !error.message.includes('confirmation email');
-        if (isFatalError) {
+        const { error, data } = await signUp(email, password, fullName, selectedRole);
+        if (error) {
+          const msg = error.message || 'An unexpected error occurred';
+          const isExisting = msg.includes('already registered') || msg.includes('already been registered');
           toast({
-            title: error.message.includes('already registered') ? 'Account exists' : 'Sign up failed',
-            description: error.message.includes('already registered')
+            title: isExisting ? 'Account exists' : 'Sign up failed',
+            description: isExisting
               ? 'This email is already registered. Please sign in instead.'
-              : error.message,
+              : msg,
             variant: 'destructive',
           });
           return;
         }
-        // Send OTP while still authenticated, then sign out
-        await sendOtp(email, fullName || email.split('@')[0]);
-        await supabase.auth.signOut();
-      } else {
-        // Verify password first
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) {
-          toast({ title: 'Sign in failed', description: 'Invalid email or password.', variant: 'destructive' });
+
+        // Supabase returns a user with empty identities when email is already confirmed
+        const identities = data?.user?.identities ?? [];
+        if (data?.user && identities.length === 0) {
+          toast({
+            title: 'Account exists',
+            description: 'This email is already registered. Please sign in instead.',
+            variant: 'destructive',
+          });
+          setIsSignUp(false);
           return;
         }
-        // Send OTP while still authenticated, then sign out
-        await sendOtp(email, email.split('@')[0]);
-        await supabase.auth.signOut();
+
+        toast({
+          title: 'Account created',
+          description: data?.session 
+            ? 'Redirecting to your dashboard...'
+            : 'Check your email for a confirmation link to activate your account.',
+        });
+        
+        // If autoconfirm is enabled, session exists immediately → redirect will happen via onAuthStateChange
+        // If email confirmation is required, show the confirm step
+        if (!data?.session) {
+          setStep('confirm');
+        }
+        setPassword('');
+        setFullName('');
+      } else {
+        const { error } = await signIn(email, password);
+        if (error) {
+          const msg = error.message || 'An unexpected error occurred';
+          toast({ title: 'Sign in failed', description: msg, variant: 'destructive' });
+          return;
+        }
+
+        // Session is now active — onAuthStateChange will redirect
+        toast({
+          title: 'Signed in successfully',
+          description: 'Redirecting to your dashboard...',
+        });
       }
-      // Move to OTP step
-      setOtp(['', '', '', '', '', '']);
-      setStep('otp');
-      setResendCooldown(60);
-      toast({ title: 'OTP sent ✉️', description: `We sent a 6-digit code to ${email}` });
     } catch {
       toast({ title: 'Error', description: 'An unexpected error occurred.', variant: 'destructive' });
     } finally {
@@ -171,85 +161,40 @@ export default function Auth() {
     }
   };
 
-  // ─── Step 2: Verify OTP → final sign in ───
-  const handleVerifyOtp = async () => {
-    const code = otp.join('');
-    if (code.length !== 6) {
-      toast({ title: 'Enter all 6 digits', variant: 'destructive' });
-      return;
-    }
-    setIsLoading(true);
-    try {
-      if (!verifyOtp(code)) {
-        toast({ title: 'Invalid or expired code', description: 'Please check the code or request a new one.', variant: 'destructive' });
-        return;
-      }
-      clearOtpStorage();
-      // OTP verified — now sign in for real
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        toast({ title: 'Sign in failed', description: error.message, variant: 'destructive' });
-        return;
-      }
-      toast({ title: 'Verified! 🎉', description: 'Welcome to User Ninjas!' });
-      // Redirect is handled by the useEffect above
-    } catch {
-      toast({ title: 'Error', description: 'An unexpected error occurred.', variant: 'destructive' });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // ─── Resend OTP ───
-  const handleResendOtp = async () => {
+  const handleResendConfirmation = async () => {
     if (resendCooldown > 0) return;
     setIsLoading(true);
     try {
-      await sendOtp(email, fullName || email.split('@')[0]);
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) {
+        throw error;
+      }
+
       setResendCooldown(60);
-      setOtp(['', '', '', '', '', '']);
-      toast({ title: 'New code sent ✉️', description: `Check ${email} for the new code.` });
+      toast({
+        title: 'Email sent',
+        description: `Check ${email} for the confirmation link`,
+      });
     } catch {
-      toast({ title: 'Failed to resend', variant: 'destructive' });
+      toast({ title: 'Failed to resend', description: 'Please try again in a moment.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ─── OTP Input Handlers ───
-  const handleOtpChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
-    const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
-    setOtp(newOtp);
-    if (value && index < 5) otpRefs.current[index + 1]?.focus();
-  };
-
-  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent) => {
-    if (e.key === 'Backspace' && !otp[index] && index > 0) {
-      otpRefs.current[index - 1]?.focus();
-    }
-    if (e.key === 'Enter' && otp.join('').length === 6) {
-      handleVerifyOtp();
-    }
-  };
-
-  const handleOtpPaste = (e: React.ClipboardEvent) => {
-    e.preventDefault();
-    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
-    if (!pasted) return;
-    const newOtp = [...otp];
-    for (let i = 0; i < 6; i++) newOtp[i] = pasted[i] || '';
-    setOtp(newOtp);
-    otpRefs.current[Math.min(pasted.length, 5)]?.focus();
-  };
-
   const pageTitle = step === 'forgot' ? 'Reset your password'
-    : step === 'otp' ? 'Verify your email'
+    : step === 'confirm' ? 'Confirm your email'
     : isSignUp ? 'Create your account' : 'Welcome back';
 
   const pageSubtitle = step === 'forgot' ? "Enter your email and we'll send you a reset link"
-    : step === 'otp' ? `Enter the 6-digit code sent to ${email}`
+    : step === 'confirm' ? `Use the link we sent to ${email} to activate your account`
     : isSignUp ? 'Join User Ninjas as a tester or recruiter' : 'Sign in to continue to your dashboard';
 
   return (
@@ -297,50 +242,37 @@ export default function Auth() {
                 </>
               )}
 
-              {/* ─── OTP VERIFICATION ─── */}
-              {step === 'otp' && (
+              {/* ─── EMAIL CONFIRMATION ─── */}
+              {step === 'confirm' && (
                 <div className="space-y-6">
                   <div className="flex justify-center">
                     <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-                      <ShieldCheck className="w-8 h-8 text-primary" />
+                      <Mail className="w-8 h-8 text-primary" />
                     </div>
                   </div>
 
-                  <div className="flex justify-center gap-2" onPaste={handleOtpPaste}>
-                    {otp.map((digit, i) => (
-                      <input
-                        key={i}
-                        ref={(el) => { otpRefs.current[i] = el; }}
-                        type="text"
-                        inputMode="numeric"
-                        maxLength={1}
-                        value={digit}
-                        onChange={(e) => handleOtpChange(i, e.target.value)}
-                        onKeyDown={(e) => handleOtpKeyDown(i, e)}
-                        className="w-12 h-14 text-center text-xl font-bold rounded-xl border-2 border-border/60 bg-background focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none transition-all"
-                        autoFocus={i === 0}
-                      />
-                    ))}
+                  <div className="rounded-2xl border border-border/60 bg-muted/30 px-5 py-4 text-sm text-muted-foreground text-center leading-6">
+                    Supabase sent your confirmation email using the project auth mailer. Open the message and click the activation link before signing in.
                   </div>
 
-                  <Button onClick={handleVerifyOtp} className="w-full bg-foreground text-background hover:bg-foreground/90 rounded-xl gap-2 h-11" disabled={isLoading || otp.join('').length !== 6}>
-                    {isLoading ? 'Verifying...' : 'Verify & Continue'}
+                  <Button onClick={() => setStep('form')} className="w-full bg-foreground text-background hover:bg-foreground/90 rounded-xl gap-2 h-11" disabled={isLoading}>
+                    Back to sign in
                     {!isLoading && <ArrowRight className="h-4 w-4" />}
                   </Button>
 
                   <div className="text-center space-y-2">
                     <button
                       type="button"
-                      onClick={handleResendOtp}
+                      onClick={handleResendConfirmation}
                       disabled={resendCooldown > 0 || isLoading}
                       className="text-sm text-muted-foreground hover:text-primary transition-colors disabled:opacity-50 inline-flex items-center gap-1.5"
                     >
                       <RotateCw className="w-3.5 h-3.5" />
-                      {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend code'}
+                      {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : 'Resend email'}
                     </button>
                     <br />
-                    <button type="button" onClick={() => { setStep('form'); clearOtpStorage(); }} className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                      ← Back to {isSignUp ? 'sign up' : 'sign in'}
+                    <button type="button" onClick={() => { setStep('form'); setIsSignUp(false); }} className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                      ← Back to sign in
                     </button>
                   </div>
                 </div>

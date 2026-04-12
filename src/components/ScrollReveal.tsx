@@ -2,7 +2,7 @@ import { ReactNode } from 'react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { cn } from '@/lib/utils';
 
-type AnimationType = 'fade-up' | 'fade-down' | 'fade-left' | 'fade-right' | 'scale' | 'blur' | 'zoom-up' | 'slide-blur';
+type AnimationType = 'fade-up' | 'fade-down' | 'fade-left' | 'fade-right' | 'scale' | 'blur' | 'zoom-up' | 'slide-blur' | 'pop' | 'rotate-in' | 'slide-right' | 'clip-up';
 
 interface ScrollRevealProps {
   children: ReactNode;
@@ -15,23 +15,23 @@ interface ScrollRevealProps {
 
 const animationClasses: Record<AnimationType, { initial: string; visible: string }> = {
   'fade-up': {
-    initial: 'opacity-0 translate-y-10',
+    initial: 'opacity-0 translate-y-8',
     visible: 'opacity-100 translate-y-0',
   },
   'fade-down': {
-    initial: 'opacity-0 -translate-y-10',
+    initial: 'opacity-0 -translate-y-8',
     visible: 'opacity-100 translate-y-0',
   },
   'fade-left': {
-    initial: 'opacity-0 translate-x-10',
+    initial: 'opacity-0 translate-x-8',
     visible: 'opacity-100 translate-x-0',
   },
   'fade-right': {
-    initial: 'opacity-0 -translate-x-10',
+    initial: 'opacity-0 -translate-x-8',
     visible: 'opacity-100 translate-x-0',
   },
   'scale': {
-    initial: 'opacity-0 scale-[0.92]',
+    initial: 'opacity-0 scale-[0.9]',
     visible: 'opacity-100 scale-100',
   },
   'blur': {
@@ -39,12 +39,28 @@ const animationClasses: Record<AnimationType, { initial: string; visible: string
     visible: 'opacity-100 blur-0 scale-100',
   },
   'zoom-up': {
-    initial: 'opacity-0 scale-[0.88] translate-y-6',
+    initial: 'opacity-0 scale-[0.85] translate-y-6',
     visible: 'opacity-100 scale-100 translate-y-0',
   },
   'slide-blur': {
-    initial: 'opacity-0 translate-y-8 blur-[6px]',
+    initial: 'opacity-0 translate-y-6 blur-[6px]',
     visible: 'opacity-100 translate-y-0 blur-0',
+  },
+  'pop': {
+    initial: 'opacity-0 scale-[0.8]',
+    visible: 'opacity-100 scale-100',
+  },
+  'rotate-in': {
+    initial: 'opacity-0 rotate-3 translate-y-4',
+    visible: 'opacity-100 rotate-0 translate-y-0',
+  },
+  'slide-right': {
+    initial: 'opacity-0 -translate-x-10',
+    visible: 'opacity-100 translate-x-0',
+  },
+  'clip-up': {
+    initial: 'opacity-0 [clip-path:inset(100%_0_0_0)]',
+    visible: 'opacity-100 [clip-path:inset(0_0_0_0)]',
   },
 };
 

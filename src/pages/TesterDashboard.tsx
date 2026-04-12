@@ -422,19 +422,6 @@ export default function TesterDashboard() {
 
       // Notify recruiter of new submission (non-blocking)
       const matchedTest = tests.find(t => t.id === testId);
-      if (matchedTest) {
-        supabase.functions.invoke('send-email', {
-          body: {
-            type: 'new_submission',
-            to_user_id: matchedTest.recruiter_id,
-            data: {
-              name: 'Recruiter',
-              tester_name: user!.user_metadata?.full_name || 'A tester',
-              test_title: matchedTest.title,
-            },
-          },
-        }).catch(() => {});
-      }
 
       // If it's a survey, open survey flow immediately
       if (matchedTest?.test_type === 'survey' && insertedData) {

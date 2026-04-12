@@ -87,13 +87,13 @@ const testimonials = [
 
 export default function Testimonials() {
   return (
-    <section className="py-28">
+    <section className="py-28 section-soft-divider">
       <div className="container mx-auto px-4">
         <ScrollReveal animation="fade-up">
           <div className="text-center mb-16">
             <p className="text-xs font-semibold text-primary tracking-widest uppercase mb-4">Customer Stories</p>
             <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-5">
-              Loved by research-driven teams
+              Loved by <span className="text-gradient">research-driven</span> teams
             </h2>
             <p className="text-muted-foreground text-lg max-w-xl mx-auto">
               500+ product teams use User Ninjas to build products their users actually love.
@@ -118,7 +118,7 @@ export default function Testimonials() {
         <div className="columns-1 md:columns-2 lg:columns-3 gap-5 max-w-6xl mx-auto space-y-5">
           {testimonials.map((t, index) => (
             <ScrollReveal key={t.name} animation="fade-up" delay={index * 60}>
-              <div className={`break-inside-avoid p-6 rounded-2xl border transition-all duration-300 spring-card ${
+              <div className={`break-inside-avoid p-6 rounded-2xl border transition-all duration-300 lift-glow spotlight-card ${
                 t.highlight
                   ? 'bg-gradient-to-br from-primary/8 to-accent/5 border-primary/20 hover:border-primary/35 hover:shadow-xl hover:shadow-primary/5'
                   : 'bg-card border-border/50 hover:border-primary/20 hover:shadow-xl'

@@ -91,13 +91,14 @@ export default function TrustedBy() {
           <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-background to-transparent z-10 pointer-events-none" />
           <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-background to-transparent z-10 pointer-events-none" />
 
-          <div className="flex animate-[scroll_30s_linear_infinite] gap-16 md:gap-24 items-center">
+          <div className="flex animate-[scroll_30s_linear_infinite] gap-16 md:gap-24 items-center hover:[animation-play-state:paused]">
             {[...logos, ...logos].map((logo, i) => (
               <div
                 key={`${logo.name}-${i}`}
-                className="flex items-center gap-2.5 opacity-30 hover:opacity-60 transition-opacity duration-300 cursor-default shrink-0 text-foreground"
+                className="flex items-center gap-2.5 opacity-30 hover:opacity-70 transition-all duration-500 cursor-default shrink-0 text-foreground hover:scale-105"
               >
                 {logo.svg}
+                <span className="text-xs font-semibold tracking-wide sr-only md:not-sr-only">{logo.name}</span>
               </div>
             ))}
           </div>

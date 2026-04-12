@@ -244,15 +244,6 @@ export default function CreateTest() {
 
       toast({ title: 'Test created successfully!' });
 
-      // Send email notification to recruiter (non-blocking)
-      supabase.functions.invoke('send-email', {
-        body: {
-          type: 'test_created',
-          to: user.email!,
-          data: { name: user.user_metadata?.full_name || 'Recruiter', test_title: title.trim() },
-        },
-      }).catch(() => {});
-
       navigate('/recruiter');
     } catch (err: any) {
       toast({ title: 'Error creating test', description: err.message, variant: 'destructive' });

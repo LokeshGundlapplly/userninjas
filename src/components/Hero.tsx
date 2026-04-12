@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play, CheckCircle, Star, TrendingUp, Users, Zap, Shield } from 'lucide-react';
 import ScrollReveal from './ScrollReveal';
@@ -15,6 +16,51 @@ const heroStats = [
   { value: '500+', label: 'Product Teams', icon: Shield },
   { value: '98%', label: 'Satisfaction', icon: Star },
 ];
+
+function AnimatedCounter({ value }: { value: string }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  const [display, setDisplay] = useState(value);
+  const animated = useRef(false);
+
+  const animate = useCallback(() => {
+    if (animated.current) return;
+    animated.current = true;
+    // Extract number part
+    const match = value.match(/(\d[\d,]*)/);
+    if (!match) { setDisplay(value); return; }
+    const numStr = match[1].replace(/,/g, '');
+    const target = parseInt(numStr, 10);
+    if (isNaN(target)) { setDisplay(value); return; }
+    const prefix = value.slice(0, match.index);
+    const suffix = value.slice((match.index ?? 0) + match[1].length);
+    const duration = 1200;
+    const start = performance.now();
+    const step = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = Math.round(target * eased);
+      const formatted = target >= 1000 ? current.toLocaleString() : String(current);
+      setDisplay(`${prefix}${formatted}${suffix}`);
+      if (progress < 1) requestAnimationFrame(step);
+    };
+    requestAnimationFrame(step);
+  }, [value]);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) animate(); },
+      { threshold: 0.5 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [animate]);
+
+  return <span ref={ref}>{display}</span>;
+}
 
 export default function Hero() {
   return (
@@ -35,9 +81,9 @@ export default function Hero() {
 
           <ScrollReveal animation="fade-up" delay={80}>
             <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.05] mb-6">
-              Understand your users.{' '}
+              <span className="text-shimmer">Understand your users.</span>{' '}
               <br className="hidden sm:block" />
-              <span className="text-gradient">Ship better products.</span>
+              <span className="text-gradient text-glow">Ship better products.</span>
             </h1>
           </ScrollReveal>
 
@@ -51,13 +97,13 @@ export default function Hero() {
           <ScrollReveal animation="fade-up" delay={240}>
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
               <Link to="/auth">
-                <Button size="lg" className="btn-shimmer bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-12 text-base font-semibold rounded-xl gap-2 shadow-xl shadow-primary/25 w-full sm:w-auto">
+                <Button size="lg" className="btn-magnetic btn-shimmer bg-primary text-primary-foreground hover:bg-primary/90 px-8 h-12 text-base font-semibold rounded-xl gap-2 shadow-xl shadow-primary/25 w-full sm:w-auto">
                   Start for Free — No Credit Card
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/features">
-                <Button size="lg" variant="outline" className="px-8 h-12 text-base font-semibold rounded-xl gap-2 border-border/60 w-full sm:w-auto hover:bg-secondary/60">
+                <Button size="lg" variant="outline" className="btn-magnetic px-8 h-12 text-base font-semibold rounded-xl gap-2 border-border/60 w-full sm:w-auto hover:bg-secondary/60">
                   <Play className="h-4 w-4 fill-current" />
                   See All Features
                 </Button>
@@ -76,7 +122,7 @@ export default function Hero() {
           <ScrollReveal animation="fade-up" delay={300}>
             <div className="flex flex-wrap items-center justify-center gap-4 mb-10">
               {awards.map((a, i) => (
-                <div key={a.label} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-card border border-border/50 shadow-sm hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-300" style={{ animationDelay: `${i * 150}ms` }}>
+                <div key={a.label} className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl bg-card border border-border/50 shadow-sm hover:border-primary/20 hover:-translate-y-1 hover:shadow-md transition-all duration-300 spotlight-card" style={{ animationDelay: `${i * 150}ms` }}>
                   <div className="flex gap-0.5">
                     {[...Array(5)].map((_, i) => (
                       <Star key={i} className="w-3 h-3 fill-primary text-primary" />
@@ -94,9 +140,12 @@ export default function Hero() {
           <ScrollReveal animation="fade-up" delay={340}>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 max-w-2xl mx-auto mb-16">
               {heroStats.map((stat, i) => (
-                <div key={stat.label} className="flex flex-col items-center gap-1 p-3 rounded-xl bg-secondary/30 border border-border/30 hover:border-primary/20 hover:-translate-y-0.5 transition-all duration-300" style={{ animationDelay: `${i * 100}ms` }}>
-                  <p className="font-display text-xl font-extrabold text-primary stat-number">{stat.value}</p>
-                  <p className="text-[11px] text-muted-foreground font-medium">{stat.label}</p>
+                <div key={stat.label} className="tilt-card">
+                  <div className="tilt-card-inner flex flex-col items-center gap-1.5 p-4 rounded-xl bg-card/60 border border-border/40 hover:border-primary/25 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 group" style={{ animationDelay: `${i * 100}ms` }}>
+                    <stat.icon className="w-4 h-4 text-primary/60 mb-0.5 group-hover:text-primary group-hover:scale-110 transition-all duration-300" />
+                    <p className="font-display text-xl font-extrabold text-gradient stat-number"><AnimatedCounter value={stat.value} /></p>
+                    <p className="text-[11px] text-muted-foreground font-medium">{stat.label}</p>
+                  </div>
                 </div>
               ))}
             </div>
@@ -104,10 +153,11 @@ export default function Hero() {
         </div>
 
         {/* Dashboard mockup */}
-        <ScrollReveal animation="fade-up" delay={400}>
+        <ScrollReveal animation="zoom-up" delay={400}>
           <div className="relative max-w-5xl mx-auto">
-            <div className="absolute -inset-6 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent rounded-3xl blur-3xl pointer-events-none" />
+            <div className="absolute -inset-6 bg-gradient-to-b from-primary/10 via-primary/5 to-transparent rounded-3xl blur-3xl pointer-events-none animate-glow-pulse" />
             <div className="relative rounded-2xl border border-border/50 bg-card shadow-2xl overflow-hidden">
+              <div className="gradient-line" />
               <div className="flex items-center gap-2 px-5 py-3 border-b border-border/40 bg-secondary/30">
                 <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-400/80" />

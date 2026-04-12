@@ -10,7 +10,7 @@ interface AuthContextType {
   role: AppRole | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
-  signUp: (email: string, password: string, fullName: string, role: AppRole) => Promise<{ error: Error | null }>;
+  signUp: (email: string, password: string, fullName: string, role: AppRole) => Promise<{ error: Error | null; data: { user: any; session: any } | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -28,25 +28,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         // Defer role fetching to avoid deadlock
         if (session?.user) {
           setTimeout(() => {
             fetchUserRole(session.user.id);
           }, 0);
-
-          // Send welcome email when user confirms their email
-          if (event === 'SIGNED_IN' && session.user.email_confirmed_at) {
-            const meta = session.user.user_metadata;
-            if (meta?.welcome_email_sent !== true) {
-              sendEmailNotification('welcome', session.user.email!, {
-                name: meta?.full_name || session.user.email!.split('@')[0],
-                role: meta?.role || 'tester',
-              });
-              // Mark so we don't resend on every sign-in
-              supabase.auth.updateUser({ data: { welcome_email_sent: true } });
-            }
-          }
         } else {
           setRole(null);
         }
@@ -83,47 +70,46 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const sendEmailNotification = async (type: string, to: string, data: Record<string, unknown>) => {
-    try {
-      await supabase.functions.invoke('send-email', {
-        body: { type, to, data },
-      });
-    } catch (e) {
-      console.error('Email notification failed (non-blocking):', e);
-    }
-  };
-
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
-    // Send sign-in alert email (non-blocking)
-    if (!error) {
-      sendEmailNotification('sign_in_alert', email, {
-        name: email.split('@')[0],
-        timestamp: new Date().toLocaleString(),
-      });
-    }
     return { error: error as Error | null };
   };
 
   const signUp = async (email: string, password: string, fullName: string, role: AppRole) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          full_name: fullName,
-          role: role,
+    // Wrap signUp in a timeout — Supabase mailer can hang for 30+ seconds
+    // if the email service is slow or rate-limited
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15000);
+    
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            full_name: fullName,
+            role: role,
+          },
         },
-      },
-    });
-    // Welcome email is sent after email confirmation (see onAuthStateChange)
-    return { error: error as Error | null };
+      });
+      clearTimeout(timeout);
+      return { error: error as Error | null, data: data ?? null };
+    } catch (err: any) {
+      clearTimeout(timeout);
+      if (err?.name === 'AbortError' || controller.signal.aborted) {
+        return {
+          error: new Error('Sign up is taking longer than expected. Your account may have been created — please check your email or try signing in.'),
+          data: null,
+        };
+      }
+      return { error: err as Error, data: null };
+    }
   };
 
   const signOut = async () => {

@@ -49,7 +49,7 @@ const sections = [
     icon: UserCheck,
     title: '3. Data Sharing & Third Parties',
     content: [
-      { subtitle: 'Service Providers', text: 'We share data with trusted sub-processors (Supabase for database hosting, Stripe for payments, OpenAI for AI analysis, Resend for transactional email, Cloudflare for CDN). Each is bound by data processing agreements.' },
+      { subtitle: 'Service Providers', text: 'We share data with trusted sub-processors (Supabase for database hosting and authentication, Stripe for payments, OpenAI for AI analysis, Cloudflare for CDN). Each is bound by data processing agreements.' },
       { subtitle: 'Recruiters & Testers', text: 'Testers\' session outputs (recordings, responses) are shared with the recruiter who commissioned the test. Testers\' personally identifiable information is never directly disclosed to recruiters beyond what testers opt to share.' },
       { subtitle: 'Business Transfers', text: 'In the event of a merger, acquisition, or asset sale, user data may be transferred. We will provide notice and ensure equivalent protections are maintained.' },
       { subtitle: 'Law Enforcement', text: 'We may disclose data if required by valid legal process, court order, or government authority, to the extent permitted by law and after notifying you where legally permissible.' },
