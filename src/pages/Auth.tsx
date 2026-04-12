@@ -252,7 +252,7 @@ export default function Auth() {
                   </div>
 
                   <div className="rounded-2xl border border-border/60 bg-muted/30 px-5 py-4 text-sm text-muted-foreground text-center leading-6">
-                    Supabase sent your confirmation email using the project auth mailer. Open the message and click the activation link before signing in.
+                    We've sent a confirmation email to <strong className="text-foreground">{email}</strong>. Open the message and click the activation link to verify your account before signing in.
                   </div>
 
                   <Button onClick={() => setStep('form')} className="w-full bg-foreground text-background hover:bg-foreground/90 rounded-xl gap-2 h-11" disabled={isLoading}>

@@ -2,58 +2,64 @@
 
 ## Current Implementation
 
-This project uses **Supabase Auth** exclusively for email management and multi-factor authentication. The system implements a secure two-step login process that requires email confirmation on signup and OTP verification on login.
+This project uses **Supabase Auth** for authentication with **Resend** as the email provider. Resend handles both Supabase's built-in auth emails (confirmation, recovery, etc.) via SMTP and custom transactional emails (OTP codes, notifications) via the Resend API through edge functions.
+
+### Email Provider: Resend
+- **SMTP**: Configured in Supabase Dashboard for auth emails (confirmation, password reset, etc.)
+- **API**: Used in edge functions for transactional emails (OTP codes, review notifications)
+- **Domain**: `userninjas.in` (DNS verified)
+- **Sender**: `noreply@userninjas.in`
 
 ### Signup Flow
 1. User registers with email, password, full name, and role (tester/recruiter)
-2. Supabase Auth sends a confirmation email to the provided address
-3. User clicks the confirmation link in their email to activate the account
-4. Account is now confirmed and ready for login
-
-**Configuration:**
-- Supabase Auth is configured with email confirmations enabled
-- Email templates are customized in `/supabase/templates/`
-- Custom SMTP can be configured in Supabase project settings
+2. Supabase Auth sends a confirmation email via Resend SMTP
+3. User clicks the confirmation link to activate their account
+4. Account is confirmed and ready for login
 
 ### Login Flow
-1. User enters email and password on the login form
+1. User enters email and password
 2. System validates credentials with Supabase Auth
-3. Once password is verified, system triggers OTP (One-Time Password) generation
-4. OTP (6-digit code) is sent to user's email
-5. User enters OTP on the verification screen
-6. OTP is verified against the database
-7. User is granted access and signed in to their dashboard
+3. User is signed in and redirected to their role-based dashboard
 
-**Verification Layers:**
-- Email confirmation requirement (protects against wrong/disposable emails)
-- OTP verification on login (adds security layer against credential theft)
-- Database checks via edge functions for OTP validity
-- Role loading and database verification after successful authentication
+### Password Reset Flow
+1. User clicks "Forgot password?" and enters email
+2. Supabase Auth sends recovery email via Resend SMTP
+3. User clicks the link and sets a new password
 
 ## Edge Functions
 
 ### 1. send-login-otp
-- **Purpose:** Generate and store OTP codes for login verification
+- **Purpose:** Generate OTP codes and send them via Resend API
 - **Location:** `supabase/functions/send-login-otp/index.ts`
-- **Triggered by:** User login form after password validation
 - **Requirements:**
-  - User email must be confirmed
-  - User must exist in Supabase Auth
+  - User email must be confirmed in Supabase Auth
+  - `RESEND_API_KEY` must be set as a Supabase secret
 - **Action:** 
   - Generates 6-digit random OTP
   - Stores OTP in `login_otps` table with 10-minute expiry
-  - Logs OTP to console for development (replace with actual email sending)
+  - Sends branded OTP email via Resend API
 - **Response:** `{ success: true, message: "OTP sent to email" }`
 
 ### 2. verify-login-otp
-- **Purpose:** Validate OTP codes entered by user during login
+- **Purpose:** Validate OTP codes entered by user
 - **Location:** `supabase/functions/verify-login-otp/index.ts`
-- **Triggered by:** User submitting OTP on verification screen
 - **Action:** 
   - Retrieves OTP from database
   - Validates it matches email and hasn't expired
   - Deletes used OTP to prevent replay attacks
 - **Response:** `{ success: true, userId: "<user_id>", message: "OTP verified successfully" }`
+
+### 3. send-email
+- **Purpose:** General-purpose transactional email via Resend API
+- **Location:** `supabase/functions/send-email/index.ts`
+- **Parameters:** `{ to, subject, html, from? }`
+- **Requirements:** `RESEND_API_KEY` must be set as a Supabase secret
+
+### 4. send-review-notification
+- **Purpose:** Notify testers when their submissions are reviewed
+- **Location:** `supabase/functions/send-review-notification/index.ts`
+- **Parameters:** `{ submissionId, testTitle, testerEmail, testerName, status, feedback? }`
+- **Status types:** `approved`, `rejected`, `needs_revision`
 - **Errors:** Returns 401 for invalid/expired codes
 
 ## Database Tables
@@ -80,7 +86,7 @@ Stores temporary OTP codes for login verification:
 ## Frontend Components
 
 ### Auth Page (`src/pages/Auth.tsx`)
-Multi-step authentication UI with 4 distinct flows:
+Multi-step authentication UI with 3 flows:
 
 1. **form** - Sign up/sign in form
    - Sign up: Collects email, password, full name, and role selection
@@ -88,21 +94,13 @@ Multi-step authentication UI with 4 distinct flows:
    - Form validation with real-time error messages
    
 2. **confirm** - Email confirmation instructions
-   - Shows email address for reference
-   - Displays confirmation email content guidelines
+   - Shows the email address for reference
    - Resend confirmation email button with 60-second cooldown
    - Back button to return to form
 
-3. **otp** - OTP verification during login
-   - Displays masked email address
-   - 6-digit numeric input with monospace font
-   - Only enables verify button when all digits entered
-   - Resend OTP button with 60-second cooldown
-   - Back button cancels login process
-
-4. **forgot** - Password reset flow
+3. **forgot** - Password reset flow
    - Email input field
-   - Sends reset link via Supabase Auth
+   - Sends reset link via Supabase Auth (delivered by Resend SMTP)
    - Confirmation message after sending
 
 **Features:**
@@ -136,33 +134,38 @@ Context provider for auth state management:
 
 ## Email Configuration
 
-### Using Supabase Default SMTP
-If using Supabase's built-in email service:
-1. No additional configuration needed
-2. Emails sent automatically to confirmation email address
-3. Free tier includes email sending
+### Resend SMTP Setup (Supabase Auth Emails)
+Resend is configured as the custom SMTP provider in Supabase Dashboard. This handles all auth-related emails automatically:
 
-### Using Custom SMTP Provider
-To use external email service (SendGrid, AWS SES, Gmail, etc.):
-1. Go to Supabase Dashboard → Project Settings → Authentication → SMTP Settings
-2. Configure provider credentials
-3. Test email sending in dashboard
-4. Confirmation emails will use your custom provider
-
-### Development & Testing
-**For development without external email:**
-OTP codes are logged to the Supabase function logs:
+**Supabase Dashboard → Project Settings → Authentication → SMTP Settings:**
 ```
-OTP for user@example.com: 123456
+Host: smtp.resend.com
+Port: 465
+Auth method: Login
+Username: resend
+Password: <Your Resend API Key>
+Sender email: noreply@userninjas.in
+Sender name: User Ninjas
 ```
 
-**To view during development:**
-1. Go to Supabase Dashboard → Functions → send-login-otp
-2. View the function logs in real-time
-3. Extract the OTP code for manual testing
+### Resend API Key (Edge Functions)
+Edge functions use the Resend API directly for transactional emails. Set the secret:
+```bash
+supabase secrets set RESEND_API_KEY=re_your_api_key_here
+```
+
+### Email Confirmations
+Email confirmations are **enabled** in `supabase/config.toml`:
+```toml
+[auth.email]
+enable_confirmations = true
+```
+
+Also ensure "Confirm email" is enabled in:
+**Supabase Dashboard → Authentication → Providers → Email → Confirm email**
 
 ### Email Templates
-Branded email templates in `/supabase/templates/`:
+Branded email templates in `/supabase/templates/` (used by Supabase Auth via SMTP):
 - `confirmation.html` - Account confirmation email
 - `recovery.html` - Password reset email
 - `magic_link.html` - Magic link sign-in
@@ -170,10 +173,12 @@ Branded email templates in `/supabase/templates/`:
 - `invite.html` - Invitation to join
 - `reauthentication.html` - Re-auth verification
 
-**Template Variables:**
+**Template Variables (Supabase Auth templates):**
 - `{{ .ConfirmationURL }}` - Link to confirm email
 - `{{ .Email }}` - User's email address
 - `{{ .SiteURL }}` - Your application URL
+
+**Edge function emails** (OTP, notifications) use inline HTML in the function code, matching the same brand style.
 
 ## Testing the Auth Flow
 
@@ -181,37 +186,33 @@ Branded email templates in `/supabase/templates/`:
 ```bash
 # Visit signup form in browser
 # Fill in: name, email, password, select role
-# Receive confirmation email
+# Receive confirmation email via Resend
 # Click confirmation link
-# Email should be confirmed
+# Email should be confirmed → redirect to sign in
 ```
 
-### 2. Test Login with OTP
+### 2. Test Password Reset
 ```bash
-# Visit signin form
-# Enter email and password
-# System sends OTP code
-# Check logs or email for code
-# Enter 6-digit code
-# Should be logged in to dashboard
+# Click "Forgot password?" on login form
+# Enter your email
+# Receive recovery email via Resend
+# Click reset link → set new password
 ```
 
-### 3. Curl Test (for API testing)
+### 3. Test Review Notification
 ```bash
-# Start edge function locally
-supabase start
-
-# Test send-login-otp function
-curl -X POST "http://localhost:54321/functions/v1/send-login-otp" \
-  -H "Authorization: Bearer $(supabase auth list | grep -i anon)" \
+# Call the send-review-notification edge function:
+curl -X POST "https://itkmsjqiaphxwwekevqp.supabase.co/functions/v1/send-review-notification" \
+  -H "Authorization: Bearer <your-anon-key>" \
   -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com"}'
-
-# Test verify-login-otp function
-curl -X POST "http://localhost:54321/functions/v1/verify-login-otp" \
-  -H "Authorization: Bearer $(supabase auth list | grep -i anon)" \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "otp": "123456"}'
+  -d '{
+    "submissionId": "test-123",
+    "testTitle": "Mobile App Checkout Flow",
+    "testerEmail": "tester@example.com",
+    "testerName": "John",
+    "status": "approved",
+    "feedback": "Great work on the detailed observations!"
+  }'
 ```
 
 ## Security Considerations
@@ -235,58 +236,28 @@ curl -X POST "http://localhost:54321/functions/v1/verify-login-otp" \
 
 ### ❌ "Error sending confirmation email"
 
-**Root Cause:** SMTP (email service) is not configured in your Supabase project.
+**Root Cause:** SMTP is not configured or Resend API key is invalid.
 
-**Solution - Configure SMTP in Supabase Dashboard:**
+**Solution:**
+1. Verify Resend SMTP is configured in Supabase Dashboard → Authentication → SMTP Settings
+2. Check DNS verification status at https://resend.com/domains
+3. Ensure sender domain `userninjas.in` is verified in Resend
+4. Click "Send test email" in Supabase SMTP settings to verify
 
-1. **Go to:** https://supabase.com/dashboard
-2. **Select project:** userninjas (`jpclnzgouzyroebjvcqp`)
-3. **Navigate to:** Project Settings → Authentication → SMTP Settings
-4. **Choose email provider:**
+### ❌ "RESEND_API_KEY is not configured"
 
-#### Option A: Use Supabase Built-in Email (Simplest)
-- No additional configuration needed
-- Free tier includes email sending
-- Limited to reasonable email volume per day
-- Just ensure toggle is **enabled** (default)
+**Solution:**
+```bash
+supabase secrets set RESEND_API_KEY=re_your_api_key_here
+```
 
-#### Option B: SendGrid (Recommended)
-1. Sign up at https://sendgrid.com (free tier available)
-2. Create API key in SendGrid dashboard
-3. In Supabase SMTP Settings enter:
-   ```
-   Host: smtp.sendgrid.net
-   Port: 587
-   Auth method: Login
-   Username: apikey
-   Password: <Your SendGrid API Key>
-   Sender email: noreply@userninjas.in
-   Sender name: User Ninjas
-   ```
-4. Click "Send test email"
-5. If successful, signup emails will now work
+### ❌ Confirmation email not arriving
 
-#### Option C: Resend
-1. Sign up at https://resend.com
-2. Get your API key
-3. In Supabase SMTP Settings enter:
-   ```
-   Host: smtp.resend.com
-   Port: 465
-   Auth method: Login
-   Username: resend
-   Password: <Your Resend API Key>
-   Sender email: onboarding@resend.dev
-   Sender name: User Ninjas
-   ```
-4. Click "Send test email"
-5. If successful, signup emails will now work
-
-**After configuring SMTP:**
-1. Try signing up again with a test email
-2. Check your inbox for confirmation email (check spam folder too)
-3. Click confirmation link
-4. You should now be able to login with OTP verification
+1. Check spam/junk folder
+2. Verify Resend domain status at https://resend.com/domains
+3. Check Resend dashboard → Emails tab for delivery status
+4. Ensure `enable_confirmations = true` in config.toml
+5. Ensure "Confirm email" is ON in Supabase Dashboard → Authentication → Providers → Email
 
 ---
 
