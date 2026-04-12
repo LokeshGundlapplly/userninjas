@@ -107,26 +107,32 @@ export default function Auth() {
 
   // ─── Sign In / Sign Up ───
   const sendOtpCode = async (targetEmail: string): Promise<OtpMethod> => {
-    // Primary path: custom edge function
+    const normalizedEmail = targetEmail.trim().toLowerCase();
+
+    // Primary path: Supabase built-in OTP (most reliable across environments)
+    const { error: supabaseOtpError } = await supabase.auth.signInWithOtp({
+      email: normalizedEmail,
+      options: {
+        shouldCreateUser: false,
+      },
+    });
+
+    if (!supabaseOtpError) {
+      return 'supabase';
+    }
+
+    // Fallback path: custom edge OTP for projects using login_otps flow
     try {
       const { data: otpData, error: otpError } = await supabase.functions.invoke('send-login-otp', {
-        body: { email: targetEmail },
+        body: { email: normalizedEmail },
       });
       if (otpError) throw otpError;
       if (otpData?.error) throw new Error(otpData.error);
       return 'edge';
-    } catch {
-      // Fallback path: Supabase built-in email OTP
-      const { error: fallbackError } = await supabase.auth.signInWithOtp({
-        email: targetEmail,
-        options: {
-          shouldCreateUser: false,
-        },
-      });
-      if (fallbackError) {
-        throw fallbackError;
-      }
-      return 'supabase';
+    } catch (edgeErr: any) {
+      throw new Error(
+        supabaseOtpError.message || edgeErr?.message || 'Unable to send verification code right now.'
+      );
     }
   };
 
