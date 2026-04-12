@@ -34,6 +34,7 @@ export default function Auth() {
   const [otpCode, setOtpCode] = useState('');
   const [otpResendCooldown, setOtpResendCooldown] = useState(0);
   const [otpMethod, setOtpMethod] = useState<OtpMethod>('edge');
+  const [otpChallengePending, setOtpChallengePending] = useState(false);
 
 
   const { user, role, signIn, signUp } = useAuth();
@@ -42,14 +43,14 @@ export default function Auth() {
 
   // Redirect authenticated users (blocked during OTP verification)
   useEffect(() => {
-    if (step === 'otp') return;
+    if (step === 'otp' || otpChallengePending) return;
     if (user && role) {
       if (role === 'recruiter') navigate('/recruiter', { replace: true });
       else if (role === 'tester') navigate('/tester', { replace: true });
       else if (role === 'admin') navigate('/admin', { replace: true });
       else navigate('/', { replace: true });
     }
-  }, [user, role, navigate, step]);
+  }, [user, role, navigate, step, otpChallengePending]);
 
   // Resend cooldown timer
   useEffect(() => {
@@ -106,6 +107,17 @@ export default function Auth() {
   };
 
   // ─── Sign In / Sign Up ───
+  const getOtpHelpMessage = (message: string) => {
+    const msg = message.toLowerCase();
+    if (msg.includes('otp_disabled') || msg.includes('otp is disabled')) {
+      return 'Email OTP is disabled in Supabase. Enable it in Authentication > Providers > Email, or deploy the send-login-otp edge function.';
+    }
+    if (msg.includes('failed to send a request to the edge function') || msg.includes('404')) {
+      return 'OTP edge function is not deployed in this Supabase project. Please deploy send-login-otp and verify-login-otp.';
+    }
+    return message;
+  };
+
   const sendOtpCode = async (targetEmail: string): Promise<OtpMethod> => {
     const normalizedEmail = targetEmail.trim().toLowerCase();
 
@@ -130,9 +142,8 @@ export default function Auth() {
       if (otpData?.error) throw new Error(otpData.error);
       return 'edge';
     } catch (edgeErr: any) {
-      throw new Error(
-        supabaseOtpError.message || edgeErr?.message || 'Unable to send verification code right now.'
-      );
+      const fallbackMessage = supabaseOtpError.message || edgeErr?.message || 'Unable to send verification code right now.';
+      throw new Error(getOtpHelpMessage(fallbackMessage));
     }
   };
 
@@ -183,21 +194,24 @@ export default function Auth() {
         setPassword('');
         setFullName('');
       } else {
+        setOtpChallengePending(true);
+
         // Step 1: Verify password credentials
         const { error } = await signIn(email, password);
         if (error) {
+          setOtpChallengePending(false);
           const msg = error.message || 'An unexpected error occurred';
           toast({ title: 'Sign in failed', description: msg, variant: 'destructive' });
           return;
         }
 
-        // Step 2: Immediately sign out to prevent redirect race condition.
-        // The session will be re-created after successful OTP verification.
-        await supabase.auth.signOut();
-
-        // Step 3: Send OTP for second-factor verification
+        // Step 2: Send OTP for second-factor verification while session is active
+        // so edge-function fallback can pass JWT auth requirements.
         try {
           const method = await sendOtpCode(email);
+
+          // Step 3: Sign out to enforce OTP challenge before dashboard access.
+          await supabase.auth.signOut();
 
           setOtpMethod(method);
           setStep('otp');
@@ -211,9 +225,10 @@ export default function Auth() {
         } catch (otpErr: any) {
           toast({
             title: 'Could not send verification code',
-            description: otpErr?.message || 'Please try again.',
+            description: getOtpHelpMessage(otpErr?.message || 'Please try again.'),
             variant: 'destructive',
           });
+          setOtpChallengePending(false);
         }
       }
     } catch {
@@ -280,6 +295,7 @@ export default function Auth() {
       }
 
       toast({ title: 'Verified!', description: 'Redirecting to your dashboard...' });
+      setOtpChallengePending(false);
 
       // Fetch role and navigate directly
       const { data: { session: activeSession } } = await supabase.auth.getSession();
@@ -312,7 +328,18 @@ export default function Auth() {
     if (otpResendCooldown > 0) return;
     setIsLoading(true);
     try {
-      const method = await sendOtpCode(email);
+      let method = otpMethod;
+
+      // Edge resend requires auth header; temporarily sign in if needed.
+      if (otpMethod === 'edge') {
+        const { error: reauthError } = await signIn(email, password);
+        if (reauthError) throw reauthError;
+        method = await sendOtpCode(email);
+        await supabase.auth.signOut();
+      } else {
+        method = await sendOtpCode(email);
+      }
+
       setOtpMethod(method);
 
       setOtpResendCooldown(60);
@@ -322,7 +349,11 @@ export default function Auth() {
         description: `Check ${email} for the fresh verification code.`,
       });
     } catch (err: any) {
-      toast({ title: 'Failed to resend', description: err?.message || 'Please try again in a moment.', variant: 'destructive' });
+      toast({
+        title: 'Failed to resend',
+        description: getOtpHelpMessage(err?.message || 'Please try again in a moment.'),
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -331,6 +362,7 @@ export default function Auth() {
   const handleCancelOtp = async () => {
     // User was already signed out after password verification
     setStep('form');
+    setOtpChallengePending(false);
     setOtpCode('');
     toast({ title: 'Sign in cancelled', description: 'Please sign in again to continue.' });
   };
@@ -436,7 +468,9 @@ export default function Auth() {
                   </div>
 
                   <div className="rounded-2xl border border-border/60 bg-muted/30 px-5 py-4 text-sm text-muted-foreground text-center leading-6">
-                    We've sent a 6-digit verification code to <strong className="text-foreground">{email}</strong>. Enter it below to complete your sign-in.
+                    {otpMethod === 'supabase'
+                      ? <>We sent a sign-in code (or magic link) to <strong className="text-foreground">{email}</strong>. Use the code below to complete sign-in.</>
+                      : <>We've sent a 6-digit verification code to <strong className="text-foreground">{email}</strong>. Enter it below to complete your sign-in.</>}
                   </div>
 
                   <form onSubmit={handleVerifyOtp} className="space-y-4">
