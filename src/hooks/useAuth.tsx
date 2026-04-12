@@ -126,35 +126,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signUp = async (email: string, password: string, fullName: string, role: AppRole) => {
     const redirectUrl = `${window.location.origin}/`;
-    
-    // Wrap signUp in a timeout — Supabase mailer can hang for 30+ seconds
-    // if the email service is slow or rate-limited
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
+    const timeoutMs = 15000;
+
+    const signUpPromise = supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: redirectUrl,
+        data: {
+          full_name: fullName,
+          role: role,
+        },
+      },
+    });
+
+    // Hard timeout via Promise.race: Supabase SMTP can hang when provider is misconfigured.
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('SIGNUP_TIMEOUT')), timeoutMs);
+    });
     
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            full_name: fullName,
-            role: role,
-          },
-        },
-      });
-      clearTimeout(timeout);
+      const { data, error } = await Promise.race([signUpPromise, timeoutPromise]);
       return { error: error as Error | null, data: data ?? null };
     } catch (err: any) {
-      clearTimeout(timeout);
-      if (err?.name === 'AbortError' || controller.signal.aborted) {
+      if (err?.message === 'SIGNUP_TIMEOUT') {
         return {
-          error: new Error('Sign up is taking longer than expected. Your account may have been created — please check your email or try signing in.'),
+          error: new Error('Sign up is taking longer than expected. Please check your email, then try signing in. Also verify SMTP in Supabase Auth settings.'),
           data: null,
         };
       }
-      return { error: err as Error, data: null };
+
+      const normalizedMessage =
+        typeof err?.message === 'string' && err.message.trim().length > 0
+          ? err.message
+          : typeof err === 'string' && err.trim().length > 0
+            ? err
+            : 'Sign up failed due to a temporary server issue. Please try again.';
+
+      return { error: new Error(normalizedMessage), data: null };
     }
   };
 

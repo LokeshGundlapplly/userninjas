@@ -118,6 +118,30 @@ export default function Auth() {
     return message;
   };
 
+  const getReadableError = (err: unknown, fallback: string) => {
+    if (!err) return fallback;
+
+    if (typeof err === 'string') {
+      const msg = err.trim();
+      return msg.length > 0 && msg !== '{}' ? msg : fallback;
+    }
+
+    if (typeof err === 'object') {
+      const anyErr = err as any;
+      const direct = typeof anyErr?.message === 'string' ? anyErr.message.trim() : '';
+      if (direct && direct !== '{}') return direct;
+
+      const nested = typeof anyErr?.error_description === 'string'
+        ? anyErr.error_description.trim()
+        : typeof anyErr?.error === 'string'
+          ? anyErr.error.trim()
+          : '';
+      if (nested && nested !== '{}') return nested;
+    }
+
+    return fallback;
+  };
+
   const sendOtpCode = async (targetEmail: string): Promise<OtpMethod> => {
     const normalizedEmail = targetEmail.trim().toLowerCase();
 
@@ -155,7 +179,7 @@ export default function Auth() {
       if (isSignUp) {
         const { error, data } = await signUp(email, password, fullName, selectedRole);
         if (error) {
-          const msg = error.message || 'An unexpected error occurred';
+          const msg = getReadableError(error, 'Sign up failed. Please try again.');
           const isExisting = msg.includes('already registered') || msg.includes('already been registered');
           toast({
             title: isExisting ? 'Account exists' : 'Sign up failed',
