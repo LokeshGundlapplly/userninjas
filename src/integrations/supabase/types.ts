@@ -76,6 +76,39 @@ export type Database = {
           },
         ]
       }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string | null
+          id: string
+          last_name: string | null
+          message: string
+          status: string
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          message: string
+          status?: string
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string | null
+          id?: string
+          last_name?: string | null
+          message?: string
+          status?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
       earnings: {
         Row: {
           amount: number
@@ -203,6 +236,47 @@ export type Database = {
             columns: ["submission_id"]
             isOneToOne: false
             referencedRelation: "test_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_slots: {
+        Row: {
+          booked_at: string | null
+          booked_by: string | null
+          created_at: string
+          end_time: string
+          id: string
+          start_time: string
+          status: string
+          test_id: string
+        }
+        Insert: {
+          booked_at?: string | null
+          booked_by?: string | null
+          created_at?: string
+          end_time: string
+          id?: string
+          start_time: string
+          status?: string
+          test_id: string
+        }
+        Update: {
+          booked_at?: string | null
+          booked_by?: string | null
+          created_at?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          status?: string
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_slots_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
             referencedColumns: ["id"]
           },
         ]
