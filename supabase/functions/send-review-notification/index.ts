@@ -1,131 +1,6 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
-
-interface NotificationRequest {
-  submissionId: string;
-  testTitle: string;
-  testerEmail: string;
-  testerName: string;
-  status: "approved" | "rejected" | "needs_revision";
-  feedback?: string;
-}
-
-function buildEmailHtml(data: NotificationRequest): string {
-  const statusConfig = {
-    approved: { emoji: "✅", title: "Submission Approved!", color: "#059669", bg: "#ecfdf5", border: "#a7f3d0", message: "Great work! Your submission has been reviewed and approved." },
-    rejected: { emoji: "❌", title: "Submission Not Accepted", color: "#dc2626", bg: "#fef2f2", border: "#fecaca", message: "Unfortunately, your submission did not meet the requirements this time." },
-    needs_revision: { emoji: "🔄", title: "Revision Requested", color: "#d97706", bg: "#fffbeb", border: "#fde68a", message: "The recruiter has requested some changes to your submission." },
-  };
-  const cfg = statusConfig[data.status];
-
-  return `<!DOCTYPE html>
-<html>
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"></head>
-<body style="margin: 0; padding: 24px; background: #f3f4f6; font-family: 'Segoe UI', Arial, sans-serif;">
-  <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.06);">
-    <div style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 40px 32px; text-align: center;">
-      <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto 16px auto;"><tr><td align="center" style="width: 56px; height: 56px; background: rgba(255,255,255,0.15); border-radius: 14px;">
-        <img src="https://www.userninjas.in/logo.png" alt="User Ninjas" width="40" height="40" style="display: block; border: 0; border-radius: 8px;" />
-      </td></tr></table>
-      <p style="color: #e0e7ff; font-size: 13px; font-weight: 600; letter-spacing: 1px; margin: 0 0 12px 0;">USER NINJAS</p>
-      <h1 style="color: #ffffff; margin: 0; font-size: 26px; font-weight: 700;">${cfg.title} ${cfg.emoji}</h1>
-      <p style="color: #e0e7ff; margin: 8px 0 0 0; font-size: 15px;">Your test submission has been reviewed</p>
-    </div>
-    <div style="padding: 36px 32px;">
-      <p style="font-size: 16px; color: #1f2937; margin: 0 0 16px 0;">Hi ${data.testerName},</p>
-      <p style="font-size: 15px; color: #4b5563; line-height: 1.7; margin: 0 0 16px 0;">${cfg.message}</p>
-      <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; margin: 0 0 16px 0;">
-        <p style="font-size: 13px; color: #6b7280; margin: 0 0 4px 0;">Test:</p>
-        <p style="font-size: 15px; color: #1f2937; font-weight: 600; margin: 0;">${data.testTitle}</p>
-      </div>
-      ${data.feedback ? `<div style="background: ${cfg.bg}; border: 1px solid ${cfg.border}; border-radius: 8px; padding: 16px; margin: 0 0 24px 0;">
-        <p style="font-size: 13px; color: ${cfg.color}; font-weight: 600; margin: 0 0 8px 0;">Reviewer Feedback:</p>
-        <p style="font-size: 14px; color: #4b5563; line-height: 1.6; margin: 0;">${data.feedback}</p>
-      </div>` : ""}
-      <div style="text-align: center; margin: 32px 0;">
-        <a href="https://www.userninjas.in/tester" style="display: inline-block; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: #ffffff; padding: 16px 40px; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 16px; box-shadow: 0 4px 14px rgba(99,102,241,0.4);">View Dashboard</a>
-      </div>
-    </div>
-    <div style="background: #f9fafb; padding: 20px 32px; text-align: center; border-top: 1px solid #e5e7eb;">
-      <p style="font-size: 13px; color: #9ca3af; margin: 0;">
-        &copy; 2026 User Ninjas &middot;
-        <a href="https://www.userninjas.in/privacy" style="color: #6366f1; text-decoration: none;">Privacy</a> &middot;
-        <a href="https://www.userninjas.in/terms" style="color: #6366f1; text-decoration: none;">Terms</a>
-      </p>
-    </div>
-  </div>
-</body>
-</html>`;
-}
-
-serve(async (req) => {
-  if (req.method === "OPTIONS") {
-    return new Response(null, { headers: corsHeaders });
-  }
-
-  try {
-    const data: NotificationRequest = await req.json();
-
-    if (!data.submissionId || !data.testTitle || !data.testerEmail || !data.testerName || !data.status) {
-      return new Response(
-        JSON.stringify({ error: "submissionId, testTitle, testerEmail, testerName, and status are required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const resendApiKey = Deno.env.get("RESEND_API_KEY");
-    if (!resendApiKey) {
-      throw new Error("RESEND_API_KEY is not configured");
-    }
-
-    const statusSubjects = {
-      approved: `✅ Your submission for "${data.testTitle}" was approved!`,
-      rejected: `Update on your "${data.testTitle}" submission`,
-      needs_revision: `🔄 Revision requested for "${data.testTitle}"`,
-    };
-
-    const res = await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${resendApiKey}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "User Ninjas <noreply@userninjas.in>",
-        to: [data.testerEmail],
-        subject: statusSubjects[data.status],
-        html: buildEmailHtml(data),
-      }),
-    });
-
-    if (!res.ok) {
-      const body = await res.text();
-      console.error("Resend API error:", body);
-      throw new Error(`Resend API error (${res.status}): ${body}`);
-    }
-
-    const result = await res.json();
-
-    return new Response(
-      JSON.stringify({ success: true, id: result.id }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  } catch (error) {
-    console.error("send-review-notification error:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Internal server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
-  }
-});
-import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 const corsHeaders = {
@@ -238,10 +113,7 @@ const handler = async (req: Request): Promise<Response> => {
       console.error("Error fetching profile:", profileError);
       return new Response(
         JSON.stringify({ error: "Could not find tester email" }),
-        {
-          status: 400,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
+        { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
@@ -336,7 +208,6 @@ const handler = async (req: Request): Promise<Response> => {
     });
 
     const emailResponse = await res.json();
-
     console.log("Email sent successfully:", emailResponse);
 
     return new Response(JSON.stringify({ success: true }), {
