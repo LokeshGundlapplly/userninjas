@@ -1,0 +1,60 @@
+project_id = "jpclnzgouzyroebjvcqp"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
+
+[auth]
+enabled = true
+site_url = "https://www.userninjas.in"
+additional_redirect_urls = ["http://localhost:3000/**", "http://localhost:5173/**", "http://localhost:8080/**", "http://localhost:8081/**", "http://localhost:8082/**", "https://userninjas.in/**", "https://www.userninjas.in/**"]
+
+[auth.email]
+enable_signup = true
+double_confirm_changes = true
+enable_confirmations = true
+otp_length = 6
+otp_expiry = 3600
+
+[auth.email.template.confirmation]
+subject = "Confirm your User Ninjas account 🥷"
+content_path = "./templates/confirmation.html"
+
+[auth.email.template.invite]
+subject = "You've been invited to User Ninjas 🥷"
+content_path = "./templates/invite.html"
+
+[auth.email.template.otp]
+subject = "Your User Ninjas verification code 🔐"
+content_path = "./templates/otp.html"
+
+[auth.email.template.email_change]
+subject = "Confirm your new email — User Ninjas"
+content_path = "./templates/email_change.html"
+
+[auth.email.template.recovery]
+subject = "Reset your User Ninjas password"
+content_path = "./templates/recovery.html"
+
+[auth.email.template.reauthentication]
+subject = "Verify your identity — User Ninjas"
+content_path = "./templates/reauthentication.html"
+
+[auth.external.google]
+enabled = false
+
+[auth.external.github]
+enabled = false

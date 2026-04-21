@@ -1,0 +1,1034 @@
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
+
+export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+  public: {
+    Tables: {
+      ai_interview_sessions: {
+        Row: {
+          created_at: string
+          duration_seconds: number | null
+          eligibility_reason: string | null
+          eligible: boolean | null
+          ended_at: string | null
+          friction_points: Json
+          id: string
+          insights: Json
+          key_quotes: Json
+          started_at: string | null
+          status: string
+          submission_id: string | null
+          test_id: string | null
+          tester_id: string
+          transcript: Json
+        }
+        Insert: {
+          created_at?: string
+          duration_seconds?: number | null
+          eligibility_reason?: string | null
+          eligible?: boolean | null
+          ended_at?: string | null
+          friction_points?: Json
+          id?: string
+          insights?: Json
+          key_quotes?: Json
+          started_at?: string | null
+          status?: string
+          submission_id?: string | null
+          test_id?: string | null
+          tester_id: string
+          transcript?: Json
+        }
+        Update: {
+          created_at?: string
+          duration_seconds?: number | null
+          eligibility_reason?: string | null
+          eligible?: boolean | null
+          ended_at?: string | null
+          friction_points?: Json
+          id?: string
+          insights?: Json
+          key_quotes?: Json
+          started_at?: string | null
+          status?: string
+          submission_id?: string | null
+          test_id?: string | null
+          tester_id?: string
+          transcript?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_interview_sessions_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "test_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ai_interview_sessions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_conversations: {
+        Row: {
+          created_at: string
+          escalated_at: string | null
+          id: string
+          status: string
+          updated_at: string
+          visitor_email: string | null
+          visitor_name: string | null
+        }
+        Insert: {
+          created_at?: string
+          escalated_at?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          visitor_email?: string | null
+          visitor_name?: string | null
+        }
+        Update: {
+          created_at?: string
+          escalated_at?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          visitor_email?: string | null
+          visitor_name?: string | null
+        }
+        Relationships: []
+      }
+      chat_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "chat_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contact_submissions: {
+        Row: {
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          message: string
+          subject: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          last_name: string
+          message: string
+          subject?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          last_name?: string
+          message?: string
+          subject?: string | null
+        }
+        Relationships: []
+      }
+      earnings: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          paid_at: string | null
+          status: string
+          submission_id: string | null
+          tester_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: string
+          submission_id?: string | null
+          tester_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: string
+          submission_id?: string | null
+          tester_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "earnings_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "test_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      login_otps: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          last_attempt_at: string | null
+          otp: string
+          verification_attempts: number
+          verification_error: string | null
+          verification_status: string
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          id?: string
+          last_attempt_at?: string | null
+          otp: string
+          verification_attempts?: number
+          verification_error?: string | null
+          verification_status?: string
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          last_attempt_at?: string | null
+          otp?: string
+          verification_attempts?: number
+          verification_error?: string | null
+          verification_status?: string
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          age: number | null
+          avatar_url: string | null
+          bio: string | null
+          created_at: string
+          devices: string[] | null
+          email: string | null
+          full_name: string | null
+          gender: string | null
+          id: string
+          interests: string[] | null
+          location: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          age?: number | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          devices?: string[] | null
+          email?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string
+          interests?: string[] | null
+          location?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          age?: number | null
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string
+          devices?: string[] | null
+          email?: string | null
+          full_name?: string | null
+          gender?: string | null
+          id?: string
+          interests?: string[] | null
+          location?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      question_answers: {
+        Row: {
+          answer_text: string | null
+          created_at: string
+          id: string
+          question_id: string
+          selected_option: number | null
+          submission_id: string
+        }
+        Insert: {
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id: string
+          selected_option?: number | null
+          submission_id: string
+        }
+        Update: {
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id?: string
+          selected_option?: number | null
+          submission_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "question_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "test_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "question_answers_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "test_submissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_sessions: {
+        Row: {
+          created_at: string
+          id: string
+          meeting_url: string | null
+          slot_id: string
+          status: string
+          test_id: string
+          tester_id: string
+          zoom_join_url: string | null
+          zoom_meeting_id: string | null
+          zoom_password: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          meeting_url?: string | null
+          slot_id: string
+          status?: string
+          test_id: string
+          tester_id: string
+          zoom_join_url?: string | null
+          zoom_meeting_id?: string | null
+          zoom_password?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          meeting_url?: string | null
+          slot_id?: string
+          status?: string
+          test_id?: string
+          tester_id?: string
+          zoom_join_url?: string | null
+          zoom_meeting_id?: string | null
+          zoom_password?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_sessions_slot_id_fkey"
+            columns: ["slot_id"]
+            isOneToOne: true
+            referencedRelation: "study_slots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_sessions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      study_slots: {
+        Row: {
+          booked_at: string | null
+          booked_by: string | null
+          created_at: string
+          end_time: string
+          id: string
+          start_time: string
+          status: string
+          test_id: string
+        }
+        Insert: {
+          booked_at?: string | null
+          booked_by?: string | null
+          created_at?: string
+          end_time: string
+          id?: string
+          start_time: string
+          status?: string
+          test_id: string
+        }
+        Update: {
+          booked_at?: string | null
+          booked_by?: string | null
+          created_at?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          status?: string
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "study_slots_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      submission_insights: {
+        Row: {
+          created_at: string
+          id: string
+          key_findings: string[]
+          pain_points: string[]
+          sentiment: string
+          submission_id: string
+          summary: string
+          tags: string[]
+          test_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          key_findings?: string[]
+          pain_points?: string[]
+          sentiment?: string
+          submission_id: string
+          summary: string
+          tags?: string[]
+          test_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          key_findings?: string[]
+          pain_points?: string[]
+          sentiment?: string
+          submission_id?: string
+          summary?: string
+          tags?: string[]
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submission_insights_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: true
+            referencedRelation: "test_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submission_insights_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_questions: {
+        Row: {
+          created_at: string
+          id: string
+          logic_branch: Json | null
+          options: Json | null
+          question_text: string
+          question_type: string
+          required: boolean | null
+          sort_order: number
+          survey_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          logic_branch?: Json | null
+          options?: Json | null
+          question_text: string
+          question_type?: string
+          required?: boolean | null
+          sort_order?: number
+          survey_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          logic_branch?: Json | null
+          options?: Json | null
+          question_text?: string
+          question_type?: string
+          required?: boolean | null
+          sort_order?: number
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_questions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          respondent_id: string
+          survey_id: string
+        }
+        Insert: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          respondent_id: string
+          survey_id: string
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          respondent_id?: string
+          survey_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surveys: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          recruiter_id: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          recruiter_id: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          recruiter_id?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      test_questions: {
+        Row: {
+          created_at: string
+          id: string
+          options: Json | null
+          question_text: string
+          question_type: string
+          required: boolean | null
+          sort_order: number
+          task_id: string | null
+          test_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          options?: Json | null
+          question_text: string
+          question_type?: string
+          required?: boolean | null
+          sort_order?: number
+          task_id?: string | null
+          test_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          options?: Json | null
+          question_text?: string
+          question_type?: string
+          required?: boolean | null
+          sort_order?: number
+          task_id?: string | null
+          test_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_questions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "test_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "test_questions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_submissions: {
+        Row: {
+          attachments: string[] | null
+          created_at: string
+          feedback: string | null
+          id: string
+          rating: number | null
+          recording_url: string | null
+          reviewed_at: string | null
+          status: string
+          submitted_at: string | null
+          test_id: string
+          tester_id: string
+          transcript: string | null
+          transcript_summary: string | null
+        }
+        Insert: {
+          attachments?: string[] | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          rating?: number | null
+          recording_url?: string | null
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          test_id: string
+          tester_id: string
+          transcript?: string | null
+          transcript_summary?: string | null
+        }
+        Update: {
+          attachments?: string[] | null
+          created_at?: string
+          feedback?: string | null
+          id?: string
+          rating?: number | null
+          recording_url?: string | null
+          reviewed_at?: string | null
+          status?: string
+          submitted_at?: string | null
+          test_id?: string
+          tester_id?: string
+          transcript?: string | null
+          transcript_summary?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_submissions_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_tasks: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          sort_order: number
+          test_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          sort_order?: number
+          test_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          sort_order?: number
+          test_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_tasks_test_id_fkey"
+            columns: ["test_id"]
+            isOneToOne: false
+            referencedRelation: "tests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tests: {
+        Row: {
+          browser_targeting: string[] | null
+          category: string | null
+          created_at: string
+          current_testers: number | null
+          description: string | null
+          device_targeting: string[] | null
+          estimated_duration: number
+          id: string
+          max_testers: number | null
+          prototype_url: string | null
+          recruiter_id: string
+          requirements: string | null
+          reward_amount: number
+          screener_questions: Json | null
+          status: string
+          target_audience: Json | null
+          test_type: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          browser_targeting?: string[] | null
+          category?: string | null
+          created_at?: string
+          current_testers?: number | null
+          description?: string | null
+          device_targeting?: string[] | null
+          estimated_duration?: number
+          id?: string
+          max_testers?: number | null
+          prototype_url?: string | null
+          recruiter_id: string
+          requirements?: string | null
+          reward_amount?: number
+          screener_questions?: Json | null
+          status?: string
+          target_audience?: Json | null
+          test_type?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          browser_targeting?: string[] | null
+          category?: string | null
+          created_at?: string
+          current_testers?: number | null
+          description?: string | null
+          device_targeting?: string[] | null
+          estimated_duration?: number
+          id?: string
+          max_testers?: number | null
+          prototype_url?: string | null
+          recruiter_id?: string
+          requirements?: string | null
+          reward_amount?: number
+          screener_questions?: Json | null
+          status?: string
+          target_audience?: Json | null
+          test_type?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+    }
+    Views: {
+      otp_verification_analytics: {
+        Row: {
+          date: string | null
+          expired: number | null
+          failed_verifications: number | null
+          pending: number | null
+          successful_verifications: number | null
+          total_otps_sent: number | null
+          verification_success_rate: number | null
+        }
+        Relationships: []
+      }
+    }
+    Functions: {
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      is_valid_otp: {
+        Args: { p_email: string; p_otp: string }
+        Returns: {
+          attempts: number
+          expires_soon: boolean
+          is_valid: boolean
+        }[]
+      }
+      update_otp_verification_status: {
+        Args: {
+          p_email: string
+          p_error?: string
+          p_otp: string
+          p_status: string
+        }
+        Returns: boolean
+      }
+    }
+    Enums: {
+      app_role: "tester" | "recruiter" | "admin"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
+}
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {
+      app_role: ["tester", "recruiter", "admin"],
+    },
+  },
+} as const
