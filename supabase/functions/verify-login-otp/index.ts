@@ -78,9 +78,30 @@ serve(async (req) => {
     // Delete used OTP (cleanup)
     await supabase.from("login_otps").delete().eq("id", otpRecord.id);
 
-    // Mark OTP as verified in user metadata
-    const { data: userData } = await supabase.auth.admin.listUsers();
-    const user = userData?.users.find((u) => u.email?.toLowerCase() === normalizedEmail);
+    // Find user by email (listUsers is paginated, so we must scan pages).
+    let user = null;
+    let page = 1;
+    const perPage = 200;
+
+    while (!user) {
+      const { data: userData, error: userListError } = await supabase.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+
+      if (userListError) {
+        throw new Error(`Failed to list users: ${userListError.message}`);
+      }
+
+      const users = userData?.users ?? [];
+      user = users.find((u) => u.email?.toLowerCase() === normalizedEmail) ?? null;
+
+      if (users.length < perPage) {
+        break;
+      }
+
+      page += 1;
+    }
 
     if (!user) {
       return new Response(JSON.stringify({ error: "User not found" }), {
