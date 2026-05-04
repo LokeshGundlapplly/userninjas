@@ -3,7 +3,7 @@
 -- UserNinjas AI Support Assistant
 -- ============================================================
 
--- 1. chat_conversations table (creates if missing, idempotent)
+-- 1. chat_conversations table
 CREATE TABLE IF NOT EXISTS public.chat_conversations (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   visitor_name  TEXT,
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS public.chat_conversations (
   updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
--- Auto-update updated_at
+-- Auto-update updated_at trigger function
 CREATE OR REPLACE FUNCTION public.set_updated_at()
 RETURNS TRIGGER LANGUAGE plpgsql AS $$
 BEGIN NEW.updated_at = NOW(); RETURN NEW; END;
@@ -28,12 +28,37 @@ CREATE TRIGGER trg_chat_conversations_updated_at
 
 ALTER TABLE public.chat_conversations ENABLE ROW LEVEL SECURITY;
 
--- Public can create and update their own conversations
-CREATE POLICY IF NOT EXISTS "Anyone can create conversations"
+-- chat_conversations policies (drop first for idempotency)
+DROP POLICY IF EXISTS "Anyone can create conversations"   ON public.chat_conversations;
+DROP POLICY IF EXISTS "Anyone can update own conversation" ON public.chat_conversations;
+DROP POLICY IF EXISTS "Anyone can read conversations"     ON public.chat_conversations;
+DROP POLICY IF EXISTS "Admins can view all conversations" ON public.chat_conversations;
+DROP POLICY IF EXISTS "Admins can update all conversations" ON public.chat_conversations;
+
+CREATE POLICY "Anyone can create conversations"
   ON public.chat_conversations FOR INSERT WITH CHECK (true);
 
-CREATE POLICY IF NOT EXISTS "Anyone can update own conversation"
+CREATE POLICY "Anyone can read conversations"
+  ON public.chat_conversations FOR SELECT USING (true);
+
+CREATE POLICY "Anyone can update own conversation"
   ON public.chat_conversations FOR UPDATE USING (true);
+
+CREATE POLICY "Admins can view all conversations"
+  ON public.chat_conversations FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.user_roles ur
+      WHERE ur.user_id = auth.uid() AND ur.role = 'admin'
+    )
+  );
+
+CREATE POLICY "Admins can update all conversations"
+  ON public.chat_conversations FOR UPDATE USING (
+    EXISTS (
+      SELECT 1 FROM public.user_roles ur
+      WHERE ur.user_id = auth.uid() AND ur.role = 'admin'
+    )
+  );
 
 -- 2. chat_messages table
 CREATE TABLE IF NOT EXISTS public.chat_messages (
@@ -48,8 +73,33 @@ CREATE INDEX IF NOT EXISTS idx_chat_messages_convo ON public.chat_messages(conve
 
 ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY IF NOT EXISTS "Anyone can insert chat messages"
+-- chat_messages policies
+DROP POLICY IF EXISTS "Anyone can insert chat messages" ON public.chat_messages;
+DROP POLICY IF EXISTS "Anyone can read chat messages"   ON public.chat_messages;
+DROP POLICY IF EXISTS "Admins can view all messages"    ON public.chat_messages;
+DROP POLICY IF EXISTS "Admins can insert messages"      ON public.chat_messages;
+
+CREATE POLICY "Anyone can insert chat messages"
   ON public.chat_messages FOR INSERT WITH CHECK (true);
+
+CREATE POLICY "Anyone can read chat messages"
+  ON public.chat_messages FOR SELECT USING (true);
+
+CREATE POLICY "Admins can view all messages"
+  ON public.chat_messages FOR SELECT USING (
+    EXISTS (
+      SELECT 1 FROM public.user_roles ur
+      WHERE ur.user_id = auth.uid() AND ur.role = 'admin'
+    )
+  );
+
+CREATE POLICY "Admins can insert messages"
+  ON public.chat_messages FOR INSERT WITH CHECK (
+    EXISTS (
+      SELECT 1 FROM public.user_roles ur
+      WHERE ur.user_id = auth.uid() AND ur.role = 'admin'
+    )
+  );
 
 -- 3. support_tickets table
 CREATE TABLE IF NOT EXISTS public.support_tickets (
@@ -68,8 +118,8 @@ CREATE TABLE IF NOT EXISTS public.support_tickets (
   updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX IF NOT EXISTS idx_support_tickets_status ON public.support_tickets(status);
-CREATE INDEX IF NOT EXISTS idx_support_tickets_email  ON public.support_tickets(email);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_status  ON public.support_tickets(status);
+CREATE INDEX IF NOT EXISTS idx_support_tickets_email   ON public.support_tickets(email);
 CREATE INDEX IF NOT EXISTS idx_support_tickets_created ON public.support_tickets(created_at DESC);
 
 DROP TRIGGER IF EXISTS trg_support_tickets_updated_at ON public.support_tickets;
@@ -79,12 +129,15 @@ CREATE TRIGGER trg_support_tickets_updated_at
 
 ALTER TABLE public.support_tickets ENABLE ROW LEVEL SECURITY;
 
--- Public (unauthenticated visitors) can create tickets
-CREATE POLICY IF NOT EXISTS "Anyone can create support tickets"
+-- support_tickets policies
+DROP POLICY IF EXISTS "Anyone can create support tickets" ON public.support_tickets;
+DROP POLICY IF EXISTS "Admins can view all tickets"       ON public.support_tickets;
+DROP POLICY IF EXISTS "Admins can update tickets"         ON public.support_tickets;
+
+CREATE POLICY "Anyone can create support tickets"
   ON public.support_tickets FOR INSERT WITH CHECK (true);
 
--- Admins can view all tickets
-CREATE POLICY IF NOT EXISTS "Admins can view all tickets"
+CREATE POLICY "Admins can view all tickets"
   ON public.support_tickets FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM public.user_roles ur
@@ -92,36 +145,10 @@ CREATE POLICY IF NOT EXISTS "Admins can view all tickets"
     )
   );
 
--- Admins can update tickets
-CREATE POLICY IF NOT EXISTS "Admins can update tickets"
+CREATE POLICY "Admins can update tickets"
   ON public.support_tickets FOR UPDATE USING (
     EXISTS (
       SELECT 1 FROM public.user_roles ur
       WHERE ur.user_id = auth.uid() AND ur.role = 'admin'
     )
   );
-
--- ============================================================
--- Patch chat_conversations: add missing policies if not exist
--- ============================================================
-DO $$
-BEGIN
-  -- Ensure anyone can read their own conversation by id (for widget polling)
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'chat_conversations'
-      AND policyname = 'Anyone can read conversations'
-  ) THEN
-    EXECUTE 'CREATE POLICY "Anyone can read conversations"
-      ON public.chat_conversations FOR SELECT USING (true)';
-  END IF;
-
-  IF NOT EXISTS (
-    SELECT 1 FROM pg_policies
-    WHERE tablename = 'chat_messages'
-      AND policyname = 'Anyone can read chat messages'
-  ) THEN
-    EXECUTE 'CREATE POLICY "Anyone can read chat messages"
-      ON public.chat_messages FOR SELECT USING (true)';
-  END IF;
-END$$;
