@@ -1,0 +1,349 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "User Ninjas Support API",
+    "description": "Backend API for the AI-powered support assistant on the UserNinjas UX research platform. Handles ticket creation, retrieval, and management for the human escalation flow.",
+    "version": "1.0.0",
+    "contact": {
+      "name": "User Ninjas Engineering",
+      "email": "contact@userninjas.in",
+      "url": "https://www.userninjas.in"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://jpclnzgouzyroebjvcqp.supabase.co/functions/v1",
+      "description": "Supabase Edge Functions (production)"
+    },
+    {
+      "url": "http://localhost:54321/functions/v1",
+      "description": "Local development (supabase start)"
+    }
+  ],
+  "security": [
+    {
+      "BearerToken": []
+    }
+  ],
+  "paths": {
+    "/create-support-ticket": {
+      "post": {
+        "operationId": "createSupportTicket",
+        "summary": "Create a support ticket",
+        "description": "Creates a validated support ticket after the AI agent collects the visitor's name, email, and issue description. Optionally links it to an ongoing chat conversation.",
+        "tags": ["Support"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateTicketRequest"
+              },
+              "examples": {
+                "basic": {
+                  "summary": "Basic ticket",
+                  "value": {
+                    "name": "Alice Johnson",
+                    "email": "alice@example.com",
+                    "issue": "I cannot access my recruiter dashboard after logging in. The page shows a blank white screen.",
+                    "priority": "high"
+                  }
+                },
+                "withConversation": {
+                  "summary": "Ticket linked to chat conversation",
+                  "value": {
+                    "name": "Bob Smith",
+                    "email": "bob@company.com",
+                    "issue": "My test results are not showing AI insights even though I'm on the Pro plan.",
+                    "priority": "normal",
+                    "conversation_id": "a3b211b2-2801-4408-aee2-3a184501d966"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Ticket successfully created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTicketResponse"
+                },
+                "example": {
+                  "success": true,
+                  "ticket": {
+                    "id": "f3dbf221-2eb7-4d2d-8b7d-5b06ed20a4de",
+                    "name": "Alice Johnson",
+                    "email": "alice@example.com",
+                    "status": "open",
+                    "priority": "high",
+                    "created_at": "2026-05-04T12:41:08Z"
+                  },
+                  "requestId": "abc12345"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing or malformed request body",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation failed — one or more fields are invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ValidationErrorResponse"
+                },
+                "example": {
+                  "error": "Validation failed",
+                  "details": {
+                    "email": "A valid email address is required",
+                    "issue": "Issue description must be at least 10 characters"
+                  },
+                  "requestId": "abc12345"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/chat-widget": {
+      "post": {
+        "operationId": "chatWithAIAssistant",
+        "summary": "Send a message to the AI support assistant",
+        "description": "Streams AI responses using Server-Sent Events (SSE). The AI uses an embedded knowledge base (RAG-style) to answer platform questions and follows a structured escalation flow to collect name/email/issue for ticket creation.",
+        "tags": ["Chat"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              },
+              "example": {
+                "messages": [
+                  { "role": "user", "content": "How does pricing work?" },
+                  { "role": "assistant", "content": "We have three plans: Starter ($49/mo), Pro ($149/mo), and Enterprise (custom)." },
+                  { "role": "user", "content": "Can I test mobile apps?" }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Server-Sent Event stream of AI response tokens",
+            "content": {
+              "text/event-stream": {
+                "schema": {
+                  "type": "string",
+                  "description": "SSE stream in OpenAI chat completion format. Each `data:` line contains a JSON object with `choices[0].delta.content`. Stream ends with `data: [DONE]`."
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "BearerToken": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "Supabase anon key (VITE_SUPABASE_PUBLISHABLE_KEY). Pass as `Authorization: Bearer <key>`"
+      }
+    },
+    "schemas": {
+      "CreateTicketRequest": {
+        "type": "object",
+        "required": ["name", "email", "issue"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 200,
+            "description": "Full name of the visitor submitting the ticket",
+            "example": "Alice Johnson"
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "Contact email address — must be a valid email format",
+            "example": "alice@example.com"
+          },
+          "issue": {
+            "type": "string",
+            "minLength": 10,
+            "maxLength": 5000,
+            "description": "Detailed description of the support issue",
+            "example": "I cannot access my recruiter dashboard after logging in. The page shows a blank white screen."
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "normal", "high", "urgent"],
+            "default": "normal",
+            "description": "Priority level for the ticket"
+          },
+          "conversation_id": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true,
+            "description": "Optional UUID of the chat_conversations row to link to this ticket",
+            "example": "a3b211b2-2801-4408-aee2-3a184501d966"
+          }
+        }
+      },
+      "CreateTicketResponse": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "example": true
+          },
+          "ticket": {
+            "$ref": "#/components/schemas/TicketSummary"
+          },
+          "requestId": {
+            "type": "string",
+            "description": "Unique request ID for tracing",
+            "example": "abc12345"
+          }
+        }
+      },
+      "TicketSummary": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid",
+            "example": "f3dbf221-2eb7-4d2d-8b7d-5b06ed20a4de"
+          },
+          "name": {
+            "type": "string",
+            "example": "Alice Johnson"
+          },
+          "email": {
+            "type": "string",
+            "example": "alice@example.com"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "in_progress", "resolved", "closed"],
+            "example": "open"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["low", "normal", "high", "urgent"],
+            "example": "high"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "example": "2026-05-04T12:41:08Z"
+          }
+        }
+      },
+      "ChatRequest": {
+        "type": "object",
+        "required": ["messages"],
+        "properties": {
+          "messages": {
+            "type": "array",
+            "maxItems": 20,
+            "description": "Conversation history in OpenAI chat format. Last 12 messages are used for context.",
+            "items": {
+              "$ref": "#/components/schemas/ChatMessage"
+            }
+          }
+        }
+      },
+      "ChatMessage": {
+        "type": "object",
+        "required": ["role", "content"],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": ["user", "assistant"],
+            "example": "user"
+          },
+          "content": {
+            "type": "string",
+            "example": "How does pricing work?"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Internal server error"
+          },
+          "message": {
+            "type": "string",
+            "example": "Detailed error message"
+          },
+          "requestId": {
+            "type": "string",
+            "example": "abc12345"
+          }
+        }
+      },
+      "ValidationErrorResponse": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "example": "Validation failed"
+          },
+          "details": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            },
+            "example": {
+              "email": "A valid email address is required",
+              "issue": "Issue description must be at least 10 characters"
+            }
+          },
+          "requestId": {
+            "type": "string",
+            "example": "abc12345"
+          }
+        }
+      }
+    }
+  }
+}

@@ -31,6 +31,7 @@ import {
   Smartphone,
   Heart,
   User,
+  FileText,
 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -74,6 +75,7 @@ interface Profile {
   bio: string | null;
   devices: string[] | null;
   interests: string[] | null;
+  attachments: string[] | null;
 }
 
 export default function TesterProfile() {
@@ -96,7 +98,9 @@ export default function TesterProfile() {
     devices: [] as string[],
     interests: [] as string[],
     newInterest: '',
+    attachments: [] as string[],
   });
+  const [uploadingProfileFiles, setUploadingProfileFiles] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -139,7 +143,7 @@ export default function TesterProfile() {
           .order('created_at', { ascending: false }),
         supabase
           .from('profiles')
-          .select('full_name, email, avatar_url, created_at, age, gender, location, bio, devices, interests')
+          .select('full_name, email, avatar_url, created_at, age, gender, location, bio, devices, interests, attachments')
           .eq('user_id', user!.id)
           .single(),
       ]);
@@ -172,6 +176,7 @@ export default function TesterProfile() {
         bio: profile.bio || '',
         devices: profile.devices || [],
         interests: profile.interests || [],
+        attachments: profile.attachments || [],
         newInterest: '',
       });
     }
@@ -192,6 +197,7 @@ export default function TesterProfile() {
           bio: editForm.bio || null,
           devices: editForm.devices,
           interests: editForm.interests,
+          attachments: editForm.attachments,
         })
         .eq('user_id', user.id);
 
@@ -232,6 +238,52 @@ export default function TesterProfile() {
     setEditForm(prev => ({
       ...prev,
       interests: prev.interests.filter(i => i !== interest),
+    }));
+  };
+
+  const handleProfileFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !user) return;
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum file size is 10MB', variant: 'destructive' });
+      return;
+    }
+
+    setUploadingProfileFiles(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error } = await supabase.storage
+        .from('profile-attachments')
+        .upload(fileName, file);
+      
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-attachments')
+        .getPublicUrl(fileName);
+        
+      setEditForm(prev => ({
+        ...prev,
+        attachments: [...prev.attachments, publicUrl]
+      }));
+      
+    } catch (err) {
+      console.error('Error uploading profile attachment:', err);
+      toast({ title: 'Error', description: 'Failed to upload file.', variant: 'destructive' });
+    } finally {
+      setUploadingProfileFiles(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const removeProfileAttachment = (url: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter(a => a !== url)
     }));
   };
   const totalEarnings = earnings.reduce((sum, e) => sum + Number(e.amount), 0);
@@ -496,6 +548,28 @@ export default function TesterProfile() {
                       ))}
                     </div>
                   </div>
+
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2"><FileText className="h-4 w-4" /> Attachments (Resumes, Portfolios)</Label>
+                    <div className="flex items-center gap-3">
+                      <Input type="file" onChange={handleProfileFileUpload} disabled={uploadingProfileFiles} className="flex-1" />
+                      {uploadingProfileFiles && <span className="text-sm text-muted-foreground animate-pulse">Uploading...</span>}
+                    </div>
+                    {editForm.attachments.length > 0 && (
+                      <div className="flex flex-col gap-2 mt-2">
+                        {editForm.attachments.map((url, i) => (
+                          <div key={i} className="flex items-center justify-between p-2 rounded border border-border/50 bg-secondary/20">
+                            <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate max-w-[200px] sm:max-w-[400px]">
+                              Attachment {i + 1}
+                            </a>
+                            <Button variant="ghost" size="sm" onClick={() => removeProfileAttachment(url)} className="text-destructive h-7 px-2">
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </CardContent>
               </Card>
             </ScrollReveal>
@@ -531,6 +605,20 @@ export default function TesterProfile() {
                   )}
                   {profile.bio && (
                     <div className="mt-4"><p className="text-xs text-muted-foreground mb-1">Bio</p><p className="text-sm">{profile.bio}</p></div>
+                  )}
+                  {profile.attachments && profile.attachments.length > 0 && (
+                    <div className="mt-4">
+                      <p className="text-xs text-muted-foreground mb-2">Attachments</p>
+                      <div className="flex flex-wrap gap-2">
+                        {profile.attachments.map((url, i) => (
+                          <Button key={i} variant="outline" size="sm" asChild>
+                            <a href={url} target="_blank" rel="noopener noreferrer">
+                              <FileText className="h-3.5 w-3.5 mr-1.5" /> View File {i + 1}
+                            </a>
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
                   )}
                 </CardContent>
               </Card>

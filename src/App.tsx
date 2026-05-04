@@ -138,9 +138,11 @@ function ProtectedDashboardRoute({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Check if user has set a password (if email_verified metadata exists and is true)
+    // Check if user has verified their email (either via Supabase built-in or custom metadata)
     const userMetadata = user.user_metadata || {};
-    const emailVerified = userMetadata.email_verified === true;
+    const isGoogleOAuth = user.app_metadata?.provider === 'google';
+    const isLinkedInOAuth = user.app_metadata?.provider === 'linkedin_oidc';
+    const emailVerified = userMetadata.email_verified === true || !!user.email_confirmed_at || isGoogleOAuth || isLinkedInOAuth;
 
     if (!emailVerified) {
       console.log('Email not verified, redirecting to /verify-email');

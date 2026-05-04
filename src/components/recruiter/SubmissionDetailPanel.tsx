@@ -50,6 +50,7 @@ interface TesterProfileSummary {
   bio: string | null;
   devices: string[] | null;
   interests: string[] | null;
+  attachments: string[] | null;
 }
 
 export default function SubmissionDetailPanel({
@@ -71,7 +72,7 @@ export default function SubmissionDetailPanel({
 
       const { data: profileData } = await supabase
         .from('profiles')
-        .select('full_name, age, gender, location, bio, devices, interests')
+        .select('full_name, age, gender, location, bio, devices, interests, attachments')
         .eq('user_id', submission.tester_id)
         .maybeSingle();
       setTesterProfile((profileData as TesterProfileSummary) || null);
@@ -153,6 +154,19 @@ export default function SubmissionDetailPanel({
 
             {testerProfile.bio && (
               <p className="text-xs text-muted-foreground italic">"{testerProfile.bio}"</p>
+            )}
+
+            {testerProfile.attachments && testerProfile.attachments.length > 0 && (
+              <div className="flex items-start gap-2 text-xs text-muted-foreground mt-2 pt-2 border-t border-border/30">
+                <FileText className="h-3.5 w-3.5 mt-0.5" />
+                <div className="flex flex-wrap gap-2">
+                  {testerProfile.attachments.map((url, i) => (
+                    <a key={i} href={url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline flex items-center gap-1">
+                      <span className="truncate max-w-[150px]">Attachment {i + 1}</span>
+                    </a>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </div>

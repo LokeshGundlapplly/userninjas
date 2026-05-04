@@ -21,7 +21,7 @@ import {
   Users, FileText, Shield, AlertTriangle, Activity, MessageCircle, Send, ArrowLeft, X as XIcon,
   TrendingUp, DollarSign, CheckCircle, Clock, Zap, BarChart3, Eye, Search, Filter, Download,
   Edit, Trash2, Eye as EyeIcon, Star, Award, Briefcase, Target, PlusCircle, Settings, RefreshCw,
-  ArrowUpRight, ArrowDownRight, ExternalLink
+  ArrowUpRight, ArrowDownRight, ExternalLink, Ticket, Mail, Tag, StickyNote
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -91,6 +91,19 @@ interface UserStats {
   earnings?: number;
 }
 
+interface SupportTicket {
+  id: string;
+  name: string;
+  email: string;
+  issue: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'closed';
+  priority: 'low' | 'normal' | 'high' | 'urgent';
+  conversation_id: string | null;
+  resolution_notes: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export default function AdminPanel() {
   const { user, role, loading: authLoading } = useAuth();
   const navigate = useNavigate();
@@ -101,6 +114,7 @@ export default function AdminPanel() {
   const [tests, setTests] = useState<TestData[]>([]);
   const [submissions, setSubmissions] = useState<SubmissionData[]>([]);
   const [conversations, setConversations] = useState<ChatConversation[]>([]);
+  const [tickets, setTickets] = useState<SupportTicket[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ 
     totalUsers: 0, 
@@ -111,8 +125,15 @@ export default function AdminPanel() {
     pendingTests: 0,
     activeTests: 0,
     escalatedChats: 0,
-    avgTestRating: 0
+    avgTestRating: 0,
+    openTickets: 0,
   });
+
+  // Ticket state
+  const [ticketFilter, setTicketFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'closed'>('open');
+  const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [ticketNotesInput, setTicketNotesInput] = useState('');
+  const [updatingTicket, setUpdatingTicket] = useState(false);
 
   // Filter & Search
   const [activeTab, setActiveTab] = useState('overview');
@@ -217,6 +238,19 @@ export default function AdminPanel() {
       // Fetch conversations
       await fetchConversations();
 
+      // Fetch support tickets
+      const { data: ticketsData, error: ticketsError } = await supabase
+        .from('support_tickets')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (ticketsError) {
+        console.error('❌ Error fetching tickets:', ticketsError);
+      } else {
+        console.log('✓ Loaded tickets:', ticketsData?.length || 0);
+        setTickets(ticketsData as SupportTicket[] || []);
+      }
+
       // Calculate stats
       const totalRecruiters = (rolesData || []).filter((r: any) => r.role === 'recruiter').length;
       const totalTesters = (rolesData || []).filter((r: any) => r.role === 'tester').length;
@@ -240,7 +274,8 @@ export default function AdminPanel() {
         pendingTests: (testsData || []).filter((t: any) => t.status === 'pending').length,
         activeTests,
         escalatedChats: escalatedChats?.length || 0,
-        avgTestRating: parseFloat(avgRating as string)
+        avgTestRating: parseFloat(avgRating as string),
+        openTickets: (ticketsData || []).filter((t: any) => t.status === 'open' || t.status === 'in_progress').length,
       });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -358,10 +393,48 @@ export default function AdminPanel() {
     return c.status === chatFilter;
   });
 
+  const filteredTickets = tickets.filter(t => {
+    if (ticketFilter === 'all') return true;
+    return t.status === ticketFilter;
+  });
+
+  const handleUpdateTicket = async (ticketId: string, status: string, notes?: string) => {
+    setUpdatingTicket(true);
+    const { error } = await supabase
+      .from('support_tickets')
+      .update({ status, ...(notes !== undefined ? { resolution_notes: notes } : {}) })
+      .eq('id', ticketId);
+    if (error) {
+      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+    } else {
+      toast({ title: 'Ticket updated' });
+      setTickets(prev => prev.map(t => t.id === ticketId ? { ...t, status: status as SupportTicket['status'], resolution_notes: notes ?? t.resolution_notes } : t));
+      if (selectedTicket?.id === ticketId) {
+        setSelectedTicket(prev => prev ? { ...prev, status: status as SupportTicket['status'], resolution_notes: notes ?? prev.resolution_notes } : null);
+      }
+    }
+    setUpdatingTicket(false);
+  };
+
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading admin panel...</div>
+      <div className="min-h-screen bg-background pt-24 px-4">
+        <div className="container mx-auto">
+          <div className="flex justify-between items-center mb-8">
+            <div className="space-y-2">
+              <div className="h-10 bg-secondary/50 rounded w-64 animate-pulse"></div>
+              <div className="h-4 bg-secondary/30 rounded w-48 animate-pulse"></div>
+            </div>
+            <div className="h-10 bg-secondary/50 rounded w-24 animate-pulse"></div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-8">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="h-28 bg-card rounded-xl border border-border/50 animate-pulse"></div>
+            ))}
+          </div>
+          <div className="h-12 bg-card/50 rounded-lg w-full mb-6 border border-border/50 animate-pulse"></div>
+          <div className="h-[400px] bg-card rounded-xl border border-border/50 animate-pulse"></div>
+        </div>
       </div>
     );
   }
@@ -415,13 +488,14 @@ export default function AdminPanel() {
         </div>
 
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-8">
           {[
             { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'text-blue-500', bg: 'bg-blue-500/10', trend: '+12%' },
             { label: 'Recruiters', value: stats.totalRecruiters, icon: Briefcase, color: 'text-purple-500', bg: 'bg-purple-500/10', trend: '+5%' },
             { label: 'Testers', value: stats.totalTesters, icon: Target, color: 'text-cyan-500', bg: 'bg-cyan-500/10', trend: '+18%' },
             { label: 'Active Tests', value: stats.activeTests, icon: Activity, color: 'text-green-500', bg: 'bg-green-500/10', trend: '+3%' },
             { label: 'Escalated', value: stats.escalatedChats, icon: AlertTriangle, color: stats.escalatedChats > 0 ? 'text-red-500' : 'text-muted-foreground', bg: stats.escalatedChats > 0 ? 'bg-red-500/10' : 'bg-secondary', trend: stats.escalatedChats > 0 ? 'ACTION' : 'GOOD' },
+            { label: 'Open Tickets', value: stats.openTickets, icon: Ticket, color: stats.openTickets > 0 ? 'text-orange-500' : 'text-muted-foreground', bg: stats.openTickets > 0 ? 'bg-orange-500/10' : 'bg-secondary', trend: stats.openTickets > 0 ? 'PENDING' : 'CLEAR' },
           ].map((stat, i) => (
             <Card key={i} className="border-border/50 bg-card/80 backdrop-blur-sm overflow-hidden hover:border-border transition-colors">
               <CardContent className="p-4">
@@ -440,7 +514,7 @@ export default function AdminPanel() {
 
         {/* Main Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="mb-6 bg-card/50 border border-border/50 p-1">
+          <TabsList className="mb-6 bg-card/50 border border-border/50 p-1 flex-wrap gap-1">
             <TabsTrigger value="overview" className="gap-2"><Eye className="h-4 w-4" />Overview</TabsTrigger>
             <TabsTrigger value="tests" className="gap-2"><FileText className="h-4 w-4" />Tests & Postings</TabsTrigger>
             <TabsTrigger value="users" className="gap-2"><Users className="h-4 w-4" />Users</TabsTrigger>
@@ -449,6 +523,11 @@ export default function AdminPanel() {
             <TabsTrigger value="chats" className="gap-2 relative"><MessageCircle className="h-4 w-4" />Support
               {stats.escalatedChats > 0 && (
                 <Badge variant="destructive" className="ml-2 h-5 px-1.5 text-[10px]">{stats.escalatedChats}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="tickets" className="gap-2 relative"><Ticket className="h-4 w-4" />Tickets
+              {stats.openTickets > 0 && (
+                <Badge className="ml-2 h-5 px-1.5 text-[10px] bg-orange-500 text-white">{stats.openTickets}</Badge>
               )}
             </TabsTrigger>
           </TabsList>
@@ -980,6 +1059,196 @@ export default function AdminPanel() {
                       <MessageCircle className="h-12 w-12 mx-auto mb-3 opacity-20" />
                       <p className="font-medium">Select a conversation</p>
                       <p className="text-sm mt-1">Choose a chat from the left to view and respond</p>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            </div>
+          </TabsContent>
+
+          {/* TICKETS TAB */}
+          <TabsContent value="tickets" className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 min-h-[600px]">
+              {/* Ticket list */}
+              <Card className="border-border/50 bg-card/80 backdrop-blur-sm lg:col-span-1 flex flex-col overflow-hidden">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base flex items-center gap-2"><Ticket className="h-4 w-4 text-orange-500" /> Support Tickets</CardTitle>
+                  <div className="flex gap-1 mt-2 flex-wrap">
+                    {(['open', 'in_progress', 'resolved', 'closed', 'all'] as const).map(f => (
+                      <Button
+                        key={f}
+                        size="sm"
+                        variant={ticketFilter === f ? 'default' : 'outline'}
+                        className="text-xs h-7 capitalize"
+                        onClick={() => setTicketFilter(f)}
+                      >
+                        {f.replace('_', ' ')}
+                        {f === 'open' && stats.openTickets > 0 && (
+                          <Badge className="ml-1 h-4 px-1 text-[9px] bg-orange-500">{stats.openTickets}</Badge>
+                        )}
+                      </Button>
+                    ))}
+                  </div>
+                </CardHeader>
+                <CardContent className="flex-1 overflow-y-auto p-2 space-y-1">
+                  {filteredTickets.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground text-sm">
+                      <Ticket className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                      No {ticketFilter} tickets
+                    </div>
+                  ) : filteredTickets.map(ticket => (
+                    <button
+                      key={ticket.id}
+                      onClick={() => { setSelectedTicket(ticket); setTicketNotesInput(ticket.resolution_notes || ''); }}
+                      className={`w-full text-left rounded-xl p-3 transition-colors ${
+                        selectedTicket?.id === ticket.id
+                          ? 'bg-primary/10 border border-primary/30'
+                          : 'hover:bg-secondary/60 border border-transparent'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-1.5">
+                          <Badge
+                            variant={ticket.priority === 'urgent' ? 'destructive' : ticket.priority === 'high' ? 'default' : 'secondary'}
+                            className="text-[9px] h-4 px-1.5 capitalize"
+                          >
+                            {ticket.priority}
+                          </Badge>
+                          <Badge
+                            variant={ticket.status === 'open' ? 'outline' : ticket.status === 'resolved' ? 'secondary' : 'outline'}
+                            className={`text-[9px] h-4 px-1.5 capitalize ${
+                              ticket.status === 'open' ? 'border-orange-400 text-orange-600' :
+                              ticket.status === 'in_progress' ? 'border-blue-400 text-blue-600' :
+                              ticket.status === 'resolved' ? 'border-green-400 text-green-600' : ''
+                            }`}
+                          >
+                            {ticket.status.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                        <span className="text-[9px] text-muted-foreground whitespace-nowrap ml-1">
+                          {format(new Date(ticket.created_at), 'MMM d HH:mm')}
+                        </span>
+                      </div>
+                      <p className="text-xs font-medium truncate">{ticket.name}</p>
+                      <p className="text-[10px] text-muted-foreground truncate">{ticket.email}</p>
+                      <p className="text-[10px] text-muted-foreground truncate mt-0.5">{ticket.issue}</p>
+                    </button>
+                  ))}
+                </CardContent>
+              </Card>
+
+              {/* Ticket detail */}
+              <Card className="border-border/50 bg-card/80 backdrop-blur-sm lg:col-span-2 flex flex-col overflow-hidden">
+                {selectedTicket ? (
+                  <>
+                    <CardHeader className="pb-3 border-b border-border/40">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Ticket className="h-4 w-4 text-orange-500" />
+                            Ticket #{selectedTicket.id.slice(0, 8)}
+                          </CardTitle>
+                          <CardDescription className="mt-1">
+                            Submitted {format(new Date(selectedTicket.created_at), 'PPpp')}
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-2 flex-shrink-0">
+                          <Badge variant={selectedTicket.priority === 'urgent' ? 'destructive' : 'secondary'} className="capitalize">
+                            {selectedTicket.priority}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+
+                    <CardContent className="flex-1 overflow-y-auto p-4 space-y-4">
+                      {/* Contact info */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 rounded-lg bg-secondary/30">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                            <Users className="h-3 w-3" /> Name
+                          </p>
+                          <p className="text-sm font-medium">{selectedTicket.name}</p>
+                        </div>
+                        <div className="p-3 rounded-lg bg-secondary/30">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1 flex items-center gap-1">
+                            <Mail className="h-3 w-3" /> Email
+                          </p>
+                          <a href={`mailto:${selectedTicket.email}`} className="text-sm font-medium text-primary hover:underline">
+                            {selectedTicket.email}
+                          </a>
+                        </div>
+                      </div>
+
+                      {/* Issue */}
+                      <div className="p-3 rounded-lg bg-secondary/30">
+                        <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <Tag className="h-3 w-3" /> Issue
+                        </p>
+                        <p className="text-sm leading-relaxed whitespace-pre-wrap">{selectedTicket.issue}</p>
+                      </div>
+
+                      {/* Status update */}
+                      <div>
+                        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 block">Update Status</Label>
+                        <div className="flex gap-2 flex-wrap">
+                          {(['open', 'in_progress', 'resolved', 'closed'] as const).map(s => (
+                            <Button
+                              key={s}
+                              size="sm"
+                              variant={selectedTicket.status === s ? 'default' : 'outline'}
+                              className="text-xs h-7 capitalize"
+                              onClick={() => handleUpdateTicket(selectedTicket.id, s)}
+                              disabled={updatingTicket || selectedTicket.status === s}
+                            >
+                              {s.replace('_', ' ')}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Resolution notes */}
+                      <div>
+                        <Label className="text-xs text-muted-foreground uppercase tracking-wider mb-2 flex items-center gap-1">
+                          <StickyNote className="h-3 w-3" /> Resolution Notes
+                        </Label>
+                        <Textarea
+                          value={ticketNotesInput}
+                          onChange={(e) => setTicketNotesInput(e.target.value)}
+                          placeholder="Add notes about how this was resolved..."
+                          className="h-24 text-sm"
+                        />
+                        <Button
+                          size="sm"
+                          className="mt-2"
+                          onClick={() => handleUpdateTicket(selectedTicket.id, selectedTicket.status, ticketNotesInput)}
+                          disabled={updatingTicket}
+                        >
+                          Save Notes
+                        </Button>
+                      </div>
+
+                      {/* Linked conversation */}
+                      {selectedTicket.conversation_id && (
+                        <div className="p-3 rounded-lg bg-secondary/30">
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-1">Linked Conversation</p>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="text-xs h-7 gap-1"
+                            onClick={() => { setActiveTab('chats'); }}
+                          >
+                            <MessageCircle className="h-3 w-3" /> View Chat
+                          </Button>
+                        </div>
+                      )}
+                    </CardContent>
+                  </>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center text-muted-foreground">
+                    <div className="text-center">
+                      <Ticket className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p className="font-medium">Select a ticket</p>
+                      <p className="text-sm mt-1">Choose a support ticket to view details and update status</p>
                     </div>
                   </div>
                 )}

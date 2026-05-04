@@ -809,7 +809,15 @@ export default function RecruiterDashboard() {
                       </CardHeader>
                       <CardContent>
                         {recentActivity.length === 0 ? (
-                          <p className="text-sm text-muted-foreground text-center py-8">No activity yet.</p>
+                          <div className="flex flex-col items-center justify-center py-8 text-center">
+                            <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center mb-3">
+                              <Activity className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                            <h3 className="font-medium text-sm">No activity yet</h3>
+                            <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
+                              When testers start interacting with your tests, their activity will appear here.
+                            </p>
+                          </div>
                         ) : (
                           <div className="space-y-2">
                             {recentActivity.slice(0, 5).map(sub => (

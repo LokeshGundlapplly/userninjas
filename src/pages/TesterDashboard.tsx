@@ -278,6 +278,7 @@ interface Profile {
   bio: string | null;
   devices: string[] | null;
   interests: string[] | null;
+  attachments: string[] | null;
 }
 
 interface StudySlot {
@@ -370,7 +371,9 @@ export default function TesterDashboard() {
     devices: [] as string[],
     interests: [] as string[],
     newInterest: '',
+    attachments: [] as string[],
   });
+  const [uploadingProfileFiles, setUploadingProfileFiles] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -414,7 +417,7 @@ export default function TesterDashboard() {
       // Fetch full profile for profile section
       const { data: fullProfile } = await supabase
         .from('profiles')
-        .select('full_name, email, avatar_url, created_at, age, gender, location, bio, devices, interests')
+        .select('full_name, email, avatar_url, created_at, age, gender, location, bio, devices, interests, attachments')
         .eq('user_id', user.id)
         .single();
       setProfile(fullProfile);
@@ -927,6 +930,7 @@ export default function TesterDashboard() {
         bio: profile.bio || '',
         devices: profile.devices || [],
         interests: profile.interests || [],
+        attachments: profile.attachments || [],
         newInterest: '',
       });
     }
@@ -947,6 +951,7 @@ export default function TesterDashboard() {
           bio: editForm.bio || null,
           devices: editForm.devices,
           interests: editForm.interests,
+          attachments: editForm.attachments,
         })
         .eq('user_id', user.id);
 
@@ -979,6 +984,52 @@ export default function TesterDashboard() {
 
   const removeInterest = (interest: string) => {
     setEditForm(prev => ({ ...prev, interests: prev.interests.filter(i => i !== interest) }));
+  };
+
+  const handleProfileFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || !user) return;
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast({ title: 'File too large', description: 'Maximum file size is 10MB', variant: 'destructive' });
+      return;
+    }
+
+    setUploadingProfileFiles(true);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error } = await supabase.storage
+        .from('profile-attachments')
+        .upload(fileName, file);
+      
+      if (error) throw error;
+      
+      const { data: { publicUrl } } = supabase.storage
+        .from('profile-attachments')
+        .getPublicUrl(fileName);
+        
+      setEditForm(prev => ({
+        ...prev,
+        attachments: [...prev.attachments, publicUrl]
+      }));
+      
+    } catch (err) {
+      console.error('Error uploading profile attachment:', err);
+      toast({ title: 'Error', description: 'Failed to upload file.', variant: 'destructive' });
+    } finally {
+      setUploadingProfileFiles(false);
+      if (e.target) e.target.value = '';
+    }
+  };
+
+  const removeProfileAttachment = (url: string) => {
+    setEditForm(prev => ({
+      ...prev,
+      attachments: prev.attachments.filter(a => a !== url)
+    }));
   };
 
   // ─── Computed Values ──────────────────────────────────────
@@ -1226,7 +1277,22 @@ export default function TesterDashboard() {
                       <CardHeader><CardTitle className="flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary" /> Recent Activity</CardTitle></CardHeader>
                       <CardContent>
                         {submissions.length === 0 ? (
-                          <p className="text-muted-foreground text-center py-6">No activity yet. Start a test to begin!</p>
+                          <div className="flex flex-col items-center justify-center py-10 text-center">
+                            <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center mb-4">
+                              <PlayCircle className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <h3 className="font-semibold text-lg">No recent activity</h3>
+                            <p className="text-sm text-muted-foreground mt-1 max-w-[250px]">
+                              You haven't taken any tests yet. Head over to Available Tests to get started.
+                            </p>
+                            <Button 
+                              variant="outline" 
+                              className="mt-4 gap-2" 
+                              onClick={() => setSection('available')}
+                            >
+                              <Search className="h-4 w-4" /> Browse Tests
+                            </Button>
+                          </div>
                         ) : (
                           <div className="space-y-3">
                             {submissions.slice(0, 5).map(s => (
@@ -1248,7 +1314,15 @@ export default function TesterDashboard() {
                       <CardHeader><CardTitle className="flex items-center gap-2"><Award className="h-5 w-5 text-yellow-500" /> Rating Distribution</CardTitle></CardHeader>
                       <CardContent>
                         {ratedSubmissions.length === 0 ? (
-                          <p className="text-muted-foreground text-center py-6">No ratings yet. Complete tests to earn ratings!</p>
+                          <div className="flex flex-col items-center justify-center py-10 text-center">
+                            <div className="h-12 w-12 rounded-full bg-secondary flex items-center justify-center mb-4">
+                              <Star className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                            <h3 className="font-semibold text-lg">No ratings yet</h3>
+                            <p className="text-sm text-muted-foreground mt-1 max-w-[250px]">
+                              Complete tests and receive feedback from recruiters to build your reputation!
+                            </p>
+                          </div>
                         ) : (
                           <div className="space-y-3">
                             {ratingDistribution.map(({ rating, count, percentage }) => (
@@ -1637,6 +1711,27 @@ export default function TesterDashboard() {
                             ))}
                           </div>
                         </div>
+                        <div className="space-y-2">
+                          <Label className="flex items-center gap-2"><FileText className="h-4 w-4" /> Attachments (Resumes, Portfolios)</Label>
+                          <div className="flex items-center gap-3">
+                            <Input type="file" onChange={handleProfileFileUpload} disabled={uploadingProfileFiles} className="flex-1" />
+                            {uploadingProfileFiles && <span className="text-sm text-muted-foreground animate-pulse">Uploading...</span>}
+                          </div>
+                          {editForm.attachments.length > 0 && (
+                            <div className="flex flex-col gap-2 mt-2">
+                              {editForm.attachments.map((url, i) => (
+                                <div key={i} className="flex items-center justify-between p-2 rounded border border-border/50 bg-secondary/20">
+                                  <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm text-primary hover:underline truncate max-w-[200px] sm:max-w-[400px]">
+                                    Attachment {i + 1}
+                                  </a>
+                                  <Button variant="ghost" size="sm" onClick={() => removeProfileAttachment(url)} className="text-destructive h-7 px-2">
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   )}
@@ -1656,6 +1751,18 @@ export default function TesterDashboard() {
                           <div className="mt-4"><p className="text-xs text-muted-foreground mb-2">Interests</p><div className="flex flex-wrap gap-1">{profile.interests.map(i => <Badge key={i} variant="secondary" className="text-xs">{i}</Badge>)}</div></div>
                         )}
                         {profile.bio && <div className="mt-4"><p className="text-xs text-muted-foreground mb-1">Bio</p><p className="text-sm">{profile.bio}</p></div>}
+                        {profile.attachments && profile.attachments.length > 0 && (
+                          <div className="mt-4">
+                            <p className="text-xs text-muted-foreground mb-2">Attachments</p>
+                            <div className="flex flex-wrap gap-2">
+                              {profile.attachments.map((url, i) => (
+                                <Button key={i} variant="outline" size="sm" asChild>
+                                  <a href={url} target="_blank" rel="noopener noreferrer"><FileText className="h-3.5 w-3.5 mr-1.5" /> View File {i + 1}</a>
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                         {!profile.age && !profile.gender && !profile.location && (!profile.devices || profile.devices.length === 0) && (
                           <div className="text-center py-6">
                             <p className="text-muted-foreground mb-2">Complete your profile for better test matches</p>
