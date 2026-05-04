@@ -137,27 +137,28 @@ export default function ChatWidget() {
     const convId = await ensureConversation();
 
     try {
-      const res = await fetch(TICKET_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${ANON_KEY}`,
-        },
-        body: JSON.stringify({ ...form, conversation_id: convId }),
-      });
+      // Use Supabase client directly instead of Edge Function for better reliability
+      const { data, error } = await supabase
+        .from('support_tickets')
+        .insert({
+          name: form.name,
+          email: form.email,
+          issue: form.issue,
+          conversation_id: convId,
+          status: 'open',
+          priority: 'normal'
+        })
+        .select('id')
+        .single();
 
-      const data = await res.json();
+      if (error) throw error;
 
-      if (!res.ok || !data.success) {
-        throw new Error(data.error || 'Failed to create ticket');
-      }
-
-      setTicketId(data.ticket.id);
+      setTicketId(data.id);
       setEscalationStep('done');
 
       const confirmMsg: Msg = {
         role: 'assistant',
-        content: `✅ **Support ticket created!**\n\nTicket **#${data.ticket.id.slice(0, 8)}** has been submitted for **${form.name}** (${form.email}).\n\nOur team will get back to you at **${form.email}** within a few hours. You can also reach us at **contact@userninjas.in**.`,
+        content: `✅ **Support ticket created!**\n\nTicket **#${data.id.slice(0, 8)}** has been submitted for **${form.name}** (${form.email}).\n\nOur team will get back to you at **${form.email}** within a few hours. You can also reach us at **contact@userninjas.in**.`,
       };
       setMessages(prev => [...prev, confirmMsg]);
 
