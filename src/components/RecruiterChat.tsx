@@ -71,19 +71,46 @@ Rules:
 
 /** Extract the JSON object from potentially mixed AI output */
 function extractJSON(raw: string): { chat_response: string; ready: boolean; test: TestSuggestion | null } {
-  // Strip markdown code fences
-  let cleaned = raw.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
-
+  const text = raw.trim();
+  
   // Try direct parse first
-  try { return JSON.parse(cleaned); } catch {}
+  try { return JSON.parse(text); } catch {}
 
-  // Find the outermost { ... } containing "chat_response"
-  const start = cleaned.indexOf('{');
+  // Find the first '{' and try to find matching '}'
+  const start = text.indexOf('{');
   if (start !== -1) {
     let depth = 0;
-    for (let i = start; i < cleaned.length; i++) {
-      if (cleaned[i] === '{') depth++;
-      else if (cleaned[i] === '}') { depth--; if (depth === 0) { try { return JSON.parse(cleaned.slice(start, i + 1)); } catch {} break; } }
+    let inString = false;
+    let escape = false;
+
+    for (let i = start; i < text.length; i++) {
+      const char = text[i];
+      
+      if (escape) {
+        escape = false;
+        continue;
+      }
+      
+      if (char === '\\') {
+        escape = true;
+        continue;
+      }
+      
+      if (char === '"') {
+        inString = !inString;
+        continue;
+      }
+      
+      if (!inString) {
+        if (char === '{') depth++;
+        else if (char === '}') {
+          depth--;
+          if (depth === 0) {
+            const jsonPart = text.slice(start, i + 1);
+            try { return JSON.parse(jsonPart); } catch {}
+          }
+        }
+      }
     }
   }
 

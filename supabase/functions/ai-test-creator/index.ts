@@ -56,7 +56,8 @@ Rules:
 - Screener questions should filter for the most relevant testers. Include 2-4 screeners.
 - Questions should be post-session to capture reflections and specific UX moments.
 - Keep tasks between 2-5, keep questions between 2-5.
-- Be warm, professional, and encouraging in chat_response.`;
+- Be warm, professional, and encouraging in chat_response.
+- IMPORTANT: Return ONLY the JSON object. Do not include any conversational text, explanations, or markdown code blocks before or after the JSON.`;
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -102,19 +103,38 @@ serve(async (req) => {
     const data = await response.json();
     const raw = data.choices?.[0]?.message?.content ?? "";
 
-    // Strip markdown code fences if present
-    const jsonStr = raw.replace(/^```json\s*/i, "").replace(/^```\s*/i, "").replace(/\s*```$/i, "").trim();
-
-    let parsed: unknown;
+    // Robust JSON extraction
+    let parsed: any = null;
+    const text = raw.trim();
+    
     try {
-      parsed = JSON.parse(jsonStr);
+      parsed = JSON.parse(text);
     } catch {
-      // If AI didn't return valid JSON, wrap into a safe fallback
-      parsed = {
-        chat_response: raw,
-        ready: false,
-        test: null,
-      };
+      const start = text.indexOf('{');
+      if (start !== -1) {
+        let depth = 0;
+        let inString = false;
+        let escape = false;
+        for (let i = start; i < text.length; i++) {
+          const char = text[i];
+          if (escape) { escape = false; continue; }
+          if (char === '\\') { escape = true; continue; }
+          if (char === '"') { inString = !inString; continue; }
+          if (!inString) {
+            if (char === '{') depth++;
+            else if (char === '}') {
+              depth--;
+              if (depth === 0) {
+                try { parsed = JSON.parse(text.slice(start, i + 1)); break; } catch {}
+              }
+            }
+          }
+        }
+      }
+    }
+
+    if (!parsed) {
+      parsed = { chat_response: raw, ready: false, test: null };
     }
 
     return new Response(JSON.stringify(parsed), {
