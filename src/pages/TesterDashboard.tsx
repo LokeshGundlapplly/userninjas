@@ -396,10 +396,20 @@ export default function TesterDashboard() {
   }, [user, role, authLoading, navigate, toast]);
 
   useEffect(() => {
-    if (user && role === 'tester') {
-      fetchData();
+    if (authLoading) return; // wait for auth to finish
+    if (!user) return; // not logged in, redirect handled by other effect
+    if (role === null) {
+      // Role is still being fetched — wait a brief moment then check again
+      // useAuth fetches role asynchronously, so role may be null temporarily
+      return;
     }
-  }, [user, role]);
+    if (role === 'tester') {
+      fetchData();
+    } else {
+      // Non-tester: stop the loading spinner so the redirect useEffect can render & navigate
+      setLoading(false);
+    }
+  }, [user, role, authLoading]);
 
   const fetchData = useCallback(async () => {
     if (!user) return;

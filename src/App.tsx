@@ -151,7 +151,30 @@ function ProtectedDashboardRoute({ children }: { children: ReactNode }) {
     }
   }, [user, loading, role, navigate]);
 
-  if (loading || !user) return null;
+  // Show a full-page loading spinner while auth state is initializing
+  if (loading) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--background, #fff)',
+      }}>
+        <div style={{
+          width: 48,
+          height: 48,
+          borderRadius: '50%',
+          border: '4px solid #e5e7eb',
+          borderTopColor: '#6366f1',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  if (!user) return null;
   return <>{children}</>;
 }
 
