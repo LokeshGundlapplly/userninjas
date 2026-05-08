@@ -174,7 +174,28 @@ function ProtectedDashboardRoute({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!user) return null;
+  // Keep spinner visible while useEffect redirect is queued (avoids blank white flash)
+  if (!user) {
+    return (
+      <div style={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        background: 'var(--background, #fff)',
+      }}>
+        <div style={{
+          width: 48,
+          height: 48,
+          borderRadius: '50%',
+          border: '4px solid #e5e7eb',
+          borderTopColor: '#6366f1',
+          animation: 'spin 0.8s linear infinite',
+        }} />
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
   return <>{children}</>;
 }
 

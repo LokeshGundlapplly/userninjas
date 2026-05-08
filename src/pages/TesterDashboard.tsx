@@ -1113,7 +1113,25 @@ export default function TesterDashboard() {
     );
   }
 
-  if (!user) return null;
+  // Fallback: show skeleton while redirect effect queues up (never show blank page)
+  if (!user) {
+    return (
+      <>
+        <Background3D />
+        <Navbar />
+        <main className="min-h-screen pt-16 flex">
+          <div className="w-56 border-r bg-card/95 animate-pulse" />
+          <div className="flex-1 ml-56 px-6 py-6 space-y-4 animate-pulse">
+            <div className="h-8 bg-muted rounded-xl w-1/3" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[1,2,3,4].map(i => <div key={i} className="h-28 bg-muted rounded-xl" />)}
+            </div>
+            <div className="h-96 bg-muted rounded-2xl" />
+          </div>
+        </main>
+      </>
+    );
+  }
 
   // ─── Render ───────────────────────────────────────────────
 
