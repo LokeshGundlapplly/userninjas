@@ -2038,6 +2038,7 @@ export default function TesterDashboard() {
             <ScreenerGate
               testId={screenerTest.id}
               testTitle={screenerTest.title}
+              test={screenerTest}
               onEligible={handleScreenerPass}
               onCancel={() => {
                 setScreenerDialogOpen(false);

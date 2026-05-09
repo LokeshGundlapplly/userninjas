@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import {
   Loader2,
   ShieldCheck,
@@ -16,6 +17,7 @@ import {
 interface ScreenerGateProps {
   testId: string;
   testTitle: string;
+  test?: any;
   onEligible: () => void;
   onCancel: () => void;
 }
@@ -27,8 +29,15 @@ interface EligibilityResult {
   missing_criteria: string[];
 }
 
-export default function ScreenerGate({ testId, testTitle, onEligible, onCancel }: ScreenerGateProps) {
+export default function ScreenerGate({ testId, testTitle, test, onEligible, onCancel }: ScreenerGateProps) {
   const { toast } = useToast();
+  
+  const screenerQuestions = (test?.screener_questions || []) as { question: string, expected_answer: string }[];
+  
+  const [step, setStep] = useState<'custom_screeners' | 'ai_check'>(screenerQuestions.length > 0 ? 'custom_screeners' : 'ai_check');
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const [testerAnswer, setTesterAnswer] = useState('');
+  
   const [checking, setChecking] = useState(false);
   const [result, setResult] = useState<EligibilityResult | null>(null);
 
@@ -52,9 +61,76 @@ export default function ScreenerGate({ testId, testTitle, onEligible, onCancel }
     }
   };
 
-  // Auto-start check on first render
-  if (!checking && !result) {
-    check();
+  // Auto-start AI check if skipping custom screeners or if they pass
+  useEffect(() => {
+    if (step === 'ai_check' && !checking && !result) {
+      check();
+    }
+  }, [step, checking, result]);
+
+  const handleNextScreener = () => {
+    if (!testerAnswer.trim()) {
+      toast({ title: 'Answer required', description: 'Please provide an answer to continue.', variant: 'destructive' });
+      return;
+    }
+    
+    const currentScreener = screenerQuestions[currentQuestionIndex];
+    const expected = currentScreener.expected_answer.toLowerCase().trim();
+    const provided = testerAnswer.toLowerCase().trim();
+    
+    // Generous inclusion check
+    const isMatch = provided.includes(expected) || expected.includes(provided);
+    
+    if (!isMatch) {
+      setResult({ 
+        eligible: false, 
+        reason: 'Your answers to the specific screener questions did not match the requirements for this test.', 
+        match_score: 0, 
+        missing_criteria: ['Did not meet custom screener criteria'] 
+      });
+      setStep('ai_check'); // Skip to result view directly (bypassing actual AI check)
+      return;
+    }
+    
+    if (currentQuestionIndex < screenerQuestions.length - 1) {
+      setCurrentQuestionIndex(prev => prev + 1);
+      setTesterAnswer('');
+    } else {
+      setStep('ai_check');
+    }
+  };
+
+  if (step === 'custom_screeners' && !result) {
+    const currentQ = screenerQuestions[currentQuestionIndex];
+    return (
+      <div className="space-y-6 py-4">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-medium text-muted-foreground">Screener Question {currentQuestionIndex + 1} of {screenerQuestions.length}</p>
+          <Badge variant="outline" className="text-xs">{testTitle}</Badge>
+        </div>
+        
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">{currentQ.question}</h3>
+          <Input 
+            value={testerAnswer} 
+            onChange={e => setTesterAnswer(e.target.value)} 
+            placeholder="Your answer..." 
+            className="w-full"
+            autoFocus
+            onKeyDown={e => {
+              if (e.key === 'Enter') handleNextScreener();
+            }}
+          />
+        </div>
+        
+        <div className="flex justify-between pt-4">
+          <Button variant="ghost" onClick={onCancel}>Cancel</Button>
+          <Button onClick={handleNextScreener} className="gap-2">
+            Next <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (checking) {
@@ -129,7 +205,13 @@ export default function ScreenerGate({ testId, testTitle, onEligible, onCancel }
             Continue to Test <ArrowRight className="h-3.5 w-3.5" />
           </Button>
         ) : (
-          <Button size="sm" variant="outline" onClick={() => { setResult(null); check(); }} className="gap-1.5">
+          <Button size="sm" variant="outline" onClick={() => { 
+            // Reset state to start over
+            setResult(null); 
+            setCurrentQuestionIndex(0);
+            setTesterAnswer('');
+            setStep(screenerQuestions.length > 0 ? 'custom_screeners' : 'ai_check');
+          }} className="gap-1.5">
             <RotateCcw className="h-3.5 w-3.5" /> Re-check
           </Button>
         )}
