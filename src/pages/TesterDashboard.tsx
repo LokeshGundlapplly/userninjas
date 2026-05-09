@@ -59,6 +59,7 @@ import {
   Trophy,
   Award,
   Video,
+  Search,
 } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
@@ -297,7 +298,7 @@ interface ScheduledSession {
   meeting_url: string | null;
   status: string;
   created_at: string;
-  tests?: { title: string; reward_amount: number; meeting_link: string | null; estimated_duration: number } | null;
+  tests?: { title: string; reward_amount: number; estimated_duration: number } | null;
   study_slots?: { start_time: string; end_time: string } | null;
 }
 
@@ -475,7 +476,7 @@ export default function TesterDashboard() {
       // Fetch scheduled sessions with error handling
       const { data: sessionsData, error: sessionsError } = await (supabase as any)
         .from('scheduled_sessions')
-        .select('*, tests(title, reward_amount, meeting_link, estimated_duration), study_slots(start_time, end_time)')
+        .select('*, tests(title, reward_amount, estimated_duration), study_slots(start_time, end_time)')
         .eq('tester_id', user.id)
         .order('created_at', { ascending: false });
       
