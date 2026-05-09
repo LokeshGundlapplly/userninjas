@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { Users, Briefcase, Mail, Lock, User, ArrowRight, RotateCw, ShieldCheck, Linkedin, Chrome } from 'lucide-react';
+import { Users, Briefcase, Mail, Lock, User, ArrowRight, RotateCw, ShieldCheck } from 'lucide-react';
 import Navbar from '@/components/Navbar';
 import Background3D from '@/components/Background3D';
 import { isValidCompanyEmail } from '@/utils/emailValidation';
@@ -245,97 +245,6 @@ export default function Auth() {
 
     console.log(`✓ OTP sent via Supabase built-in method to ${normalizedEmail}`);
     return 'supabase';
-  };
-
-  // ─── Social Authentication Handlers ───
-  const getOAuthErrorMessage = (error: any, provider: string) => {
-    const message = error?.message || '';
-    
-    if (message.includes('provider is not enabled') || message.includes('Unsupported provider')) {
-      return `${provider} OAuth is not yet configured. Please contact support or check the documentation for setup instructions.`;
-    }
-    
-    if (message.includes('Redirect URI mismatch')) {
-      return 'There was a configuration error. Please contact support.';
-    }
-    
-    if (message.includes('Invalid client')) {
-      return 'OAuth provider configuration is invalid. Please contact support.';
-    }
-    
-    return message || `Failed to sign in with ${provider}. Please try again.`;
-  };
-
-  const handleLinkedInSignIn = async () => {
-    try {
-      setIsLoading(true);
-      const redirectUrl = getRedirectUrl('/auth/callback');
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'linkedin_oidc',
-        options: {
-          redirectTo: redirectUrl,
-          scopes: 'openid profile email',
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      console.log('LinkedIn sign in initiated');
-      toast({
-        title: "Redirecting to LinkedIn",
-        description: "You'll be redirected to complete your sign-in.",
-      });
-    } catch (error: any) {
-      console.error('LinkedIn sign in error:', error);
-      const errorMsg = getOAuthErrorMessage(error, 'LinkedIn');
-      
-      toast({
-        variant: "destructive",
-        title: "LinkedIn Sign In Failed",
-        description: errorMsg,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    try {
-      setIsLoading(true);
-      const redirectUrl = getRedirectUrl('/auth/callback');
-      
-      const { data, error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          scopes: 'profile email',
-        },
-      });
-
-      if (error) {
-        throw error;
-      }
-
-      console.log('Google sign in initiated');
-      toast({
-        title: "Redirecting to Google",
-        description: "You'll be redirected to complete your sign-in.",
-      });
-    } catch (error: any) {
-      console.error('Google sign in error:', error);
-      const errorMsg = getOAuthErrorMessage(error, 'Google');
-      
-      toast({
-        variant: "destructive",
-        title: "Google Sign In Failed",
-        description: errorMsg,
-      });
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1002,42 +911,6 @@ export default function Auth() {
                       {!isLoading && <ArrowRight className="h-4 w-4" />}
                     </Button>
                   </form>
-
-                  {/* Social Authentication Buttons */}
-                  <div className="mt-6 space-y-3">
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <span className="w-full border-t border-border/60"></span>
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-background px-2 text-muted-foreground">or continue with</span>
-                      </div>
-                    </div>
-
-                    {selectedRole === 'tester' || (!isSignUp && selectedRole === 'tester') ? (
-                      <Button
-                        type="button"
-                        onClick={handleLinkedInSignIn}
-                        disabled={isLoading}
-                        variant="outline"
-                        className="w-full rounded-xl gap-2 h-11 border-border/60 hover:bg-muted"
-                      >
-                        <Linkedin className="h-4 w-4" />
-                        LinkedIn
-                      </Button>
-                    ) : null}
-
-                    <Button
-                      type="button"
-                      onClick={handleGoogleSignIn}
-                      disabled={isLoading}
-                      variant="outline"
-                      className="w-full rounded-xl gap-2 h-11 border-border/60 hover:bg-muted"
-                    >
-                      <Chrome className="h-4 w-4" />
-                      Google
-                    </Button>
-                  </div>
                   
                   <div className="mt-6 text-center">
                     <button
