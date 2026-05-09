@@ -322,6 +322,18 @@ export default function TesterDashboard() {
   const [section, setSection] = useState<Section>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && ['overview', 'available', 'my-tests', 'earnings', 'profile'].includes(hash)) {
+        setSection(hash as Section);
+      }
+    };
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   // Data
   const [tests, setTests] = useState<Test[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);

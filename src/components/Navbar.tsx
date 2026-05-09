@@ -27,6 +27,13 @@ const testerNavLinks = [
   { href: '/tester/profile', label: 'Profile' },
 ];
 
+const adminNavLinks = [
+  { href: '/admin', label: 'Dashboard' },
+  { href: '/admin#tests', label: 'Tests & Postings' },
+  { href: '/admin#users', label: 'Users' },
+  { href: '/admin#chats', label: 'Support' },
+];
+
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -41,9 +48,11 @@ export default function Navbar() {
   }, []);
 
   const navItems = user && role
-    ? role === 'recruiter'
-      ? recruiterNavLinks
-      : testerNavLinks
+    ? role === 'admin'
+      ? adminNavLinks
+      : role === 'recruiter'
+        ? recruiterNavLinks
+        : testerNavLinks
     : publicLinks;
 
   const handleSignOut = async () => {

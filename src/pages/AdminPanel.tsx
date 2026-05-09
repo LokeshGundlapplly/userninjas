@@ -143,6 +143,18 @@ export default function AdminPanel() {
   const [testSearchQuery, setTestSearchQuery] = useState('');
   const [testStatusFilter, setTestStatusFilter] = useState<'all' | 'active' | 'completed' | 'paused'>('all');
 
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash && ['overview', 'tests', 'users', 'recruiting', 'testing', 'chats', 'tickets'].includes(hash)) {
+        setActiveTab(hash);
+      }
+    };
+    handleHashChange();
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   // Chat state
   const [selectedConvo, setSelectedConvo] = useState<string | null>(null);
   const [convoMessages, setConvoMessages] = useState<ChatMessage[]>([]);
@@ -513,7 +525,7 @@ export default function AdminPanel() {
         </div>
 
         {/* Main Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <Tabs value={activeTab} onValueChange={(val) => { setActiveTab(val); window.location.hash = val; }} className="w-full">
           <TabsList className="mb-6 bg-card/50 border border-border/50 p-1 flex-wrap gap-1">
             <TabsTrigger value="overview" className="gap-2"><Eye className="h-4 w-4" />Overview</TabsTrigger>
             <TabsTrigger value="tests" className="gap-2"><FileText className="h-4 w-4" />Tests & Postings</TabsTrigger>
