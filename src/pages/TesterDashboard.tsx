@@ -428,7 +428,7 @@ export default function TesterDashboard() {
       // Fetch full profile for profile section
       const { data: fullProfile } = await supabase
         .from('profiles')
-        .select('full_name, email, avatar_url, created_at, age, gender, location, bio, devices, interests, attachments')
+        .select('full_name, email, avatar_url, created_at, age, gender, location, bio, devices, interests')
         .eq('user_id', user.id)
         .single();
       setProfile(fullProfile);
