@@ -2,21 +2,16 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import {
-  Send,
-  Sparkles,
-  Loader2,
-  Wand2,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  RotateCcw,
+  Send, Sparkles, Loader2, Wand2, RotateCcw,
+  ChevronDown, ChevronUp, CheckCircle2, Clock, DollarSign,
+  Layers, Target, X,
 } from 'lucide-react';
 import type { TestSuggestion } from '@/components/AITestCreatorChat';
+import ReactMarkdown from 'react-markdown';
 
+// ─── System prompt ───────────────────────────────────────────────────────────
 const SYSTEM_PROMPT = `You are Alex, a senior UX research consultant at UserNinjas. You help product teams and recruiters design effective user research studies.
 
 When a recruiter describes what they want to test, you help them:
@@ -32,358 +27,299 @@ Always respond with a JSON object matching this exact schema:
   "test": {
     "title": "string",
     "description": "string",
-    "requirements": "string — what testers need (skills, devices, experience)",
+    "requirements": "string",
     "category": "one of: Web App | Mobile App | E-commerce | SaaS | Landing Page | Game | Other",
-    "estimated_duration": number (minutes, realistic for the scope),
-    "recommended_reward": number (USD — fair market rate, typically $10-50),
-    "tasks": [
-      { "title": "string", "description": "string — clear scenario-based instruction" }
-    ],
-    "questions": [
-      {
-        "question_text": "string",
-        "question_type": "open_text | mcq | rating | yes_no",
-        "options": ["string"] (only for mcq),
-        "required": boolean
-      }
-    ],
-    "screener_questions": [
-      {
-        "question": "string — yes/no or short answer question",
-        "expected_answer": "string — what the right answer should be"
-      }
-    ],
-    "target_age": "string e.g. 25-45",
-    "target_location": "string e.g. US, Global",
-    "device_targeting": ["desktop", "mobile", "tablet"] (subset),
-    "test_type": "one of: unmoderated | moderated | survey | usability | prototype | first_impression | ab_test | card_sort | tree_test | diary_study | ai_interview"
+    "estimated_duration": number,
+    "recommended_reward": number,
+    "tasks": [{ "title": "string", "description": "string" }],
+    "questions": [{ "question_text": "string", "question_type": "open_text | mcq | rating | yes_no", "options": ["string"], "required": boolean }],
+    "screener_questions": [{ "question": "string", "expected_answer": "string" }],
+    "target_age": "string",
+    "target_location": "string",
+    "device_targeting": ["desktop","mobile","tablet"],
+    "test_type": "unmoderated | moderated | survey | usability | prototype | first_impression | ab_test | card_sort | tree_test | diary_study | ai_interview"
   }
 }
 
 Rules:
-- If the user hasn't given enough information yet, set "ready": false and "test": null. Ask ONE focused clarifying question.
-- If you have enough info to create a good test, set "ready": true and populate the full "test" object.
-- Tasks should be realistic user scenarios, not instructions ("You're shopping for a gift under $50 — find something for your friend", NOT "Click on the product category").
-- Screener questions should filter for the most relevant testers. Include 2-4 screeners.
-- Questions should be post-session to capture reflections and specific UX moments.
-- Keep tasks between 2-5, keep questions between 2-5.
-- Be warm, professional, and encouraging in chat_response.`;
+- If you don't have enough info yet, set "ready": false and "test": null. Ask ONE focused clarifying question.
+- If you have enough info, set "ready": true and populate the full "test" object.
+- Tasks should be realistic user scenarios, not instructions.
+- Include 2-4 screener questions.
+- Include 2-5 post-session questions.
+- Be warm, professional, and encouraging in chat_response.
+- NEVER output raw JSON in chat_response — only natural language.`;
 
-/** Extract the JSON object from potentially mixed AI output */
+// ─── JSON extractor ───────────────────────────────────────────────────────────
 function extractJSON(raw: string): { chat_response: string; ready: boolean; test: TestSuggestion | null } {
   const text = raw.trim();
-  
-  // Try direct parse first
   try { return JSON.parse(text); } catch {}
 
-  // Find the first '{' and try to find matching '}'
   const start = text.indexOf('{');
   if (start !== -1) {
-    let depth = 0;
-    let inString = false;
-    let escape = false;
-
+    let depth = 0, inString = false, escape = false;
     for (let i = start; i < text.length; i++) {
-      const char = text[i];
-      
-      if (escape) {
-        escape = false;
-        continue;
-      }
-      
-      if (char === '\\') {
-        escape = true;
-        continue;
-      }
-      
-      if (char === '"') {
-        inString = !inString;
-        continue;
-      }
-      
+      const c = text[i];
+      if (escape) { escape = false; continue; }
+      if (c === '\\') { escape = true; continue; }
+      if (c === '"') { inString = !inString; continue; }
       if (!inString) {
-        if (char === '{') depth++;
-        else if (char === '}') {
+        if (c === '{') depth++;
+        else if (c === '}') {
           depth--;
           if (depth === 0) {
-            const jsonPart = text.slice(start, i + 1);
-            try { return JSON.parse(jsonPart); } catch {}
+            try { return JSON.parse(text.slice(start, i + 1)); } catch {}
           }
         }
       }
     }
   }
-
-  // Fallback: use whole text as chat_response
-  return { chat_response: raw, ready: false, test: null };
+  // Fallback: treat everything as conversational text (never show raw JSON)
+  return { chat_response: raw.replace(/```json[\s\S]*?```/g, '').replace(/\{[\s\S]*\}/g, '').trim() || raw, ready: false, test: null };
 }
 
-/** Generic OpenAI-compatible chat completions call (works with OpenAI, Groq, etc.) */
+// ─── AI providers ─────────────────────────────────────────────────────────────
 async function callOpenAICompatible(
   apiMessages: { role: string; content: string }[],
-  baseUrl: string,
-  apiKey: string,
-  model: string,
+  baseUrl: string, apiKey: string, model: string,
 ): Promise<{ chat_response: string; ready: boolean; test: TestSuggestion | null }> {
   const res = await fetch(`${baseUrl}/chat/completions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model,
-      messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...apiMessages.slice(-12)],
-      temperature: 0.4,
-    }),
+    body: JSON.stringify({ model, messages: [{ role: 'system', content: SYSTEM_PROMPT }, ...apiMessages.slice(-12)], temperature: 0.4 }),
   });
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(`${model} error ${res.status}: ${errText.slice(0, 200)}`);
-  }
+  if (!res.ok) throw new Error(`${model} ${res.status}`);
   const data = await res.json();
-  const raw = data.choices?.[0]?.message?.content ?? '';
-  return extractJSON(raw);
+  return extractJSON(data.choices?.[0]?.message?.content ?? '');
 }
 
-/** Try Gemini REST API */
 async function callGeminiDirect(
-  apiMessages: { role: string; content: string }[],
-  apiKey: string,
+  apiMessages: { role: string; content: string }[], apiKey: string,
 ): Promise<{ chat_response: string; ready: boolean; test: TestSuggestion | null }> {
   const contents = [
     { role: 'user', parts: [{ text: SYSTEM_PROMPT }] },
     { role: 'model', parts: [{ text: 'Understood. I will respond with the JSON schema.' }] },
-    ...apiMessages.map((m) => ({
-      role: m.role === 'assistant' ? 'model' : 'user',
-      parts: [{ text: m.content }],
-    })),
+    ...apiMessages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] })),
   ];
-
   for (const model of ['gemini-2.0-flash-lite', 'gemini-2.0-flash']) {
     const res = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents, generationConfig: { temperature: 0.4 } }),
-      },
+      { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents, generationConfig: { temperature: 0.4 } }) },
     );
     if (res.status === 429 || res.status === 404) continue;
-    if (!res.ok) throw new Error(`Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    if (!res.ok) throw new Error(`Gemini ${res.status}`);
     const data = await res.json();
-    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text ?? '';
-    return extractJSON(raw);
+    return extractJSON(data.candidates?.[0]?.content?.parts?.[0]?.text ?? '');
   }
-  throw new Error('Gemini models unavailable');
+  throw new Error('Gemini unavailable');
 }
 
-/** Tries all configured AI providers in order until one works */
 async function callAIFallback(
   apiMessages: { role: string; content: string }[],
 ): Promise<{ chat_response: string; ready: boolean; test: TestSuggestion | null }> {
   const errors: string[] = [];
-
-  // 1. Gemini (free tier)
   const geminiKey = import.meta.env.VITE_GEMINI_API_KEY;
-  if (geminiKey) {
-    try { return await callGeminiDirect(apiMessages, geminiKey); }
-    catch (e: any) { errors.push(e.message); }
-  }
-
-  // 2. OpenAI
+  if (geminiKey) { try { return await callGeminiDirect(apiMessages, geminiKey); } catch (e: any) { errors.push(e.message); } }
   const openaiKey = import.meta.env.VITE_OPENAI_API_KEY;
-  if (openaiKey) {
-    try { return await callOpenAICompatible(apiMessages, 'https://api.openai.com/v1', openaiKey, 'gpt-4o-mini'); }
-    catch (e: any) { errors.push(e.message); }
-  }
-
-  // 3. Groq (free tier — get key at console.groq.com)
+  if (openaiKey) { try { return await callOpenAICompatible(apiMessages, 'https://api.openai.com/v1', openaiKey, 'gpt-4o-mini'); } catch (e: any) { errors.push(e.message); } }
   const groqKey = import.meta.env.VITE_GROQ_API_KEY;
-  if (groqKey) {
-    try { return await callOpenAICompatible(apiMessages, 'https://api.groq.com/openai/v1', groqKey, 'llama-3.3-70b-versatile'); }
-    catch (e: any) { errors.push(e.message); }
-  }
-
-  if (errors.length === 0) {
-    throw new Error('No AI API key configured. Add VITE_GEMINI_API_KEY, VITE_OPENAI_API_KEY, or VITE_GROQ_API_KEY to your .env file.');
-  }
-  throw new Error(`All AI providers failed:\n${errors.join('\n')}`);
+  if (groqKey) { try { return await callOpenAICompatible(apiMessages, 'https://api.groq.com/openai/v1', groqKey, 'llama-3.3-70b-versatile'); } catch (e: any) { errors.push(e.message); } }
+  throw new Error(errors.length ? `All AI providers failed: ${errors.join(', ')}` : 'No AI API key configured.');
 }
 
-function NinjaAvatar({ size = 28 }: { size?: number }) {
+// ─── Avatar ───────────────────────────────────────────────────────────────────
+function AlexAvatar({ size = 32 }: { size?: number }) {
   return (
     <div
-      className="rounded-xl bg-gradient-to-br from-primary to-primary/70 flex items-center justify-center flex-shrink-0 shadow-md ring-2 ring-primary/20"
+      className="rounded-xl bg-gradient-to-br from-violet-600 via-indigo-600 to-primary flex items-center justify-center flex-shrink-0 shadow-lg shadow-violet-500/30 ring-2 ring-white/10"
       style={{ width: size, height: size }}
     >
-      <svg width={Math.round(size * 0.6)} height={Math.round(size * 0.6)} viewBox="0 0 24 24" fill="none">
-        <path d="M12 2L2 7L12 12L22 7L12 2Z" fill="white" opacity="0.95" />
-        <path d="M2 17L12 22L22 17" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.75" />
-        <path d="M2 12L12 17L22 12" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" opacity="0.9" />
-      </svg>
+      <Sparkles className="text-white" style={{ width: size * 0.45, height: size * 0.45 }} />
     </div>
   );
 }
 
-interface ChatMessage {
-  role: 'user' | 'ai';
-  content: string;
+// ─── Typing dots ─────────────────────────────────────────────────────────────
+function TypingDots() {
+  return (
+    <div className="flex items-center gap-1 px-1 py-0.5">
+      {[0, 1, 2].map(i => (
+        <span
+          key={i}
+          className="w-2 h-2 rounded-full bg-violet-400 animate-bounce"
+          style={{ animationDelay: `${i * 150}ms`, animationDuration: '1s' }}
+        />
+      ))}
+    </div>
+  );
 }
 
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface ChatMessage { role: 'user' | 'ai'; content: string; }
+
+const QUICK_PROMPTS = [
+  '🛒 E-commerce checkout test',
+  '📱 Mobile app onboarding',
+  '🎨 Landing page first impression',
+  '🔍 Navigation tree test',
+];
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function RecruiterChat() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'ai',
-      content:
-        "Hi! I'm Alex, your UserNinjas AI research consultant. 👋\n\nTell me what you'd like to test — describe your product, your users, and what you want to learn. I'll design the complete study for you:\n\n• **Test structure** with scenario-based tasks\n• **Screener questions** to find the right testers\n• **Post-session questions** for deeper insights\n• **Targeting** by age, device, and location\n\nWhat are you working on?",
-    },
-  ]);
+
+  const [messages, setMessages] = useState<ChatMessage[]>([{
+    role: 'ai',
+    content: "Hi! I'm **Alex**, your UserNinjas AI research consultant. 👋\n\nDescribe your product and what you want to test — I'll design a complete, professional study for you including tasks, screener questions, and targeting.\n\nWhat are you working on?",
+  }]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [suggestion, setSuggestion] = useState<TestSuggestion | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [showQuickPrompts, setShowQuickPrompts] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, loading]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
+  useEffect(() => { setTimeout(() => inputRef.current?.focus(), 200); }, []);
 
-  useEffect(() => {
-    setTimeout(() => inputRef.current?.focus(), 200);
-  }, []);
-
-  const sendMessage = useCallback(async () => {
-    const text = input.trim();
+  const sendMessage = useCallback(async (overrideText?: string) => {
+    const text = (overrideText ?? input).trim();
     if (!text || loading) return;
     setInput('');
-    const userMsg: ChatMessage = { role: 'user', content: text };
-    const nextMessages = [...messages, userMsg];
+    setShowQuickPrompts(false);
+    const nextMessages: ChatMessage[] = [...messages, { role: 'user', content: text }];
     setMessages(nextMessages);
     setLoading(true);
 
     try {
-      const apiMessages = nextMessages.map((m) => ({
-        role: m.role === 'ai' ? 'assistant' : 'user',
-        content: m.content,
-      }));
-
+      const apiMessages = nextMessages.map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content }));
       let parsed: { chat_response?: string; ready?: boolean; test?: TestSuggestion | null };
 
-      // Try edge function first; fall back to direct Gemini API
       try {
-        const { data, error } = await supabase.functions.invoke('ai-test-creator', {
-          body: { messages: apiMessages },
-        });
+        const { data, error } = await supabase.functions.invoke('ai-test-creator', { body: { messages: apiMessages } });
         if (error) throw error;
         if (data?.error) throw new Error(data.error);
         parsed = data;
-      } catch (edgeErr) {
-        console.warn('Edge function unavailable, trying client-side AI:', edgeErr);
+      } catch {
         parsed = await callAIFallback(apiMessages);
       }
 
-      const aiText = parsed?.chat_response ?? "I had trouble understanding — could you try rephrasing?";
-      setMessages((prev) => [...prev, { role: 'ai', content: aiText }]);
-      if (parsed?.ready && parsed?.test) {
-        setSuggestion(parsed.test as TestSuggestion);
-      }
+      // Always use chat_response only — never show raw JSON
+      const aiText = parsed?.chat_response?.trim() || "I'm not sure I understood — could you rephrase that?";
+      setMessages(prev => [...prev, { role: 'ai', content: aiText }]);
+      if (parsed?.ready && parsed?.test) setSuggestion(parsed.test as TestSuggestion);
     } catch (err: any) {
-      console.error('ai-test-creator error:', err);
-      const detail = err?.message || 'Unknown error';
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: 'ai',
-          content: `⚠️ **Something went wrong**\n\n${detail}\n\nThis usually means the AI service is temporarily unavailable. Please try again in a moment.`,
-        },
-      ]);
+      setMessages(prev => [...prev, { role: 'ai', content: "Sorry, something went wrong. Please try again in a moment." }]);
     } finally {
       setLoading(false);
     }
   }, [input, loading, messages]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
   const handleApply = () => {
     if (!suggestion) return;
-    try {
-      sessionStorage.setItem('ai_test_suggestion', JSON.stringify(suggestion));
-    } catch {}
-    toast({ title: 'Test structure applied!', description: 'Review and publish when ready.' });
+    try { sessionStorage.setItem('ai_test_suggestion', JSON.stringify(suggestion)); } catch {}
+    toast({ title: 'Test ready!', description: 'Review and publish your study.' });
     navigate('/recruiter/create-test');
   };
 
   const reset = () => {
-    setMessages([
-      {
-        role: 'ai',
-        content:
-          "Hi! I'm Alex, your UserNinjas AI research consultant. 👋\n\nTell me what you'd like to test — describe your product, your users, and what you want to learn. I'll design the complete study for you.\n\nWhat are you working on?",
-      },
-    ]);
+    setMessages([{ role: 'ai', content: "Hi again! What would you like to research today?" }]);
     setSuggestion(null);
     setInput('');
+    setShowQuickPrompts(true);
   };
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="flex-shrink-0 px-6 py-4 border-b border-border/60 bg-gradient-to-r from-primary/5 to-transparent">
+    <div className="flex flex-col h-full bg-gradient-to-b from-background via-background to-violet-950/5">
+
+      {/* ── Header ── */}
+      <div className="flex-shrink-0 px-5 py-4 border-b border-border/40 bg-gradient-to-r from-violet-600/10 via-indigo-600/5 to-transparent backdrop-blur-sm">
         <div className="flex items-center gap-3">
-          <NinjaAvatar size={42} />
+          <AlexAvatar size={40} />
           <div className="flex-1 min-w-0">
-            <h2 className="text-lg font-semibold leading-tight">
-              <span className="text-foreground">User</span>
-              <span className="text-primary">Ninjas</span>
-              <span className="text-muted-foreground font-normal"> · Alex AI</span>
-            </h2>
-            <p className="text-xs text-muted-foreground">Your AI research consultant — describe what you need</p>
+            <div className="flex items-center gap-2">
+              <h2 className="font-bold text-base text-foreground">Alex</h2>
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/15 text-green-500 border border-green-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                Online
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">AI Research Consultant · UserNinjas</p>
           </div>
           {messages.length > 1 && (
-            <Button size="icon" variant="ghost" onClick={reset} title="Start over" className="h-9 w-9">
-              <RotateCcw className="h-4 w-4" />
-            </Button>
+            <button
+              onClick={reset}
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
+              title="Start over"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
           )}
         </div>
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-6 py-5 space-y-4 min-h-0">
+      {/* ── Messages ── */}
+      <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5 min-h-0 scroll-smooth">
+
         {messages.map((msg, i) => (
           <div key={i} className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-            {msg.role === 'ai' && <NinjaAvatar size={32} />}
+
+            {/* Avatar */}
+            {msg.role === 'ai' && <AlexAvatar size={30} />}
             {msg.role === 'user' && (
-              <div className="h-8 w-8 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 text-xs font-semibold text-muted-foreground">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-white shadow-md">
                 You
               </div>
             )}
+
+            {/* Bubble */}
             <div
-              className={`max-w-[75%] rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap ${
+              className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
                 msg.role === 'ai'
-                  ? 'bg-muted/70 text-foreground rounded-tl-sm'
-                  : 'bg-primary text-primary-foreground rounded-tr-sm'
+                  ? 'bg-card/80 border border-border/50 text-foreground rounded-tl-sm backdrop-blur-sm'
+                  : 'bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm shadow-lg shadow-violet-500/20'
               }`}
-              dangerouslySetInnerHTML={{
-                __html: msg.content
-                  .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                  .replace(/\n/g, '<br/>'),
-              }}
-            />
+            >
+              {msg.role === 'ai' ? (
+                <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_li]:my-0.5 [&_strong]:font-semibold [&_strong]:text-foreground">
+                  <ReactMarkdown>{msg.content}</ReactMarkdown>
+                </div>
+              ) : (
+                <p className="whitespace-pre-wrap">{msg.content}</p>
+              )}
+            </div>
           </div>
         ))}
 
+        {/* Typing indicator */}
         {loading && (
           <div className="flex gap-3">
-            <NinjaAvatar size={32} />
-            <div className="bg-muted/70 rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-1.5">
-              {[0, 1, 2].map((i) => (
-                <span key={i} className="h-1.5 w-1.5 rounded-full bg-primary/50 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+            <AlexAvatar size={30} />
+            <div className="bg-card/80 border border-border/50 rounded-2xl rounded-tl-sm px-4 py-3 backdrop-blur-sm shadow-sm">
+              <TypingDots />
+            </div>
+          </div>
+        )}
+
+        {/* Quick prompts */}
+        {showQuickPrompts && messages.length <= 1 && !loading && (
+          <div className="space-y-2 pt-2">
+            <p className="text-xs text-muted-foreground text-center font-medium">Try a quick start:</p>
+            <div className="grid grid-cols-2 gap-2">
+              {QUICK_PROMPTS.map(p => (
+                <button
+                  key={p}
+                  onClick={() => sendMessage(p)}
+                  className="text-left text-xs px-3 py-2.5 rounded-xl border border-border/60 bg-card/60 hover:bg-card hover:border-violet-500/40 hover:shadow-sm hover:shadow-violet-500/10 transition-all text-foreground/80 hover:text-foreground font-medium backdrop-blur-sm"
+                >
+                  {p}
+                </button>
               ))}
             </div>
           </div>
@@ -391,67 +327,87 @@ export default function RecruiterChat() {
 
         {/* Test suggestion card */}
         {suggestion && (
-          <div className="rounded-2xl border border-primary/30 bg-primary/5 overflow-hidden max-w-[85%]">
-            <div className="px-4 py-3 bg-primary/10 border-b border-primary/20 flex items-center justify-between">
+          <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-600/8 to-indigo-600/5 overflow-hidden shadow-lg shadow-violet-500/10">
+            {/* Card header */}
+            <div className="px-4 py-3 bg-violet-600/10 border-b border-violet-500/20 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Sparkles className="h-4 w-4 text-primary" />
-                <span className="text-sm font-semibold text-primary">Test Ready</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs text-primary border-primary/30">
-                  {suggestion.tasks.length} tasks · {suggestion.questions.length} questions · {suggestion.screener_questions.length} screeners
-                </Badge>
-                <button
-                  onClick={() => setShowDetails((v) => !v)}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showDetails ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-                </button>
-              </div>
-            </div>
-            <div className="px-4 py-3">
-              <p className="font-semibold text-sm text-foreground mb-0.5 truncate">{suggestion.title}</p>
-              <p className="text-xs text-muted-foreground line-clamp-2">{suggestion.description}</p>
-            </div>
-            {showDetails && (
-              <div className="px-4 pb-3 space-y-3 border-t border-primary/10 pt-3">
-                {suggestion.tasks.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Tasks</p>
-                    <ul className="space-y-1">
-                      {suggestion.tasks.map((t, i) => (
-                        <li key={i} className="text-xs flex gap-1.5">
-                          <span className="text-primary font-semibold flex-shrink-0">{i + 1}.</span>
-                          <span className="text-foreground">{t.title}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                {suggestion.screener_questions.length > 0 && (
-                  <div>
-                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1.5">Screener Questions</p>
-                    <ul className="space-y-1">
-                      {suggestion.screener_questions.map((s, i) => (
-                        <li key={i} className="text-xs flex gap-1.5 items-start">
-                          <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
-                          <span>{s.question} <span className="text-muted-foreground">(expect: {s.expected_answer})</span></span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-1.5">
-                  <Badge variant="secondary" className="text-xs">{suggestion.estimated_duration} min</Badge>
-                  <Badge variant="secondary" className="text-xs">${suggestion.recommended_reward} reward</Badge>
-                  <Badge variant="secondary" className="text-xs capitalize">{suggestion.test_type?.replace('_', ' ') || 'unmoderated'}</Badge>
-                  {suggestion.category && <Badge variant="secondary" className="text-xs">{suggestion.category}</Badge>}
+                <div className="w-6 h-6 rounded-lg bg-violet-600/20 flex items-center justify-center">
+                  <Sparkles className="h-3.5 w-3.5 text-violet-400" />
                 </div>
+                <span className="text-sm font-semibold text-violet-400">Study Ready</span>
+              </div>
+              <button
+                onClick={() => setShowDetails(v => !v)}
+                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {showDetails ? 'Hide' : 'Preview'}
+                {showDetails ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+              </button>
+            </div>
+
+            {/* Card body */}
+            <div className="px-4 py-3">
+              <p className="font-semibold text-sm text-foreground mb-1 truncate">{suggestion.title}</p>
+              <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{suggestion.description}</p>
+
+              {/* Meta pills */}
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  { icon: <Layers className="h-3 w-3" />, text: `${suggestion.tasks?.length || 0} tasks` },
+                  { icon: <Target className="h-3 w-3" />, text: `${suggestion.questions?.length || 0} questions` },
+                  { icon: <CheckCircle2 className="h-3 w-3" />, text: `${suggestion.screener_questions?.length || 0} screeners` },
+                  { icon: <Clock className="h-3 w-3" />, text: `${suggestion.estimated_duration} min` },
+                  { icon: <DollarSign className="h-3 w-3" />, text: `$${suggestion.recommended_reward}` },
+                ].map((pill, i) => (
+                  <span key={i} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                    {pill.icon} {pill.text}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Expanded details */}
+            {showDetails && (
+              <div className="px-4 pb-3 space-y-3 border-t border-violet-500/10 pt-3">
+                {suggestion.tasks?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Tasks</p>
+                    <ul className="space-y-1.5">
+                      {suggestion.tasks.map((t, i) => (
+                        <li key={i} className="text-xs flex gap-2 items-start">
+                          <span className="w-4 h-4 rounded-full bg-violet-600/20 text-violet-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                          <span className="text-foreground/80">{t.title}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {suggestion.screener_questions?.length > 0 && (
+                  <div>
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Screeners</p>
+                    <ul className="space-y-1.5">
+                      {suggestion.screener_questions.map((s, i) => (
+                        <li key={i} className="text-xs flex gap-2 items-start">
+                          <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span className="text-foreground/80">
+                            {s.question} <span className="text-muted-foreground">→ expect: "{s.expected_answer}"</span>
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
-            <div className="px-4 pb-4 pt-1">
-              <Button onClick={handleApply} className="w-full gap-2 btn-shimmer">
-                <Wand2 className="h-4 w-4" /> Review & Publish Test
+
+            {/* CTA */}
+            <div className="px-4 pb-4">
+              <Button
+                onClick={handleApply}
+                className="w-full gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 rounded-xl h-10 font-semibold text-sm transition-all"
+              >
+                <Wand2 className="h-4 w-4" />
+                Open in Test Builder
               </Button>
             </div>
           </div>
@@ -460,25 +416,32 @@ export default function RecruiterChat() {
         <div ref={bottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="flex-shrink-0 border-t border-border/60 px-6 py-4 bg-card/50">
-        <div className="flex gap-3 items-end">
-          <Textarea
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Describe what you want to test…"
-            className="resize-none text-sm min-h-[48px] max-h-36 py-3"
-            rows={1}
-            disabled={loading}
-          />
-          <Button size="icon" onClick={sendMessage} disabled={!input.trim() || loading} className="h-12 w-12 flex-shrink-0">
+      {/* ── Input ── */}
+      <div className="flex-shrink-0 border-t border-border/40 px-4 py-3 bg-card/40 backdrop-blur-sm">
+        <div className="flex gap-2 items-end">
+          <div className="flex-1 relative">
+            <textarea
+              ref={inputRef}
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Describe what you want to test…"
+              className="w-full resize-none text-sm px-4 py-3 pr-10 rounded-xl border border-border/60 bg-secondary/40 focus:bg-secondary/60 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 outline-none placeholder:text-muted-foreground/50 transition-all min-h-[46px] max-h-32 leading-relaxed"
+              rows={1}
+              disabled={loading}
+              style={{ scrollbarWidth: 'none' }}
+            />
+          </div>
+          <Button
+            onClick={() => sendMessage()}
+            disabled={!input.trim() || loading}
+            className="h-11 w-11 flex-shrink-0 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md shadow-violet-500/30 disabled:opacity-40 transition-all p-0"
+          >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
-        <p className="text-[10px] text-muted-foreground mt-2 text-center">
-          Powered by <span className="text-primary font-medium">UserNinjas AI</span> · Enter to send · Shift+Enter for new line
+        <p className="text-[10px] text-muted-foreground/50 text-center mt-2">
+          Powered by <span className="text-violet-400 font-semibold">UserNinjas AI</span> · Enter to send · Shift+Enter for new line
         </p>
       </div>
     </div>

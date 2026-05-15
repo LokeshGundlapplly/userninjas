@@ -69,6 +69,9 @@ import AIInterviewReport from '@/components/AIInterviewReport';
 import { useAIInterviewer } from '@/hooks/useAIInterviewer';
 import ScreenerGate from '@/components/ScreenerGate';
 import TesterSurveyFlow from '@/components/TesterSurveyFlow';
+import TesterChat from '@/components/TesterChat';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
+import { MessageSquare } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Test {
@@ -321,6 +324,7 @@ export default function TesterDashboard() {
   // Layout
   const [section, setSection] = useState<Section>('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -2143,6 +2147,33 @@ export default function TesterDashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* ─── Floating AI Chat Sheet ─── */}
+      <Sheet open={chatOpen} onOpenChange={setChatOpen}>
+        <SheetContent side="right" className="w-full sm:w-[420px] sm:max-w-[420px] p-0 flex flex-col">
+          <SheetHeader className="px-6 pt-5 pb-3 border-b border-border/60">
+            <SheetTitle className="flex items-center gap-2">
+              <MessageSquare className="h-5 w-5 text-emerald-500" />
+              AI Assistant
+            </SheetTitle>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden">
+            <TesterChat />
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Floating chat button */}
+      {!chatOpen && (
+        <button
+          onClick={() => setChatOpen(true)}
+          className="fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/30 flex items-center justify-center hover:scale-105 transition-transform"
+          title="AI Assistant"
+        >
+          <MessageSquare className="h-6 w-6" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-amber-400 rounded-full border-2 border-background animate-pulse" />
+        </button>
+      )}
     </>
   );
 }
