@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import AITestCreatorChat, { type TestSuggestion } from '@/components/AITestCreatorChat';
+import PricingModal from '@/components/PricingModal';
 
 const TEST_TYPES = [
   { id: 'unmoderated', label: 'Unmoderated Test', icon: Video, desc: 'Tester completes tasks independently with screen recording' },
@@ -60,13 +61,14 @@ interface ScreenerQuestion {
 }
 
 export default function CreateTest() {
-  const { user, role, loading: authLoading } = useAuth();
+  const { user, role, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [aiChatOpen, setAiChatOpen] = useState(false);
+  const [showPricingModal, setShowPricingModal] = useState(false);
 
   // Step 0: Test type
   const [testType, setTestType] = useState('unmoderated');
@@ -197,6 +199,22 @@ export default function CreateTest() {
     }
     setSaving(true);
     try {
+      // 1. Check study limits
+      const { count, error: countError } = await supabase
+        .from('tests')
+        .select('*', { count: 'exact', head: true })
+        .eq('recruiter_id', user.id);
+        
+      if (countError) throw countError;
+      
+      const studyLimit = profile?.study_limit || 2;
+      
+      if (count !== null && count >= studyLimit) {
+        setShowPricingModal(true);
+        setSaving(false);
+        return;
+      }
+
       // Create test
       const { data: test, error: testError } = await supabase
         .from('tests')
@@ -718,6 +736,11 @@ export default function CreateTest() {
           )}
         </div>
       </div>
+      <PricingModal 
+        open={showPricingModal} 
+        onOpenChange={setShowPricingModal} 
+        currentPlan={profile?.plan_type || 'free'} 
+      />
     </div>
   );
 }

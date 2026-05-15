@@ -4,14 +4,24 @@ import { supabase } from '@/integrations/supabase/client';
 
 type AppRole = 'tester' | 'recruiter' | 'admin';
 
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  full_name: string | null;
+  plan_type: string;
+  study_limit: number;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
+  profile: UserProfile | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string, role: AppRole) => Promise<{ error: Error | null; data: { user: any; session: any } | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -20,6 +30,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -62,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const userId = authUser.id;
 
     // Ensure profile row exists; this is a safety net if signup trigger failed.
-    await supabase
+    const { data: profileData } = await supabase
       .from('profiles')
       .upsert(
         {
@@ -71,7 +82,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           full_name: (authUser.user_metadata?.full_name as string | undefined) ?? null,
         },
         { onConflict: 'user_id' }
-      );
+      )
+      .select('id, user_id, full_name, plan_type, study_limit')
+      .single();
+
+    if (profileData) {
+      setProfile(profileData as UserProfile);
+    }
 
     // Fetch user roles - will only see own roles due to RLS policy
     const { data, error } = await supabase
@@ -158,8 +175,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setRole(null);
   };
 
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchUserRole(user);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, session, role, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ user, session, role, profile, loading, signIn, signUp, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
