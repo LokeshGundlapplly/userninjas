@@ -9,6 +9,8 @@ import Background3D from '@/components/Background3D';
 import RecruiterChat from '@/components/RecruiterChat';
 import TestDetailPanel from '@/components/recruiter/TestDetailPanel';
 import SubmissionDetailPanel from '@/components/recruiter/SubmissionDetailPanel';
+import RecruiterPaymentsPanel from '@/components/recruiter/RecruiterPaymentsPanel';
+import PricingModal from '@/components/PricingModal';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
 import AIInsightsPanel from '@/components/AIInsightsPanel';
@@ -37,7 +39,7 @@ import {
   Percent, Award, Sparkles, Play as PlayIcon, LogOut, Settings,
   Layers, Bot, MessageSquare, PieChart, Download, Search,
   LayoutGrid, ClipboardList, Eye, ChevronLeft, ChevronRight,
-  TrendingUp, Zap, Send, ArrowRight, ExternalLink, RefreshCw,
+  TrendingUp, Zap, Send, ArrowRight, ExternalLink, RefreshCw, CreditCard,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -117,7 +119,7 @@ interface SurveyQuestion {
   logic_branch: { condition: string; skip_to: number } | null;
 }
 
-type Section = 'overview' | 'tests' | 'submissions' | 'insights' | 'ai_interviews' | 'surveys' | 'analytics';
+type Section = 'overview' | 'tests' | 'submissions' | 'insights' | 'ai_interviews' | 'surveys' | 'analytics' | 'payments';
 
 // ─── Constants ────────────────────────────────────────────
 
@@ -136,6 +138,7 @@ const SIDEBAR_ITEMS: { key: Section; label: string; icon: typeof LayoutGrid }[] 
   { key: 'ai_interviews', label: 'AI Interviews', icon: Bot },
   { key: 'surveys', label: 'Surveys', icon: ClipboardList },
   { key: 'analytics', label: 'Analytics', icon: BarChart3 },
+  { key: 'payments', label: 'Billing', icon: CreditCard },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -170,12 +173,13 @@ function downloadCSV(filename: string, headers: string[], rows: string[][]) {
 // ─── Main Component ───────────────────────────────────────
 
 export default function RecruiterDashboard() {
-  const { user, role, loading: authLoading } = useAuth();
+  const { user, role, profile, loading: authLoading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   // Layout
   const [section, setSection] = useState<Section>('overview');
+  const [pricingModalOpen, setPricingModalOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
 
@@ -710,6 +714,7 @@ export default function RecruiterDashboard() {
                     {section === 'ai_interviews' && 'AI Interviews'}
                     {section === 'surveys' && 'Surveys'}
                     {section === 'analytics' && 'Analytics'}
+                    {section === 'payments' && 'Billing & Payments'}
                   </h1>
                   <p className="text-sm text-muted-foreground mt-0.5">
                     {section === 'overview' && `${activeTests} active tests · ${totalTesters} submissions · $${totalSpent.toFixed(0)} spent`}
@@ -719,6 +724,7 @@ export default function RecruiterDashboard() {
                     {section === 'ai_interviews' && `${aiInterviewSessions.length} sessions`}
                     {section === 'surveys' && `${surveys.length} surveys`}
                     {section === 'analytics' && 'Performance metrics and insights'}
+                    {section === 'payments' && `${profile?.plan_type || 'free'} plan · manage subscription & credits`}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -1582,10 +1588,29 @@ export default function RecruiterDashboard() {
                   )}
                 </div>
               )}
+
+              {/* ══════════════════════════════════════════════════ */}
+              {/*  PAYMENTS SECTION                                  */}
+              {/* ══════════════════════════════════════════════════ */}
+              {section === 'payments' && (
+                <RecruiterPaymentsPanel
+                  user={user}
+                  profile={profile}
+                  onUpgradePlan={() => setPricingModalOpen(true)}
+                  onProfileRefresh={refreshProfile}
+                />
+              )}
             </div>
           </main>
         </div>
       </TooltipProvider>
+
+      {/* ─── Pricing Modal ─── */}
+      <PricingModal
+        open={pricingModalOpen}
+        onOpenChange={setPricingModalOpen}
+        currentPlan={profile?.plan_type || 'free'}
+      />
 
       {/* ─── Floating AI Chat Sheet ─── */}
       <Sheet open={chatOpen} onOpenChange={setChatOpen}>
