@@ -340,7 +340,7 @@ export default function Auth() {
       // Sign out if there was any unexpected error during sign in
       try {
         await supabase.auth.signOut();
-      } catch {}
+      } catch { /* ignore */ }
       setOtpChallengePending(false);
       toast({ title: 'Error', description: 'An unexpected error occurred.', variant: 'destructive' });
     } finally {

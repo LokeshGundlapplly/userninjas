@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Check, Zap, Building2, Rocket, ArrowRight, X, Phone,
-  Crown, Lock, Star, Infinity
+  Crown, Lock, Star, Infinity as InfinityIcon
 } from 'lucide-react';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -347,7 +347,7 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
                       {loadingPlan === plan.key ? (
                         <Zap className="h-3.5 w-3.5 animate-pulse" /> 
                       ) : (
-                        plan.popular && <Infinity className="h-3.5 w-3.5" />
+                        plan.popular && <InfinityIcon className="h-3.5 w-3.5" />
                       )}
                       {loadingPlan === plan.key ? 'Processing...' : plan.cta}
                       {!plan.popular && !loadingPlan && <ArrowRight className="h-3.5 w-3.5" />}

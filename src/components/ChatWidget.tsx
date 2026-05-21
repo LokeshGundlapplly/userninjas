@@ -310,7 +310,7 @@ export default function ChatWidget() {
 
         let idx: number;
         while ((idx = buffer.indexOf('\n')) !== -1) {
-          let line = buffer.slice(0, idx).replace(/\r$/, '');
+          const line = buffer.slice(0, idx).replace(/\r$/, '');
           buffer = buffer.slice(idx + 1);
           if (!line.startsWith('data: ')) continue;
           const json = line.slice(6).trim();

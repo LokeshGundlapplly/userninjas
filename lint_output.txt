@@ -1,0 +1,212 @@
+
+> vite_react_shadcn_ts@0.0.0 lint
+> eslint .
+
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/AIInsightsPanel.tsx
+   71:6   warning  React Hook useEffect has a missing dependency: 'fetchSubmissionsAndInsights'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  120:19  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/AITestCreatorChat.tsx
+  29:83  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  31:42  error  Empty block statement                     no-empty
+  46:72  error  Empty block statement                     no-empty
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ChatWidget.tsx
+   96:6   warning  React Hook useEffect has a missing dependency: 'messages.length'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  313:15  error    'line' is never reassigned. Use 'const' instead                                                                     prefer-const
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/DynamicScreenerForm.tsx
+  42:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  59:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  60:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/PricingModal.tsx
+    9:22  error  Shadowing of global property 'Infinity'   no-shadow-restricted-names
+   24:15  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  161:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  182:25  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  196:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  201:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/RecruiterChat.tsx
+   56:42   error  Empty block statement                     no-empty
+   71:72   error  Empty block statement                     no-empty
+  122:93   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  124:141  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  126:154  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  213:19   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  226:93   error  Empty block statement                     no-empty
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ScreenRecorder.tsx
+   37:33  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+   47:6   warning  React Hook useEffect has a missing dependency: 'previewUrl'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   55:42  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+   55:79  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+   66:36  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+   83:35  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+  197:19  error    Unexpected any. Specify a different type                                                                       @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ScreenerGate.tsx
+  20:10  error    Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  54:19  error    Unexpected any. Specify a different type                                                                  @typescript-eslint/no-explicit-any
+  69:6   warning  React Hook useEffect has a missing dependency: 'check'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/TesterSurveyFlow.tsx
+   51:6   warning  React Hook useEffect has a missing dependency: 'fetchQuestions'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  150:14  error    Unexpected any. Specify a different type                                                                           @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/recruiter/SubmissionDetailPanel.tsx
+   20:14  error    Unexpected any. Specify a different type                                                                                 @typescript-eslint/no-explicit-any
+  105:6   warning  React Hook useEffect has a missing dependency: 'submission.tester_id'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/recruiter/TestDetailPanel.tsx
+  26:12  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  49:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  50:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  82:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ui/badge.tsx
+  29:17  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ui/button.tsx
+  47:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ui/command.tsx
+  24:11  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ui/form.tsx
+  129:10  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ui/navigation-menu.tsx
+  111:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ui/sidebar.tsx
+  636:3  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ui/sonner.tsx
+  27:19  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ui/textarea.tsx
+  5:18  error  An interface declaring no members is equivalent to its supertype  @typescript-eslint/no-empty-object-type
+
+/Users/lokeshgundlapplly/userninjas-1/src/components/ui/toggle.tsx
+  37:18  warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/lokeshgundlapplly/userninjas-1/src/hooks/useAIInterviewer.ts
+  121:16  error    Unexpected any. Specify a different type                                                                                @typescript-eslint/no-explicit-any
+  281:6   warning  React Hook useCallback has a missing dependency: 'estimatedDuration'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  321:5   warning  React Hook useCallback has a missing dependency: 'generateReport'. Either include it or remove the dependency array     react-hooks/exhaustive-deps
+  362:18  error    Unexpected any. Specify a different type                                                                                @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/hooks/useAuth.tsx
+   22:126  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+   22:140  error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  101:34   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  154:19   error    Unexpected any. Specify a different type                                                                                        @typescript-eslint/no-explicit-any
+  191:17   warning  Fast refresh only works when a file only exports components. Use a new file to share constants or functions between components  react-refresh/only-export-components
+
+/Users/lokeshgundlapplly/userninjas-1/src/hooks/useChatEscalation.ts
+  26:40  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/pages/AdminPanel.tsx
+  199:51  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  206:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  208:50  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  228:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  230:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  267:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  268:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  269:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  270:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  271:60  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  272:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  286:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  290:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  664:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  774:71  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/pages/Auth.tsx
+  188:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  327:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  343:15  error  Empty block statement                     no-empty
+  454:26  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  558:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  627:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/pages/AuthCallback.tsx
+  42:30  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  88:23  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/pages/CompleteProfile.tsx
+  100:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/pages/CreateTest.tsx
+  134:58  error  Unexpected any. Specify a different type                                                                                                                                                     @typescript-eslint/no-explicit-any
+  136:20  error  Unexpected any. Specify a different type                                                                                                                                                     @typescript-eslint/no-explicit-any
+  163:44  error  Unexpected any. Specify a different type                                                                                                                                                     @typescript-eslint/no-explicit-any
+  183:3   error  React Hook "useEffect" is called conditionally. React Hooks must be called in the exact same order in every component render. Did you accidentally call a React Hook after an early return?  react-hooks/rules-of-hooks
+  232:76  error  Unexpected any. Specify a different type                                                                                                                                                     @typescript-eslint/no-explicit-any
+  233:83  error  Unexpected any. Specify a different type                                                                                                                                                     @typescript-eslint/no-explicit-any
+  304:19  error  Unexpected any. Specify a different type                                                                                                                                                     @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/pages/RecruiterDashboard.tsx
+    66:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+    67:24  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   231:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   271:66  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   417:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   459:35  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   475:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1365:93  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  1427:54  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/pages/SurveyBuilder.tsx
+   56:46  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+   60:6   warning  React Hook useEffect has a missing dependency: 'fetchSurveys'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   99:51  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  101:20  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  119:35  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+  135:19  error    Unexpected any. Specify a different type                                                                         @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/pages/TesterDashboard.tsx
+    87:20  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   115:65  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   429:6   warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+   467:26  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   493:79  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   720:14  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   756:50  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   777:73  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   794:59  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   816:58  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+   941:19  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  1088:29  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  1277:57  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+  1403:53  error    Unexpected any. Specify a different type                                                                      @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/pages/TesterProfile.tsx
+  128:6  warning  React Hook useEffect has a missing dependency: 'fetchData'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+/Users/lokeshgundlapplly/userninjas-1/src/pages/VerifyEmail.tsx
+  137:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/src/utils/supabase-test.ts
+  114:14  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/supabase/functions/ai-interview-session/index.ts
+  278:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/supabase/functions/ai-test-creator/index.ts
+  107:17  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  128:85  error  Empty block statement                     no-empty
+
+/Users/lokeshgundlapplly/userninjas-1/supabase/functions/send-review-notification/index.ts
+  217:19  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/Users/lokeshgundlapplly/userninjas-1/tailwind.config.ts
+  220:13  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+✖ 128 problems (109 errors, 19 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

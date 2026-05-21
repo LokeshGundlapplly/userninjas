@@ -125,7 +125,7 @@ serve(async (req) => {
             else if (char === '}') {
               depth--;
               if (depth === 0) {
-                try { parsed = JSON.parse(text.slice(start, i + 1)); break; } catch {}
+                try { parsed = JSON.parse(text.slice(start, i + 1)); break; } catch { /* ignore */ }
               }
             }
           }

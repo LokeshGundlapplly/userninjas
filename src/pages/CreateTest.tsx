@@ -118,35 +118,6 @@ export default function CreateTest() {
     }
   }, [authLoading, user, role, navigate, toast]);
 
-  if (authLoading || (user && !role)) return null;
-  if (!user || role !== 'recruiter') return null;
-
-  const addTask = () => setTasks([...tasks, { title: '', description: '' }]);
-  const removeTask = (i: number) => setTasks(tasks.filter((_, idx) => idx !== i));
-  const updateTask = (i: number, field: keyof TaskItem, val: string) => {
-    const updated = [...tasks];
-    updated[i][field] = val;
-    setTasks(updated);
-  };
-
-  const addQuestion = () => setQuestions([...questions, { question_text: '', question_type: 'open_text', options: [], required: true, task_index: null }]);
-  const removeQuestion = (i: number) => setQuestions(questions.filter((_, idx) => idx !== i));
-  const updateQuestion = (i: number, field: string, val: any) => {
-    const updated = [...questions];
-    (updated[i] as any)[field] = val;
-    setQuestions(updated);
-  };
-
-  const addScreener = () => setScreenerQuestions([...screenerQuestions, { question: '', expected_answer: '' }]);
-  const removeScreener = (i: number) => setScreenerQuestions(screenerQuestions.filter((_, idx) => idx !== i));
-
-  const toggleDevice = (d: string) => {
-    setDeviceTargeting(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
-  };
-  const toggleBrowser = (b: string) => {
-    setBrowserTargeting(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]);
-  };
-
   const handleAIApply = (suggestion: TestSuggestion) => {
     if (suggestion.title) setTitle(suggestion.title);
     if (suggestion.description) setDescription(suggestion.description);
@@ -191,6 +162,35 @@ export default function CreateTest() {
       console.error('Failed to load AI test suggestion from sessionStorage', err);
     }
   }, []);
+
+  if (authLoading || (user && !role)) return null;
+  if (!user || role !== 'recruiter') return null;
+
+  const addTask = () => setTasks([...tasks, { title: '', description: '' }]);
+  const removeTask = (i: number) => setTasks(tasks.filter((_, idx) => idx !== i));
+  const updateTask = (i: number, field: keyof TaskItem, val: string) => {
+    const updated = [...tasks];
+    updated[i][field] = val;
+    setTasks(updated);
+  };
+
+  const addQuestion = () => setQuestions([...questions, { question_text: '', question_type: 'open_text', options: [], required: true, task_index: null }]);
+  const removeQuestion = (i: number) => setQuestions(questions.filter((_, idx) => idx !== i));
+  const updateQuestion = (i: number, field: string, val: any) => {
+    const updated = [...questions];
+    (updated[i] as any)[field] = val;
+    setQuestions(updated);
+  };
+
+  const addScreener = () => setScreenerQuestions([...screenerQuestions, { question: '', expected_answer: '' }]);
+  const removeScreener = (i: number) => setScreenerQuestions(screenerQuestions.filter((_, idx) => idx !== i));
+
+  const toggleDevice = (d: string) => {
+    setDeviceTargeting(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d]);
+  };
+  const toggleBrowser = (b: string) => {
+    setBrowserTargeting(prev => prev.includes(b) ? prev.filter(x => x !== b) : [...prev, b]);
+  };
 
   const handleSubmit = async () => {
     if (!title.trim()) {

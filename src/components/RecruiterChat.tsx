@@ -53,7 +53,7 @@ Rules:
 // ─── JSON extractor ───────────────────────────────────────────────────────────
 function extractJSON(raw: string): { chat_response: string; ready: boolean; test: TestSuggestion | null } {
   const text = raw.trim();
-  try { return JSON.parse(text); } catch {}
+  try { return JSON.parse(text); } catch { /* ignore */ }
 
   const start = text.indexOf('{');
   if (start !== -1) {
@@ -68,7 +68,7 @@ function extractJSON(raw: string): { chat_response: string; ready: boolean; test
         else if (c === '}') {
           depth--;
           if (depth === 0) {
-            try { return JSON.parse(text.slice(start, i + 1)); } catch {}
+            try { return JSON.parse(text.slice(start, i + 1)); } catch { /* ignore */ }
           }
         }
       }
@@ -223,7 +223,7 @@ export default function RecruiterChat() {
 
   const handleApply = () => {
     if (!suggestion) return;
-    try { sessionStorage.setItem('ai_test_suggestion', JSON.stringify(suggestion)); } catch {}
+    try { sessionStorage.setItem('ai_test_suggestion', JSON.stringify(suggestion)); } catch { /* ignore item set error */ }
     toast({ title: 'Test ready!', description: 'Review and publish your study.' });
     navigate('/recruiter/create-test');
   };
