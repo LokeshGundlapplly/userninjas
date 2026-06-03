@@ -18,7 +18,7 @@ import {
   ArrowLeft, ArrowRight, Plus, Trash2, GripVertical,
   Monitor, Smartphone, Tablet, Globe, Video, FileText,
   MessageSquare, ClipboardList, Layers, Eye, Shuffle, BookOpen,
-  Target, Users, Zap, Bot, Wand2, Calendar, Clock, Link2
+  Target, Users, Zap, Bot, Wand2, Calendar, Clock, Link2, Crown
 } from 'lucide-react';
 import { format } from 'date-fns';
 import AITestCreatorChat, { type TestSuggestion } from '@/components/AITestCreatorChat';
@@ -62,6 +62,8 @@ interface ScreenerQuestion {
 
 export default function CreateTest() {
   const { user, role, profile, subscription, loading: authLoading } = useAuth();
+  const planKey = subscription?.plan_type || profile?.plan_type || 'free';
+  const isPremium = planKey === 'monthly' || planKey === 'yearly';
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -431,15 +433,37 @@ export default function CreateTest() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {TEST_TYPES.map(t => {
                   const Icon = t.icon;
+                  const isLocked = t.id === 'ai_interview' && !isPremium;
                   return (
                     <button
                       key={t.id}
-                      onClick={() => setTestType(t.id)}
-                      className={`flex items-start gap-3 p-4 rounded-lg border text-left transition-all ${testType === t.id ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border hover:border-primary/50'}`}
+                      onClick={() => {
+                        if (isLocked) {
+                          toast({
+                            title: "AI Interviews Locked",
+                            description: "AI-moderated research interviews are exclusive to premium plans. Please upgrade your subscription.",
+                            variant: "destructive"
+                          });
+                          setShowPricingModal(true);
+                          return;
+                        }
+                        setTestType(t.id);
+                      }}
+                      className={`flex items-start gap-3 p-4 rounded-lg border text-left transition-all relative ${
+                        isLocked ? 'opacity-65 cursor-not-allowed border-border bg-muted/30' :
+                        testType === t.id ? 'border-primary bg-primary/5 ring-2 ring-primary/20' : 'border-border hover:border-primary/50'
+                      }`}
                     >
-                      <Icon className={`h-5 w-5 mt-0.5 shrink-0 ${testType === t.id ? 'text-primary' : 'text-muted-foreground'}`} />
-                      <div>
-                        <p className="font-medium text-sm">{t.label}</p>
+                      <Icon className={`h-5 w-5 mt-0.5 shrink-0 ${isLocked ? 'text-muted-foreground' : testType === t.id ? 'text-primary' : 'text-muted-foreground'}`} />
+                      <div className="flex-1 pr-6">
+                        <div className="flex items-center gap-1.5">
+                          <p className="font-medium text-sm">{t.label}</p>
+                          {isLocked && (
+                            <span className="inline-flex items-center gap-0.5 text-[9px] font-bold bg-amber-500/15 text-amber-600 px-1.5 py-0.5 rounded-full">
+                              <Crown className="h-2.5 w-2.5" /> Premium
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground mt-0.5">{t.desc}</p>
                       </div>
                     </button>

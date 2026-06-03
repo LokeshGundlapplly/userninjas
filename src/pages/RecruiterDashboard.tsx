@@ -223,7 +223,9 @@ export default function RecruiterDashboard() {
   // AI Interviews
   const [viewingSession, setViewingSession] = useState<AIInterviewSession | null>(null);
 
-  const isYearly = subscription?.plan_type === 'yearly';
+  const planKey = subscription?.plan_type || profile?.plan_type || 'free';
+  const isYearly = planKey === 'yearly';
+  const isPremium = planKey === 'monthly' || planKey === 'yearly';
 
   // Surveys
   const [surveyTab, setSurveyTab] = useState<'list' | 'create' | 'results'>('list');
@@ -452,6 +454,14 @@ export default function RecruiterDashboard() {
 
   const handleCreateSurvey = async () => {
     if (!surveyTitle.trim()) { toast({ title: 'Title required', variant: 'destructive' }); return; }
+    if (planKey === 'monthly' && surveys.length >= 3) {
+      toast({
+        title: 'Survey Limit Reached',
+        description: 'Monthly plans are limited to 3 active surveys. Upgrade to Yearly Enterprise for unlimited surveys.',
+        variant: 'destructive'
+      });
+      return;
+    }
     setSavingSurvey(true);
     try {
       const { data: survey, error } = await supabase.from('surveys')
@@ -1175,7 +1185,46 @@ export default function RecruiterDashboard() {
               {/*  AI INTERVIEWS SECTION                             */}
               {/* ══════════════════════════════════════════════════ */}
               {section === 'ai_interviews' && (
-                <div className="space-y-6">
+                !isPremium ? (
+                  <Card className="border border-border/50 bg-card/50 backdrop-blur-md overflow-hidden relative py-12 px-6 text-center max-w-2xl mx-auto mt-8">
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-card opacity-50" />
+                    <CardHeader className="relative pb-2">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
+                        <Crown className="h-6 w-6 text-amber-500" />
+                      </div>
+                      <CardTitle className="text-xl font-bold font-display">AI Interviews Locked</CardTitle>
+                      <CardDescription className="text-sm">
+                        AI-moderated research interviews are exclusive to the Monthly Standard and Yearly Enterprise plans.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="relative space-y-4 pt-4">
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                        Upgrade to a premium plan to launch unmoderated AI-guided interviews conducted automatically by our Gemini researcher.
+                      </p>
+                      <div className="flex justify-center gap-3 pt-2">
+                        <Button 
+                          onClick={() => setPricingModalOpen(true)}
+                          className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-semibold rounded-xl text-xs h-9"
+                        >
+                          View Pricing Plans
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Show a banner if on Monthly Standard plan with the usage stats */}
+                    {planKey === 'monthly' && (
+                      <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                        <div>
+                          <p className="text-sm font-semibold text-primary">Monthly Plan AI Interview Sessions</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Your Monthly Standard plan allows up to 3 AI Interview sessions per month.</p>
+                        </div>
+                        <Badge variant="outline" className="bg-background border-primary/30 font-semibold">
+                          Used: {aiInterviewSessions.filter(s => s.status === 'completed').length} / 3 Sessions
+                        </Badge>
+                      </div>
+                    )}
                   {/* Stats row */}
                   <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                     {[
@@ -1313,13 +1362,53 @@ export default function RecruiterDashboard() {
                     </DialogContent>
                   </Dialog>
                 </div>
+                )
               )}
 
               {/* ══════════════════════════════════════════════════ */}
               {/*  SURVEYS SECTION                                   */}
               {/* ══════════════════════════════════════════════════ */}
               {section === 'surveys' && (
-                <div className="space-y-4">
+                !isPremium ? (
+                  <Card className="border border-border/50 bg-card/50 backdrop-blur-md overflow-hidden relative py-12 px-6 text-center max-w-2xl mx-auto mt-8">
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-card opacity-50" />
+                    <CardHeader className="relative pb-2">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
+                        <Crown className="h-6 w-6 text-amber-500" />
+                      </div>
+                      <CardTitle className="text-xl font-bold font-display">Surveys Locked</CardTitle>
+                      <CardDescription className="text-sm">
+                        Custom questionnaires and surveys are exclusive to the Monthly Standard and Yearly Enterprise plans.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="relative space-y-4 pt-4">
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                        Upgrade to a premium plan to build complex surveys, MCQ feedback loops, rating lists, and logic branching.
+                      </p>
+                      <div className="flex justify-center gap-3 pt-2">
+                        <Button 
+                          onClick={() => setPricingModalOpen(true)}
+                          className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-semibold rounded-xl text-xs h-9"
+                        >
+                          View Pricing Plans
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Show survey limit warning if on monthly plan */}
+                    {planKey === 'monthly' && (
+                      <div className="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+                        <div>
+                          <p className="text-sm font-semibold text-primary">Monthly Plan Surveys Limit</p>
+                          <p className="text-xs text-muted-foreground mt-0.5">Your Monthly Standard plan allows up to 3 surveys created.</p>
+                        </div>
+                        <Badge variant="outline" className="bg-background border-primary/30 font-semibold">
+                          Surveys: {surveys.length} / 3 Created
+                        </Badge>
+                      </div>
+                    )}
                   {/* Tab row */}
                   <div className="flex items-center gap-2">
                     {[
@@ -1327,7 +1416,23 @@ export default function RecruiterDashboard() {
                       { key: 'create' as const, label: 'Create Survey', icon: Plus },
                       { key: 'results' as const, label: 'Results', icon: BarChart3 },
                     ].map(tab => (
-                      <Button key={tab.key} variant={surveyTab === tab.key ? 'default' : 'outline'} size="sm" className="gap-1.5" onClick={() => setSurveyTab(tab.key)}>
+                      <Button
+                        key={tab.key}
+                        variant={surveyTab === tab.key ? 'default' : 'outline'}
+                        size="sm"
+                        className="gap-1.5"
+                        onClick={() => {
+                          if (tab.key === 'create' && planKey === 'monthly' && surveys.length >= 3) {
+                            toast({
+                              title: 'Survey Limit Reached',
+                              description: 'Your Monthly Standard plan allows max 3 surveys. Please archive/delete a survey, or upgrade to Yearly Enterprise.',
+                              variant: 'destructive'
+                            });
+                            return;
+                          }
+                          setSurveyTab(tab.key);
+                        }}
+                      >
                         <tab.icon className="h-3.5 w-3.5" /> {tab.label}
                       </Button>
                     ))}
@@ -1481,6 +1586,7 @@ export default function RecruiterDashboard() {
                     </Card>
                   )}
                 </div>
+                )
               )}
 
               {/* ══════════════════════════════════════════════════ */}
