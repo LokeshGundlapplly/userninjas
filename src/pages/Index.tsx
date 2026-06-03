@@ -49,18 +49,8 @@ export default function Index() {
       <main>
         <PageTransition>
           <Hero />
-          <TrustedBy />
-          <MissionProtocol />
-          <ResearchMethods />
-          <Features />
-          <ProductDemo />
           <Capabilities />
-          <VideoShowcase />
           <Testimonials />
-          <Pricing />
-          <ComparisonTable />
-          <FAQ />
-          <TesterCTA />
           <CTA />
         </PageTransition>
       </main>

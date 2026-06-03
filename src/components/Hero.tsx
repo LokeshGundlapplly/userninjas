@@ -62,6 +62,63 @@ function AnimatedCounter({ value }: { value: string }) {
   return <span ref={ref}>{display}</span>;
 }
 
+function AITypist() {
+  const fullText = `Users consistently struggle with the payment form. 73% mentioned unclear error messages on step 3.`;
+  const [displayedText, setDisplayedText] = useState('');
+  const [started, setStarted] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setStarted(true);
+        }
+      },
+      { threshold: 0.2 }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!started) return;
+    let index = 0;
+    const interval = setInterval(() => {
+      setDisplayedText(() => {
+        const next = fullText.slice(0, index + 1);
+        index++;
+        if (index >= fullText.length) {
+          clearInterval(interval);
+        }
+        return next;
+      });
+    }, 25);
+    return () => clearInterval(interval);
+  }, [started, fullText]);
+
+  const renderFormattedText = (text: string) => {
+    const parts = text.split(/(73%)/g);
+    return parts.map((part, i) => {
+      if (part === '73%') {
+        return <strong key={i} className="text-primary font-bold">{part}</strong>;
+      }
+      return part;
+    });
+  };
+
+  return (
+    <div ref={containerRef} className="text-xs text-muted-foreground leading-relaxed min-h-[48px] select-none">
+      "{renderFormattedText(displayedText)}"
+      {displayedText.length < fullText.length && (
+        <span className="inline-block w-1.5 h-3.5 bg-primary ml-0.5 animate-pulse" />
+      )}
+    </div>
+  );
+}
+
 export default function Hero() {
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center pt-24 pb-12 overflow-hidden">
@@ -227,9 +284,7 @@ export default function Hero() {
                 <div className="space-y-3">
                   <div className="p-4 rounded-xl bg-primary/8 border border-primary/15">
                     <p className="text-xs text-primary font-semibold mb-1.5">✦ AI Summary</p>
-                    <p className="text-xs text-muted-foreground leading-relaxed">
-                      "Users consistently struggle with the payment form. <strong>73%</strong> mentioned unclear error messages on step 3."
-                    </p>
+                    <AITypist />
                   </div>
                   {[
                     { label: 'Total Sessions', value: '1,284', icon: Users },

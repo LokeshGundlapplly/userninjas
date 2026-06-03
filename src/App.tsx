@@ -237,6 +237,55 @@ function DashboardRedirect() {
   );
 }
 
+function MagneticButtonPullListener() {
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      const buttons = document.querySelectorAll('.btn-magnetic');
+      buttons.forEach((el) => {
+        const btn = el as HTMLElement;
+        const rect = btn.getBoundingClientRect();
+        
+        const cx = rect.left + rect.width / 2;
+        const cy = rect.top + rect.height / 2;
+        
+        const dx = e.clientX - cx;
+        const dy = e.clientY - cy;
+        const dist = Math.hypot(dx, dy);
+        
+        const threshold = Math.max(rect.width, rect.height) / 2 + 50;
+        
+        if (dist < threshold) {
+          const pullStrength = 0.22;
+          const mx = dx * pullStrength;
+          const my = dy * pullStrength;
+          
+          btn.style.transform = `translate(${mx}px, ${my}px) scale(1.02)`;
+        } else {
+          btn.style.transform = '';
+        }
+      });
+    };
+
+    const handleMouseLeave = () => {
+      const buttons = document.querySelectorAll('.btn-magnetic');
+      buttons.forEach((el) => {
+        const btn = el as HTMLElement;
+        btn.style.transform = '';
+      });
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseleave', handleMouseLeave);
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, []);
+
+  return null;
+}
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
   <HelmetProvider>
@@ -246,6 +295,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <ChatEscalationListener />
+          <MagneticButtonPullListener />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
