@@ -199,6 +199,44 @@ function ProtectedDashboardRoute({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function DashboardRedirect() {
+  const { role, loading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (loading) return;
+    if (role === 'recruiter') {
+      navigate('/recruiter', { replace: true });
+    } else if (role === 'tester') {
+      navigate('/tester', { replace: true });
+    } else if (role === 'admin') {
+      navigate('/admin', { replace: true });
+    } else {
+      navigate('/', { replace: true });
+    }
+  }, [role, loading, navigate]);
+
+  return (
+    <div style={{
+      minHeight: '100vh',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      background: 'var(--background, #fff)',
+    }}>
+      <div style={{
+        width: 48,
+        height: 48,
+        borderRadius: '50%',
+        border: '4px solid #e5e7eb',
+        borderTopColor: '#6366f1',
+        animation: 'spin 0.8s linear infinite',
+      }} />
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
 const App = () => (
   <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
   <HelmetProvider>
@@ -215,6 +253,7 @@ const App = () => (
               <Route path="/login" element={<Auth />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/complete-profile" element={<ProtectedDashboardRoute><CompleteProfile /></ProtectedDashboardRoute>} />
+              <Route path="/dashboard" element={<ProtectedDashboardRoute><DashboardRedirect /></ProtectedDashboardRoute>} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/features" element={<FeaturesPage />} />
               <Route path="/about" element={<About />} />
