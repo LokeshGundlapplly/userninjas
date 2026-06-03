@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
   Check, Zap, Building2, Rocket, ArrowRight, X, Phone,
-  Crown, Lock, Star, Infinity as InfinityIcon
+  Crown, Lock, Star, Infinity as InfinityIcon, Ticket, Shield
 } from 'lucide-react';
 
 import { useAuth } from '@/hooks/useAuth';
@@ -27,77 +27,71 @@ declare global {
 
 const PLANS = [
   {
-    key: 'free',
-    name: 'Free',
-    icon: Rocket,
+    key: 'per_test',
+    name: 'Pay-Per-Test',
+    icon: Ticket,
     badge: null,
-    description: 'Get started with research basics.',
-    priceINR: 0,
-    priceUSD: 0,
-    priceLabel: 'Free forever',
+    description: 'Perfect for one-off custom research.',
+    priceINR: 999,
+    priceUSD: 15,
+    priceLabel: '/ custom test',
     features: [
-      '2 published studies lifetime',
-      '25 participant responses / study',
-      'Basic analytics only',
-      'Dynamic screener forms',
-      'Community support',
+      '1 Custom Research Test',
+      'Max 50 Candidate Invites',
+      'Valid for 30 days',
+      'Basic reporting dashboard',
     ],
     unavailable: [
-      'AI screener suggestions',
-      'CSV export',
-      'Priority support',
+      'Advanced analytics & CSV exports',
+      'Unlimited active tests',
+      'Priority developer support',
     ],
-    cta: 'Current Plan',
-    ctaDisabled: true,
+    cta: 'Buy Custom Test',
+    ctaDisabled: false,
     popular: false,
     gradient: '',
   },
   {
-    key: 'pro',
-    name: 'Pro',
+    key: 'monthly',
+    name: 'Monthly Standard',
     icon: Zap,
-    badge: '⭐ Most Popular',
-    description: 'For serious researchers and growing teams.',
+    badge: '⭐ Recommended',
+    description: 'For teams running recurring testing.',
     priceINR: 2999,
     priceUSD: 39,
     priceLabel: '/month',
     features: [
-      '25 active studies / month',
-      '2,000 responses / month',
-      'AI screener suggestions',
-      'Advanced analytics',
-      'CSV export',
-      'Priority support',
-      'Dynamic screener forms',
-      'Conditional logic',
+      'Max 5 active tests at a time',
+      'Up to 200 invites / month',
+      'Standard screener templates',
+      'Basic reporting dashboard',
     ],
-    unavailable: [],
-    cta: 'Upgrade to Pro',
+    unavailable: [
+      'Advanced analytics & CSV exports',
+      'Priority support',
+    ],
+    cta: 'Subscribe Monthly',
     ctaDisabled: false,
     popular: true,
     gradient: 'from-indigo-600 to-purple-600',
   },
   {
-    key: 'enterprise',
-    name: 'Enterprise',
-    icon: Building2,
-    badge: null,
-    description: 'Custom solutions for large organizations.',
-    priceINR: null,
-    priceUSD: null,
-    priceLabel: 'Contact Sales',
+    key: 'yearly',
+    name: 'Yearly Enterprise',
+    icon: Crown,
+    badge: '💎 Save 15%',
+    description: 'Unlimited access & priority support.',
+    priceINR: 30590,
+    priceUSD: 397,
+    priceLabel: '/year',
     features: [
-      'Unlimited studies',
-      'Unlimited responses',
-      'Team workspace',
-      'API access',
-      'SSO / SAML',
-      'Audit logs',
-      'Dedicated support',
-      'Custom onboarding',
+      'Unlimited active tests',
+      'Up to 3,000 invites / year',
+      'Advanced analytics & CSV exports',
+      'Priority developer support',
     ],
     unavailable: [],
-    cta: 'Contact Sales',
+    cta: 'Subscribe Yearly',
     ctaDisabled: false,
     popular: false,
     gradient: '',
@@ -107,99 +101,94 @@ const PLANS = [
 export default function PricingModal({ open, onOpenChange, currentPlan = 'free' }: PricingModalProps) {
   const [currency, setCurrency] = useState<'INR' | 'USD'>('INR');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const [confirmCheckoutPlan, setConfirmCheckoutPlan] = useState<string | null>(null);
   const { user, refreshProfile } = useAuth();
   const { toast } = useToast();
 
-  const loadRazorpayScript = () => {
-    return new Promise((resolve) => {
-      if (window.Razorpay) {
-        resolve(true);
-        return;
-      }
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.onload = () => {
-        resolve(true);
-      };
-      script.onerror = () => {
-        resolve(false);
-      };
-      document.body.appendChild(script);
-    });
-  };
-
-  const handleUpgrade = async (planKey: string) => {
-    if (planKey === 'enterprise') {
-      window.open('mailto:sales@userninjas.com?subject=Enterprise Plan Inquiry', '_blank');
-      return;
-    }
-    
+  const handleUpgrade = (planKey: string) => {
     if (!user) {
       toast({ title: "Authentication required", description: "Please sign in to upgrade.", variant: "destructive" });
       return;
     }
+    setConfirmCheckoutPlan(planKey);
+  };
 
-    setLoadingPlan(planKey);
-    const plan = PLANS.find(p => p.key === planKey);
-    if (!plan) return;
+  const processMockCheckout = async (status: 'success' | 'failed') => {
+    if (!user || !confirmCheckoutPlan) return;
+    setLoadingPlan(confirmCheckoutPlan);
 
     try {
-      const res = await loadRazorpayScript();
-      if (!res) {
-        toast({ title: "Error", description: "Razorpay SDK failed to load. Are you online?", variant: "destructive" });
+      const plan = PLANS.find(p => p.key === confirmCheckoutPlan);
+      if (!plan) return;
+
+      const planDetails = {
+        per_test: { name: 'Pay-Per-Test (A La Carte Plan)', priceINR: 999, days: 30, testLimit: 1, inviteLimit: 50 },
+        monthly: { name: 'Monthly Subscription (Standard Tier)', priceINR: 2999, days: 30, testLimit: 5, inviteLimit: 200 },
+        yearly: { name: 'Yearly Subscription (Enterprise/Premium Tier)', priceINR: 30590, days: 365, testLimit: 99999, inviteLimit: 3000 }
+      }[confirmCheckoutPlan as 'per_test' | 'monthly' | 'yearly'];
+
+      if (status === 'failed') {
+        await supabase.from('payments').insert({
+          user_id: user.id,
+          gateway: 'stripe_mock',
+          amount: plan.priceINR,
+          currency: 'INR',
+          status: 'failed',
+          plan_type: confirmCheckoutPlan,
+          description: `Failed purchase: ${plan.name}`
+        });
+        toast({ title: "Payment Failed", description: "The simulated transaction failed.", variant: "destructive" });
+        setConfirmCheckoutPlan(null);
         return;
       }
 
-      const amount = plan.priceINR * 100; // paise
-      const options = {
-        key: "rzp_live_SpbXv82kpMslCk", 
-        amount: amount.toString(),
-        currency: "INR",
-        name: "User Ninjas",
-        description: `Upgrade to ${plan.name} Plan`,
-        image: "https://userninjas.com/logo.png",
-        handler: async function (response: any) {
-          try {
-            // Update profile
-            await supabase.from('profiles').update({ 
-              plan_type: plan.key, 
-              study_limit: plan.key === 'pro' ? 25 : 9999 
-            }).eq('user_id', user.id);
-            
-            // Insert payment record
-            await supabase.from('payments').insert({
-              user_id: user.id, 
-              gateway: 'razorpay', 
-              amount: plan.priceINR, 
-              currency: 'INR', 
-              status: 'successful', 
-              plan_type: plan.key
-            });
+      // Success
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(startDate.getDate() + planDetails.days);
 
-            await refreshProfile();
-            toast({ title: "Payment successful!", description: `You have successfully upgraded to the ${plan.name} plan.` });
-            onOpenChange(false);
-          } catch (err: any) {
-             console.error("Error updating profile:", err);
-             toast({ title: "Setup incomplete", description: "Payment succeeded but profile update failed. Contact support.", variant: "destructive" });
-          }
-        },
-        prefill: {
-          email: user.email,
-        },
-        theme: {
-          color: "#4f46e5", // indigo-600
-        },
-      };
-
-      const paymentObject = new window.Razorpay(options);
-      paymentObject.on('payment.failed', function (response: any) {
-        toast({ title: "Payment Failed", description: response.error.description, variant: "destructive" });
+      // 1. Write payment record
+      await supabase.from('payments').insert({
+        user_id: user.id,
+        gateway: 'stripe_mock',
+        amount: plan.priceINR,
+        currency: 'INR',
+        status: 'successful',
+        plan_type: confirmCheckoutPlan,
+        description: `Purchased: ${plan.name}`
       });
-      paymentObject.open();
 
+      // 2. Upsert subscription
+      const { error: subErr } = await supabase.from('subscriptions').upsert({
+        user_id: user.id,
+        plan_type: confirmCheckoutPlan,
+        payment_status: 'success',
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        is_valid: true,
+        tests_created: 0,
+        invites_sent: 0,
+        active_test_limit: planDetails.testLimit,
+        invite_limit: planDetails.inviteLimit,
+      }, { onConflict: 'user_id' });
+
+      if (subErr) throw subErr;
+
+      // 3. Update profile for backward compatibility
+      await supabase.from('profiles').update({
+        plan_type: confirmCheckoutPlan,
+        study_limit: planDetails.testLimit,
+        subscription_status: 'active',
+        subscription_end: endDate.toISOString(),
+      }).eq('user_id', user.id);
+
+      toast({ title: "Upgrade Successful!", description: `You have successfully upgraded to the ${plan.name} plan.` });
+      await refreshProfile();
+      setConfirmCheckoutPlan(null);
+      onOpenChange(false);
     } catch (err: any) {
-      toast({ title: "Error", description: err.message || "Failed to initialize payment", variant: "destructive" });
+      console.error(err);
+      toast({ title: "Error upgrading profile", description: err.message || "Failed to update subscription.", variant: "destructive" });
     } finally {
       setLoadingPlan(null);
     }
@@ -208,7 +197,53 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl w-full p-0 overflow-hidden border border-border/60 shadow-2xl shadow-black/30 rounded-2xl bg-card">
-        {/* Header */}
+        {confirmCheckoutPlan ? (
+          <div className="p-8 space-y-6">
+            <div className="flex items-center gap-3 border-b border-border pb-4">
+              <Shield className="h-5 w-5 text-primary" />
+              <div>
+                <h3 className="text-lg font-bold font-display">Secure Payment Checkout</h3>
+                <p className="text-xs text-muted-foreground">Select a payment outcome to simulate the transaction.</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-secondary/50 border border-border/40 space-y-2">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Selected Tier</p>
+              <h4 className="font-bold text-sm text-foreground">
+                {PLANS.find(p => p.key === confirmCheckoutPlan)?.name}
+              </h4>
+              <p className="text-lg font-extrabold text-primary font-display mt-2">
+                {currency === 'INR' 
+                  ? `₹${PLANS.find(p => p.key === confirmCheckoutPlan)?.priceINR?.toLocaleString('en-IN')}`
+                  : `$${PLANS.find(p => p.key === confirmCheckoutPlan)?.priceUSD}`
+                }
+              </p>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setConfirmCheckoutPlan(null)} disabled={loadingPlan !== null} className="h-9 text-xs">
+                Cancel
+              </Button>
+              <Button 
+                variant="destructive" 
+                onClick={() => processMockCheckout('failed')} 
+                disabled={loadingPlan !== null} 
+                className="h-9 text-xs bg-red-600/10 hover:bg-red-600/20 text-red-500 border border-red-500/25"
+              >
+                Simulate Failure
+              </Button>
+              <Button 
+                onClick={() => processMockCheckout('success')} 
+                disabled={loadingPlan !== null} 
+                className="h-9 text-xs bg-gradient-to-r from-primary to-indigo-600 text-white font-semibold"
+              >
+                {loadingPlan !== null ? 'Processing...' : 'Simulate Success'}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Header */}
         <div className="relative bg-gradient-to-br from-primary/10 via-purple-500/5 to-background border-b border-border/60 px-8 pt-8 pb-6">
           <button
             onClick={() => onOpenChange(false)}
@@ -355,7 +390,7 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
                   )}
                 </Button>
 
-                {plan.key === 'pro' && (
+                {plan.key === 'monthly' && (
                   <p className="text-center text-[10px] text-muted-foreground mt-2">
                     Supports UPI · Cards · Wallets · Auto-renew
                   </p>
@@ -368,7 +403,7 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
         {/* Footer note */}
         <div className="px-8 py-4 border-t border-border/60 bg-secondary/20 flex items-center justify-between gap-4">
           <p className="text-xs text-muted-foreground">
-            Payments are secured by Razorpay & Stripe · GST invoice included · Cancel anytime
+            Payments are secured by Razorpay &amp; Stripe · GST invoice included · Cancel anytime
           </p>
           <button
             onClick={() => onOpenChange(false)}
@@ -377,6 +412,8 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
             Maybe later
           </button>
         </div>
+        </>
+        )}
       </DialogContent>
     </Dialog>
   );

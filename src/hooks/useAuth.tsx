@@ -12,11 +12,26 @@ export interface UserProfile {
   study_limit: number;
 }
 
+export interface Subscription {
+  id: string;
+  user_id: string;
+  plan_type: 'per_test' | 'monthly' | 'yearly';
+  payment_status: 'pending' | 'success' | 'failed';
+  start_date: string;
+  end_date: string;
+  is_valid: boolean;
+  tests_created: number;
+  invites_sent: number;
+  active_test_limit: number;
+  invite_limit: number;
+}
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
   profile: UserProfile | null;
+  subscription: Subscription | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string, role: AppRole) => Promise<{ error: Error | null; data: { user: any; session: any } | null }>;
@@ -31,6 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -96,27 +112,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .select('role')
       .eq('user_id', userId);
     
+    let resolvedRole: AppRole = 'tester';
     if (!error && data && data.length > 0) {
       // Prioritize admin role if user has multiple roles
       const roles = data.map((d: any) => d.role as AppRole);
       if (roles.includes('admin')) {
         console.log('✅ User is admin', { user_id: userId });
-        setRole('admin');
+        resolvedRole = 'admin';
       } else {
         console.log(`✅ User role: ${roles[0]}`, { user_id: userId, role: roles[0] });
-        setRole(roles[0]);
+        resolvedRole = roles[0];
       }
-      return;
+    } else {
+      // If we can't read the role (RLS blocked or doesn't exist), default to tester
+      // The signup trigger should have created a role already
+      resolvedRole = 'tester';
+      console.log(`⚠️ No role readable, using fallback: ${resolvedRole}`, { 
+        user_id: userId, 
+        error: error?.message 
+      });
     }
+    
+    setRole(resolvedRole);
 
-    // If we can't read the role (RLS blocked or doesn't exist), default to tester
-    // The signup trigger should have created a role already
-    const fallbackRole = 'tester';
-    console.log(`⚠️ No role readable, using fallback: ${fallbackRole}`, { 
-      user_id: userId, 
-      error: error?.message 
-    });
-    setRole(fallbackRole);
+    // Fetch subscription details if user is a recruiter or admin
+    if (resolvedRole === 'recruiter' || resolvedRole === 'admin') {
+      const { data: subData } = await supabase
+        .from('subscriptions')
+        .select('*')
+        .eq('user_id', userId)
+        .maybeSingle();
+      
+      if (subData) {
+        setSubscription(subData as Subscription);
+      } else {
+        setSubscription(null);
+      }
+    } else {
+      setSubscription(null);
+    }
   };
 
   const signIn = async (email: string, password: string) => {
@@ -173,6 +207,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setRole(null);
+    setProfile(null);
+    setSubscription(null);
   };
 
   const refreshProfile = async () => {
@@ -182,7 +218,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, role, profile, loading, signIn, signUp, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, session, role, profile, subscription, loading, signIn, signUp, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

@@ -39,7 +39,7 @@ import {
   Percent, Award, Sparkles, Play as PlayIcon, LogOut, Settings,
   Layers, Bot, MessageSquare, PieChart, Download, Search,
   LayoutGrid, ClipboardList, Eye, ChevronLeft, ChevronRight,
-  TrendingUp, Zap, Send, ArrowRight, ExternalLink, RefreshCw, CreditCard,
+  TrendingUp, Zap, Send, ArrowRight, ExternalLink, RefreshCw, CreditCard, Crown,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -138,7 +138,7 @@ const SIDEBAR_ITEMS: { key: Section; label: string; icon: typeof LayoutGrid }[] 
   { key: 'ai_interviews', label: 'AI Interviews', icon: Bot },
   { key: 'surveys', label: 'Surveys', icon: ClipboardList },
   { key: 'analytics', label: 'Analytics', icon: BarChart3 },
-  { key: 'payments', label: 'Billing', icon: CreditCard },
+  { key: 'payments', label: 'Billing & Subscription', icon: CreditCard },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -173,7 +173,7 @@ function downloadCSV(filename: string, headers: string[], rows: string[][]) {
 // ─── Main Component ───────────────────────────────────────
 
 export default function RecruiterDashboard() {
-  const { user, role, profile, loading: authLoading, refreshProfile } = useAuth();
+  const { user, role, profile, subscription, loading: authLoading, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -222,6 +222,8 @@ export default function RecruiterDashboard() {
 
   // AI Interviews
   const [viewingSession, setViewingSession] = useState<AIInterviewSession | null>(null);
+
+  const isYearly = subscription?.plan_type === 'yearly';
 
   // Surveys
   const [surveyTab, setSurveyTab] = useState<'list' | 'create' | 'results'>('list');
@@ -491,6 +493,15 @@ export default function RecruiterDashboard() {
   // ─── Export Handlers ──────────────────────────────────────
 
   const exportSubmissions = () => {
+    if (!isYearly) {
+      toast({
+        title: "Feature Locked",
+        description: "Exporting submissions data to CSV is exclusive to the Yearly Enterprise tier.",
+        variant: "destructive"
+      });
+      setPricingModalOpen(true);
+      return;
+    }
     const headers = ['Test', 'Tester ID', 'Status', 'Rating', 'Feedback', 'Submitted At', 'Created At', 'Reward'];
     const rows = filteredSubmissions.map(s => [
       s.tests?.title || '', s.tester_id, s.status, s.rating?.toString() || '',
@@ -1129,7 +1140,35 @@ export default function RecruiterDashboard() {
               {/*  AI INSIGHTS SECTION                               */}
               {/* ══════════════════════════════════════════════════ */}
               {section === 'insights' && (
-                <AIInsightsPanel tests={tests} userId={user.id} />
+                !isYearly ? (
+                  <Card className="border border-border/50 bg-card/50 backdrop-blur-md overflow-hidden relative py-12 px-6 text-center max-w-2xl mx-auto mt-8">
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-card opacity-50" />
+                    <CardHeader className="relative pb-2">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
+                        <Crown className="h-6 w-6 text-amber-500" />
+                      </div>
+                      <CardTitle className="text-xl font-bold font-display">AI Insights Locked</CardTitle>
+                      <CardDescription className="text-sm">
+                        AI-powered analysis and Insights reports are exclusive to the Yearly Enterprise plan.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="relative space-y-4 pt-4">
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                        Upgrade to Yearly Enterprise to unlock AI Insights, sentiment analyses, automated summaries, and friction point maps.
+                      </p>
+                      <div className="flex justify-center gap-3 pt-2">
+                        <Button 
+                          onClick={() => setPricingModalOpen(true)}
+                          className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-semibold rounded-xl text-xs h-9"
+                        >
+                          View Pricing Plans
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <AIInsightsPanel tests={tests} userId={user.id} />
+                )
               )}
 
               {/* ══════════════════════════════════════════════════ */}
@@ -1448,17 +1487,44 @@ export default function RecruiterDashboard() {
               {/*  ANALYTICS SECTION                                 */}
               {/* ══════════════════════════════════════════════════ */}
               {section === 'analytics' && (
-                <div className="space-y-6">
-                  {tests.length === 0 && submissions.length === 0 ? (
-                    <Card className="bg-card border border-border/60 shadow-sm">
-                      <CardContent className="pt-12 pb-12 text-center">
-                        <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                        <p className="text-foreground font-medium">No data to analyze yet.</p>
-                        <p className="text-sm text-muted-foreground mt-2">Create tests and receive submissions to see analytics.</p>
-                      </CardContent>
-                    </Card>
-                  ) : (
-                    <>
+                !isYearly ? (
+                  <Card className="border border-border/50 bg-card/50 backdrop-blur-md overflow-hidden relative py-12 px-6 text-center max-w-2xl mx-auto mt-8">
+                    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-card opacity-50" />
+                    <CardHeader className="relative pb-2">
+                      <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center mx-auto mb-3">
+                        <Crown className="h-6 w-6 text-amber-500" />
+                      </div>
+                      <CardTitle className="text-xl font-bold font-display">Enterprise Analytics Locked</CardTitle>
+                      <CardDescription className="text-sm">
+                        Advanced analytics and CSV export features are exclusive to the Yearly Enterprise plan.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="relative space-y-4 pt-4">
+                      <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                        Upgrade to Yearly Enterprise to unlock advanced graphs, category breakdowns, detailed spending layouts, and complete database downloads.
+                      </p>
+                      <div className="flex justify-center gap-3 pt-2">
+                        <Button 
+                          onClick={() => setPricingModalOpen(true)}
+                          className="bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-600 hover:to-yellow-700 text-white font-semibold rounded-xl text-xs h-9"
+                        >
+                          View Pricing Plans
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="space-y-6">
+                    {tests.length === 0 && submissions.length === 0 ? (
+                      <Card className="bg-card border border-border/60 shadow-sm">
+                        <CardContent className="pt-12 pb-12 text-center">
+                          <BarChart3 className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                          <p className="text-foreground font-medium">No data to analyze yet.</p>
+                          <p className="text-sm text-muted-foreground mt-2">Create tests and receive submissions to see analytics.</p>
+                        </CardContent>
+                      </Card>
+                    ) : (
+                      <>
                       {/* KPI row */}
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
@@ -1586,7 +1652,8 @@ export default function RecruiterDashboard() {
                       </Card>
                     </>
                   )}
-                </div>
+                  </div>
+                )
               )}
 
               {/* ══════════════════════════════════════════════════ */}

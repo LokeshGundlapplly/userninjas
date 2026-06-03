@@ -61,7 +61,7 @@ interface ScreenerQuestion {
 }
 
 export default function CreateTest() {
-  const { user, role, profile, loading: authLoading } = useAuth();
+  const { user, role, profile, subscription, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -199,20 +199,74 @@ export default function CreateTest() {
     }
     setSaving(true);
     try {
-      // 1. Check study limits
-      const { count, error: countError } = await supabase
-        .from('tests')
-        .select('*', { count: 'exact', head: true })
-        .eq('recruiter_id', user.id);
+      // 1. Check subscription validity and limits
+      if (subscription) {
+        // Date check: current_date <= end_date and is_valid == true
+        const now = new Date();
+        const end = new Date(subscription.end_date);
         
-      if (countError) throw countError;
-      
-      const studyLimit = profile?.study_limit || 2;
-      
-      if (count !== null && count >= studyLimit) {
-        setShowPricingModal(true);
-        setSaving(false);
-        return;
+        if (now > end || !subscription.is_valid) {
+          toast({
+            title: "Subscription Expired or Invalid",
+            description: "Your recruiter subscription is no longer valid. Please renew your subscription to create tests.",
+            variant: "destructive"
+          });
+          setShowPricingModal(true);
+          setSaving(false);
+          return;
+        }
+
+        // Limit checks:
+        if (subscription.plan_type === 'per_test') {
+          // Pay-Per-Test allows creating exactly 1 custom test per purchase
+          if (subscription.tests_created >= 1) {
+            toast({
+              title: "Test Limit Reached",
+              description: "You have already created a test for your Pay-Per-Test purchase. Buy another test credit to create more.",
+              variant: "destructive"
+            });
+            setSaving(false);
+            return;
+          }
+        } else if (subscription.plan_type === 'monthly') {
+          // Monthly Subscription allows max 5 active tests at a time
+          const { count: activeCount, error: activeError } = await supabase
+            .from('tests')
+            .select('*', { count: 'exact', head: true })
+            .eq('recruiter_id', user.id)
+            .eq('status', 'active');
+
+          if (activeError) throw activeError;
+
+          if (activeCount !== null && activeCount >= 5) {
+            toast({
+              title: "Active Tests Limit Reached",
+              description: "Your monthly plan allows max 5 active test links at a time. Please archive an existing test to publish a new one.",
+              variant: "destructive"
+            });
+            setSaving(false);
+            return;
+          }
+        }
+      } else {
+        // No subscription row: Free tier allows max 2 lifetime tests
+        const { count, error: countError } = await supabase
+          .from('tests')
+          .select('*', { count: 'exact', head: true })
+          .eq('recruiter_id', user.id);
+
+        if (countError) throw countError;
+
+        if (count !== null && count >= 2) {
+          toast({
+            title: "Free Limit Reached",
+            description: "You have reached the free limit of 2 lifetime tests. Please subscribe to standard or premium to create more.",
+            variant: "destructive"
+          });
+          setShowPricingModal(true);
+          setSaving(false);
+          return;
+        }
       }
 
       // Create test
@@ -239,6 +293,16 @@ export default function CreateTest() {
         .single();
 
       if (testError) throw testError;
+
+      // Increment tests_created count in subscription
+      if (subscription) {
+        await supabase
+          .from('subscriptions')
+          .update({
+            tests_created: subscription.tests_created + 1
+          })
+          .eq('user_id', user.id);
+      }
 
       // Insert tasks
       const validTasks = tasks.filter(t => t.title.trim());

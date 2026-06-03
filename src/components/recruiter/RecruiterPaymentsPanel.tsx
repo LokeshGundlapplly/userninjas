@@ -18,8 +18,9 @@ import {
   CreditCard, Zap, Building2, Rocket, TrendingUp, Download,
   CheckCircle, Clock, XCircle, Wallet, Receipt, RefreshCw,
   ArrowUpRight, ShieldCheck, Sparkles, AlertCircle, Crown,
+  Ticket, Shield, Sparkle
 } from 'lucide-react';
-import type { UserProfile } from '@/hooks/useAuth';
+import { useAuth, type UserProfile, type Subscription } from '@/hooks/useAuth';
 import type { User } from '@supabase/supabase-js';
 
 // ─── Types ────────────────────────────────────────────────
@@ -49,7 +50,7 @@ declare global {
   interface Window { Razorpay: any; }
 }
 
-const PLAN_META: Record<string, { label: string; color: string; bg: string; icon: typeof Rocket; studyLimit: number; description: string }> = {
+const PLAN_META: Record<string, { label: string; color: string; bg: string; icon: any; studyLimit: number; description: string }> = {
   free: {
     label: 'Free',
     color: 'text-muted-foreground',
@@ -58,8 +59,32 @@ const PLAN_META: Record<string, { label: string; color: string; bg: string; icon
     studyLimit: 2,
     description: '2 studies lifetime · 25 responses / study',
   },
+  per_test: {
+    label: 'Pay-Per-Test',
+    color: 'text-orange-400',
+    bg: 'bg-orange-500/10',
+    icon: Ticket,
+    studyLimit: 1,
+    description: '1 custom test created · Valid 30 days · Max 50 candidates / test',
+  },
+  monthly: {
+    label: 'Standard (Monthly)',
+    color: 'text-indigo-400',
+    bg: 'bg-indigo-500/10',
+    icon: Zap,
+    studyLimit: 5,
+    description: 'Max 5 active tests · Up to 200 candidates / month · Basic reporting',
+  },
+  yearly: {
+    label: 'Enterprise (Yearly)',
+    color: 'text-amber-400',
+    bg: 'bg-amber-500/10',
+    icon: Crown,
+    studyLimit: 99999,
+    description: 'Unlimited tests · Up to 3,000 candidates / year · Advanced analytics & export · Priority support',
+  },
   pro: {
-    label: 'Pro',
+    label: 'Standard (Pro)',
     color: 'text-indigo-400',
     bg: 'bg-indigo-500/10',
     icon: Zap,
@@ -147,6 +172,7 @@ export default function RecruiterPaymentsPanel({
   user, profile, onUpgradePlan, onProfileRefresh,
 }: RecruiterPaymentsPanelProps) {
   const { toast } = useToast();
+  const { subscription, refreshProfile } = useAuth();
 
   const [tab, setTab] = useState<'overview' | 'history' | 'credits'>('overview');
   const [payments, setPayments] = useState<PaymentRecord[]>([]);
@@ -158,10 +184,13 @@ export default function RecruiterPaymentsPanel({
   const [processingPayment, setProcessingPayment] = useState(false);
   const [studiesUsed, setStudiesUsed] = useState(0);
 
-  const planKey = profile?.plan_type || 'free';
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [selectedCheckoutPlan, setSelectedCheckoutPlan] = useState<'per_test' | 'monthly' | 'yearly'>('monthly');
+
+  const planKey = subscription?.plan_type || profile?.plan_type || 'free';
   const planMeta = PLAN_META[planKey] || PLAN_META.free;
   const PlanIcon = planMeta.icon;
-  const studyLimit = profile?.study_limit ?? planMeta.studyLimit;
+  const studyLimit = subscription ? (planKey === 'per_test' ? 1 : subscription.active_test_limit) : (profile?.study_limit ?? planMeta.studyLimit);
 
   // ─── Fetch data ───────────────────────────────────────
   const fetchPayments = useCallback(async () => {
@@ -299,6 +328,92 @@ export default function RecruiterPaymentsPanel({
     }
   };
 
+  const processMockPayment = async (status: 'success' | 'failed') => {
+    setProcessingPayment(true);
+    try {
+      const planDetails = {
+        per_test: { name: 'Pay-Per-Test (A La Carte Plan)', priceINR: 999, days: 30, testLimit: 1, inviteLimit: 50 },
+        monthly: { name: 'Monthly Subscription (Standard Tier)', priceINR: 2999, days: 30, testLimit: 5, inviteLimit: 200 },
+        yearly: { name: 'Yearly Subscription (Enterprise/Premium Tier)', priceINR: 30590, days: 365, testLimit: 99999, inviteLimit: 3000 }
+      }[selectedCheckoutPlan];
+
+      if (status === 'failed') {
+        // Insert payment record
+        await supabase.from('payments').insert({
+          user_id: user.id,
+          gateway: 'stripe_mock',
+          amount: planDetails.priceINR,
+          currency: 'INR',
+          status: 'failed',
+          plan_type: selectedCheckoutPlan,
+          description: `Failed purchase: ${planDetails.name}`
+        });
+        toast({ title: 'Payment Failed', description: 'The simulated transaction failed.', variant: 'destructive' });
+        setCheckoutOpen(false);
+        return;
+      }
+
+      // Success
+      const startDate = new Date();
+      const endDate = new Date();
+      endDate.setDate(startDate.getDate() + planDetails.days);
+
+      // 1. Insert payment record
+      await supabase.from('payments').insert({
+        user_id: user.id,
+        gateway: 'stripe_mock',
+        amount: planDetails.priceINR,
+        currency: 'INR',
+        status: 'successful',
+        plan_type: selectedCheckoutPlan,
+        description: `Purchased: ${planDetails.name}`
+      });
+
+      // 2. Upsert subscription record
+      const { error: subErr } = await supabase.from('subscriptions').upsert({
+        user_id: user.id,
+        plan_type: selectedCheckoutPlan,
+        payment_status: 'success',
+        start_date: startDate.toISOString(),
+        end_date: endDate.toISOString(),
+        is_valid: true,
+        tests_created: 0,
+        invites_sent: 0,
+        active_test_limit: planDetails.testLimit,
+        invite_limit: planDetails.inviteLimit,
+      }, { onConflict: 'user_id' });
+
+      if (subErr) throw subErr;
+
+      // 3. Update profiles table for backward compatibility
+      await supabase.from('profiles').update({
+        plan_type: selectedCheckoutPlan,
+        study_limit: planDetails.testLimit,
+        subscription_status: 'active',
+        subscription_end: endDate.toISOString(),
+      }).eq('user_id', user.id);
+
+      toast({
+        title: 'Subscription Active!',
+        description: `You are now subscribed to the ${planDetails.name}.`,
+      });
+
+      await refreshProfile();
+      if (onProfileRefresh) await onProfileRefresh();
+      await fetchPayments();
+      setCheckoutOpen(false);
+    } catch (err: any) {
+      console.error('Mock Payment Error:', err);
+      toast({
+        title: 'Error updating subscription',
+        description: err.message || 'Payment was recorded but profile update failed.',
+        variant: 'destructive',
+      });
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
   // ─── Export ────────────────────────────────────────────
 
   const exportPaymentHistory = () => {
@@ -353,141 +468,191 @@ export default function RecruiterPaymentsPanel({
 
       {/* ══════════ OVERVIEW TAB ══════════ */}
       {tab === 'overview' && (
-        <div className="space-y-5">
-          {/* Top cards row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Plan Card */}
-            <Card className={`border border-border/60 col-span-1 sm:col-span-1 overflow-hidden relative`}>
-              <div className={`absolute inset-0 opacity-[0.04] ${planKey === 'pro' ? 'bg-gradient-to-br from-indigo-500 to-purple-600' : ''}`} />
-              <CardContent className="p-5 relative">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">Current Plan</p>
-                    <div className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded-lg ${planMeta.bg} flex items-center justify-center`}>
-                        <PlanIcon className={`h-3.5 w-3.5 ${planMeta.color}`} />
-                      </div>
-                      <span className={`text-xl font-bold font-display ${planMeta.color}`}>{planMeta.label}</span>
+        <div className="space-y-6">
+          {/* Active Subscription Status Banner */}
+          <Card className="border border-border/60 overflow-hidden relative bg-gradient-to-br from-indigo-500/5 via-purple-500/5 to-card backdrop-blur-md">
+            <div className="absolute inset-0 opacity-[0.02] bg-grid-white" />
+            <CardContent className="p-6">
+              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className={`w-8 h-8 rounded-xl ${planMeta.bg} flex items-center justify-center`}>
+                      <PlanIcon className={`h-4.5 w-4.5 ${planMeta.color}`} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Active Plan</p>
+                      <h3 className={`text-xl font-bold font-display ${planMeta.color}`}>{planMeta.label}</h3>
                     </div>
                   </div>
-                  {planKey === 'pro' && (
-                    <Badge className="bg-indigo-500/15 text-indigo-400 border-indigo-500/30 border text-[10px]">
-                      <Crown className="h-3 w-3 mr-1" />Active
-                    </Badge>
+                  <p className="text-sm text-muted-foreground max-w-xl">
+                    {planMeta.description}
+                  </p>
+                  {subscription && (
+                    <div className="flex items-center gap-4 text-xs text-muted-foreground pt-1.5">
+                      <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Started: {new Date(subscription.start_date).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                      <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" /> Renews/Expires: {new Date(subscription.end_date).toLocaleDateString(undefined, { dateStyle: 'medium' })}</span>
+                    </div>
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground mb-4">{planMeta.description}</p>
-                {planKey !== 'enterprise' && (
-                  <Button
-                    size="sm"
-                    onClick={onUpgradePlan}
-                    className={`w-full gap-2 rounded-lg h-8 text-xs font-semibold ${
-                      planKey === 'free'
-                        ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700 shadow-md shadow-indigo-500/20'
-                        : 'bg-secondary text-foreground hover:bg-secondary/80'
-                    }`}
-                    variant={planKey === 'free' ? 'default' : 'outline'}
-                  >
-                    <ArrowUpRight className="h-3.5 w-3.5" />
-                    {planKey === 'free' ? 'Upgrade to Pro' : 'Manage Plan'}
-                  </Button>
-                )}
-              </CardContent>
-            </Card>
 
-            {/* Wallet Balance Card */}
-            <Card className="border border-border/60 col-span-1">
-              <CardContent className="p-5">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">Wallet Balance</p>
-                <p className="text-3xl font-bold font-display text-green-500 mb-1">
-                  ₹{walletBalance.toLocaleString('en-IN')}
-                </p>
-                <p className="text-xs text-muted-foreground mb-4">Available for tester payouts</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setAddCreditsOpen(true)}
-                  className="w-full gap-2 rounded-lg h-8 text-xs font-semibold"
-                >
-                  <Wallet className="h-3.5 w-3.5 text-green-500" />
-                  Add Credits
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Total Spent Card */}
-            <Card className="border border-border/60 col-span-1">
-              <CardContent className="p-5">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium mb-1">Total Spent</p>
-                <p className="text-3xl font-bold font-display text-primary mb-1">
-                  ₹{totalSpent.toLocaleString('en-IN')}
-                </p>
-                <p className="text-xs text-muted-foreground mb-4">Across {payments.filter(p => p.status === 'successful').length} transactions</p>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setTab('history')}
-                  className="w-full gap-2 rounded-lg h-8 text-xs"
-                >
-                  <Receipt className="h-3.5 w-3.5" />
-                  View History
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Study Usage */}
-          <Card className="border border-border/60">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-primary" /> Plan Usage
-              </CardTitle>
-              <CardDescription>Your current usage against plan limits</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="text-muted-foreground font-medium">Studies Published</span>
-                  <span className="font-semibold">
-                    {studiesUsed} / {studyLimit >= 999 ? '∞' : studyLimit}
-                  </span>
+                <div className="flex flex-row sm:flex-col items-end gap-3 w-full md:w-auto shrink-0">
+                  <div className="flex items-center gap-2">
+                    <Badge className={subscription?.is_valid ? "bg-emerald-500/15 text-emerald-500 border-emerald-500/30 border" : "bg-yellow-500/15 text-yellow-500 border-yellow-500/30 border"}>
+                      <ShieldCheck className="h-3.5 w-3.5 mr-1" /> {subscription?.is_valid ? 'Active Account' : 'Free Account'}
+                    </Badge>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-muted-foreground">Wallet Balance</p>
+                    <p className="text-2xl font-bold text-green-500">₹{walletBalance.toLocaleString('en-IN')}</p>
+                  </div>
                 </div>
-                <Progress value={studyUsagePercent} className="h-2" />
-                {planKey === 'free' && studiesUsed >= studyLimit && (
-                  <div className="flex items-center gap-2 mt-2 p-2.5 rounded-lg bg-yellow-500/10 border border-yellow-500/20">
-                    <AlertCircle className="h-3.5 w-3.5 text-yellow-500 shrink-0" />
-                    <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                      You've used all your free studies. Upgrade to publish more.
-                    </p>
-                  </div>
-                )}
               </div>
 
-              <Separator />
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[
-                  { label: 'Plan', value: planMeta.label },
-                  { label: 'Billing', value: planKey === 'free' ? 'None' : 'Monthly' },
-                  { label: 'Payments', value: payments.filter(p => p.status === 'successful').length.toString() },
-                  { label: 'Gateway', value: 'Razorpay' },
-                ].map(item => (
-                  <div key={item.label} className="rounded-lg bg-secondary/40 p-3">
-                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">{item.label}</p>
-                    <p className="text-sm font-semibold">{item.value}</p>
+              {/* Progress Counters */}
+              {subscription && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pt-6 border-t border-border/40">
+                  {/* Test creation limit */}
+                  {planKey !== 'yearly' && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-xs font-medium">
+                        <span className="text-muted-foreground">Tests Created This Period</span>
+                        <span className="font-semibold">{subscription.tests_created} / {subscription.active_test_limit}</span>
+                      </div>
+                      <Progress value={Math.min(100, (subscription.tests_created / subscription.active_test_limit) * 100)} className="h-2" />
+                    </div>
+                  )}
+                  {/* Candidates/Invites Limit */}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-xs font-medium">
+                      <span className="text-muted-foreground">Candidate Submissions / Invites</span>
+                      <span className="font-semibold">{subscription.invites_sent} / {subscription.invite_limit}</span>
+                    </div>
+                    <Progress value={Math.min(100, (subscription.invites_sent / subscription.invite_limit) * 100)} className="h-2" />
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Security note */}
-          <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-secondary/30 border border-border/50">
-            <ShieldCheck className="h-4 w-4 text-green-500 shrink-0" />
-            <p className="text-xs text-muted-foreground">
-              All payments are processed securely via <strong>Razorpay</strong>. We never store your card details.
-              GST invoices are available for every transaction.
-            </p>
+          {/* Pricing Model / Plan Options Selection Grid */}
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-bold font-display flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" /> Choose Subscription Plan
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                Select the pricing model that best fits your recruitment volume. Upgrade or switch anytime.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {/* Pay-Per-Test */}
+              <Card className={`border ${planKey === 'per_test' ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-border/60'} hover:border-primary/50 transition-all flex flex-col justify-between overflow-hidden relative`}>
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div className="w-8 h-8 rounded-lg bg-orange-500/10 flex items-center justify-center mb-2">
+                      <Ticket className="h-4 w-4 text-orange-400" />
+                    </div>
+                    {planKey === 'per_test' && <Badge className="bg-orange-500/10 text-orange-400 border border-orange-500/20">Current</Badge>}
+                  </div>
+                  <CardTitle className="text-base font-bold">Pay-Per-Test</CardTitle>
+                  <CardDescription className="text-xs">Perfect for occasional researchers.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 pb-6 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-baseline gap-1 mb-4">
+                      <span className="text-3xl font-extrabold font-display">₹999</span>
+                      <span className="text-xs text-muted-foreground">/ custom test</span>
+                    </div>
+                    <ul className="space-y-2 text-xs text-muted-foreground">
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> 1 Custom Research Test</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> Max 50 Candidate Invites / test</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> Valid for 30 days</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> Basic reporting dashboard</li>
+                    </ul>
+                  </div>
+
+                  <Button
+                    onClick={() => { setSelectedCheckoutPlan('per_test'); setCheckoutOpen(true); }}
+                    className="w-full mt-4 h-9 text-xs font-semibold bg-orange-600 hover:bg-orange-700 text-white"
+                  >
+                    Continue to Payment
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Monthly Subscription */}
+              <Card className={`border ${planKey === 'monthly' ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-border/60'} hover:border-primary/50 transition-all flex flex-col justify-between overflow-hidden relative`}>
+                <div className="absolute top-0 right-0 bg-primary text-primary-foreground text-[9px] font-bold px-2 py-0.5 rounded-bl">RECOMMENDED</div>
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center mb-2">
+                      <Zap className="h-4 w-4 text-indigo-400" />
+                    </div>
+                    {planKey === 'monthly' && <Badge className="bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">Current</Badge>}
+                  </div>
+                  <CardTitle className="text-base font-bold">Monthly Standard</CardTitle>
+                  <CardDescription className="text-xs">For teams running recurring monthly testing.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 pb-6 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-baseline gap-1 mb-4">
+                      <span className="text-3xl font-extrabold font-display">₹2,999</span>
+                      <span className="text-xs text-muted-foreground">/ month</span>
+                    </div>
+                    <ul className="space-y-2 text-xs text-muted-foreground">
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> Max 5 active test links at a time</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> Up to 200 invites / month</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> Standard screener templates</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> Basic reporting dashboard</li>
+                    </ul>
+                  </div>
+
+                  <Button
+                    onClick={() => { setSelectedCheckoutPlan('monthly'); setCheckoutOpen(true); }}
+                    className="w-full mt-4 h-9 text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white"
+                  >
+                    Continue to Payment
+                  </Button>
+                </CardContent>
+              </Card>
+
+              {/* Yearly Premium */}
+              <Card className={`border ${planKey === 'yearly' ? 'border-primary bg-primary/5 ring-1 ring-primary/20' : 'border-border/60'} hover:border-primary/50 transition-all flex flex-col justify-between overflow-hidden relative`}>
+                <CardHeader className="pb-3">
+                  <div className="flex justify-between items-start">
+                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center mb-2">
+                      <Crown className="h-4 w-4 text-amber-400" />
+                    </div>
+                    {planKey === 'yearly' && <Badge className="bg-amber-500/10 text-amber-400 border border-amber-500/20">Current</Badge>}
+                  </div>
+                  <CardTitle className="text-base font-bold">Yearly Enterprise</CardTitle>
+                  <CardDescription className="text-xs">Unlimited access & priority support.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4 pb-6 flex-1 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-baseline gap-1 mb-4 flex-wrap">
+                      <span className="text-3xl font-extrabold font-display">₹30,590</span>
+                      <span className="text-xs text-muted-foreground">/ year</span>
+                      <Badge className="ml-1 text-[9px] bg-green-500/15 text-green-500 border border-green-500/20">Save 15%</Badge>
+                    </div>
+                    <ul className="space-y-2 text-xs text-muted-foreground">
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> Unlimited active test links</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> Up to 3,000 invites / year</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> Advanced analytics & exports</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle className="h-3.5 w-3.5 text-green-500 shrink-0" /> Priority developer support</li>
+                    </ul>
+                  </div>
+
+                  <Button
+                    onClick={() => { setSelectedCheckoutPlan('yearly'); setCheckoutOpen(true); }}
+                    className="w-full mt-4 h-9 text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white"
+                  >
+                    Continue to Payment
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       )}
@@ -749,6 +914,77 @@ export default function RecruiterPaymentsPanel({
                 ? <><Sparkles className="h-4 w-4 animate-pulse" />Processing…</>
                 : <><Wallet className="h-4 w-4" />Pay ₹{(customAmount ? parseInt(customAmount) : selectedPreset || 0).toLocaleString('en-IN')}</>
               }
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── Mock Checkout Session Modal ── */}
+      <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
+        <DialogContent className="sm:max-w-md border border-border/60 shadow-2xl rounded-2xl bg-card">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 font-display">
+              <Shield className="h-5 w-5 text-primary" /> Secure Payment Checkout
+            </DialogTitle>
+            <DialogDescription>
+              Initialize payment processing session for UserNinjas subscription.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3">
+            {/* Selected Plan Details Banner */}
+            <div className="p-4 rounded-xl bg-secondary/50 border border-border/40 space-y-1.5">
+              <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold">Selected Tier</p>
+              <h4 className="font-bold text-sm text-foreground">
+                {{
+                  per_test: 'Pay-Per-Test (A La Carte Plan)',
+                  monthly: 'Monthly Subscription (Standard Tier)',
+                  yearly: 'Yearly Subscription (Enterprise/Premium Tier)'
+                }[selectedCheckoutPlan]}
+              </h4>
+              <p className="text-lg font-extrabold text-primary font-display mt-2">
+                {{
+                  per_test: '₹999 single payment',
+                  monthly: '₹2,999 / month',
+                  yearly: '₹30,590 / year'
+                }[selectedCheckoutPlan]}
+              </p>
+            </div>
+
+            {/* Mock Payment Details Inputs */}
+            <div className="space-y-3">
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-muted-foreground">Cardholder Name</Label>
+                <Input placeholder="John Doe" defaultValue="Recruiter Account Manager" className="h-9 text-sm" disabled />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs font-semibold text-muted-foreground">Card Details (Mocked)</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><CreditCard className="h-4 w-4" /></span>
+                  <Input placeholder="4111 •••• •••• 1111" className="pl-9 h-9 text-sm" disabled />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-2">
+            <Button variant="outline" onClick={() => setCheckoutOpen(false)} disabled={processingPayment} className="w-full sm:w-auto h-9 text-xs">
+              Cancel
+            </Button>
+            <Button
+              onClick={() => processMockPayment('failed')}
+              variant="destructive"
+              disabled={processingPayment}
+              className="w-full sm:w-auto h-9 text-xs bg-red-600/10 hover:bg-red-600/20 text-red-500 border border-red-500/25"
+            >
+              Simulate Failure
+            </Button>
+            <Button
+              onClick={() => processMockPayment('success')}
+              disabled={processingPayment}
+              className="w-full sm:w-auto h-9 text-xs bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 text-white font-semibold animate-shimmer"
+            >
+              {processingPayment ? 'Processing...' : 'Simulate Success'}
             </Button>
           </DialogFooter>
         </DialogContent>
