@@ -262,6 +262,25 @@ export default function RecruiterPaymentsPanel({
         return;
       }
 
+      // Generate Order ID via backend/Vercel serverless function
+      const apiResponse = await fetch(
+        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+          ? 'https://www.userninjas.in/api/create-razorpay-order' 
+          : '/api/create-razorpay-order', 
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount })
+        }
+      );
+
+      if (!apiResponse.ok) {
+        const errData = await apiResponse.json();
+        throw new Error(errData.error || 'Failed to initialize payment transaction');
+      }
+
+      const order = await apiResponse.json();
+
       const options = {
         key: 'rzp_live_Sx5YIPbX0SGPU4',
         amount: (amount * 100).toString(),
@@ -269,6 +288,7 @@ export default function RecruiterPaymentsPanel({
         name: 'User Ninjas',
         description: 'Wallet Credit Top-up',
         image: 'https://userninjas.com/logo.png',
+        order_id: order.id,
         handler: async function (response: any) {
           try {
             // Insert payment record
@@ -344,6 +364,25 @@ export default function RecruiterPaymentsPanel({
         return;
       }
 
+      // Generate Order ID via backend/Vercel serverless function
+      const apiResponse = await fetch(
+        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+          ? 'https://www.userninjas.in/api/create-razorpay-order' 
+          : '/api/create-razorpay-order', 
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: planDetails.priceINR })
+        }
+      );
+
+      if (!apiResponse.ok) {
+        const errData = await apiResponse.json();
+        throw new Error(errData.error || 'Failed to initialize payment transaction');
+      }
+
+      const order = await apiResponse.json();
+
       const amount = planDetails.priceINR * 100; // in paise
       const options = {
         key: 'rzp_live_Sx5YIPbX0SGPU4',
@@ -352,6 +391,7 @@ export default function RecruiterPaymentsPanel({
         name: 'User Ninjas',
         description: `Upgrade to ${planDetails.name}`,
         image: 'https://userninjas.com/logo.png',
+        order_id: order.id,
         handler: async function (response: any) {
           try {
             const startDate = new Date();

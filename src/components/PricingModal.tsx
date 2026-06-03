@@ -144,6 +144,25 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
         return;
       }
 
+      // Generate Order ID via backend/Vercel serverless function
+      const apiResponse = await fetch(
+        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+          ? 'https://www.userninjas.in/api/create-razorpay-order' 
+          : '/api/create-razorpay-order', 
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ amount: plan.priceINR })
+        }
+      );
+
+      if (!apiResponse.ok) {
+        const errData = await apiResponse.json();
+        throw new Error(errData.error || 'Failed to initialize payment transaction');
+      }
+
+      const order = await apiResponse.json();
+
       const amount = plan.priceINR * 100; // in paise
       const options = {
         key: 'rzp_live_Sx5YIPbX0SGPU4',
@@ -152,6 +171,7 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
         name: 'User Ninjas',
         description: `Upgrade to ${plan.name} Plan`,
         image: 'https://userninjas.com/logo.png',
+        order_id: order.id,
         handler: async function (response: any) {
           try {
             const startDate = new Date();
