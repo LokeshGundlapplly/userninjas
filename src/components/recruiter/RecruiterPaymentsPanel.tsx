@@ -263,7 +263,7 @@ export default function RecruiterPaymentsPanel({
       }
 
       const options = {
-        key: 'rzp_live_SpbXv82kpMslCk',
+        key: 'rzp_live_Sx5YIPbX0SGPU4',
         amount: (amount * 100).toString(),
         currency: 'INR',
         name: 'User Ninjas',
@@ -328,7 +328,7 @@ export default function RecruiterPaymentsPanel({
     }
   };
 
-  const processMockPayment = async (status: 'success' | 'failed') => {
+  const processRazorpayPayment = async () => {
     setProcessingPayment(true);
     try {
       const planDetails = {
@@ -337,79 +337,108 @@ export default function RecruiterPaymentsPanel({
         yearly: { name: 'Yearly Subscription (Enterprise/Premium Tier)', priceINR: 30590, days: 365, testLimit: 99999, inviteLimit: 3000 }
       }[selectedCheckoutPlan];
 
-      if (status === 'failed') {
-        // Insert payment record
-        await supabase.from('payments').insert({
-          user_id: user.id,
-          gateway: 'stripe_mock',
-          amount: planDetails.priceINR,
-          currency: 'INR',
-          status: 'failed',
-          plan_type: selectedCheckoutPlan,
-          description: `Failed purchase: ${planDetails.name}`
-        });
-        toast({ title: 'Payment Failed', description: 'The simulated transaction failed.', variant: 'destructive' });
-        setCheckoutOpen(false);
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        toast({ title: 'Error', description: 'Razorpay SDK failed to load.', variant: 'destructive' });
+        setProcessingPayment(false);
         return;
       }
 
-      // Success
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setDate(startDate.getDate() + planDetails.days);
-
-      // 1. Insert payment record
-      await supabase.from('payments').insert({
-        user_id: user.id,
-        gateway: 'stripe_mock',
-        amount: planDetails.priceINR,
+      const amount = planDetails.priceINR * 100; // in paise
+      const options = {
+        key: 'rzp_live_Sx5YIPbX0SGPU4',
+        amount: amount.toString(),
         currency: 'INR',
-        status: 'successful',
-        plan_type: selectedCheckoutPlan,
-        description: `Purchased: ${planDetails.name}`
+        name: 'User Ninjas',
+        description: `Upgrade to ${planDetails.name}`,
+        image: 'https://userninjas.com/logo.png',
+        handler: async function (response: any) {
+          try {
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setDate(startDate.getDate() + planDetails.days);
+
+            // 1. Insert payment record
+            await supabase.from('payments').insert({
+              user_id: user.id,
+              gateway: 'razorpay',
+              amount: planDetails.priceINR,
+              currency: 'INR',
+              status: 'successful',
+              plan_type: selectedCheckoutPlan,
+              description: `Purchased: ${planDetails.name} (Payment ID: ${response.razorpay_payment_id})`
+            });
+
+            // 2. Upsert subscription record
+            const { error: subErr } = await supabase.from('subscriptions').upsert({
+              user_id: user.id,
+              plan_type: selectedCheckoutPlan,
+              payment_status: 'success',
+              start_date: startDate.toISOString(),
+              end_date: endDate.toISOString(),
+              is_valid: true,
+              tests_created: 0,
+              invites_sent: 0,
+              active_test_limit: planDetails.testLimit,
+              invite_limit: planDetails.inviteLimit,
+            }, { onConflict: 'user_id' });
+
+            if (subErr) throw subErr;
+
+            // 3. Update profiles table for backward compatibility
+            await supabase.from('profiles').update({
+              plan_type: selectedCheckoutPlan,
+              study_limit: planDetails.testLimit,
+              subscription_status: 'active',
+              subscription_end: endDate.toISOString(),
+            }).eq('user_id', user.id);
+
+            toast({
+              title: 'Subscription Active!',
+              description: `You are now subscribed to the ${planDetails.name}.`,
+            });
+
+            await refreshProfile();
+            if (onProfileRefresh) await onProfileRefresh();
+            await fetchPayments();
+            setCheckoutOpen(false);
+          } catch (err: any) {
+            console.error('Error updating subscription:', err);
+            toast({
+              title: 'Error updating subscription',
+              description: err.message || 'Payment was recorded but profile update failed.',
+              variant: 'destructive',
+            });
+          } finally {
+            setProcessingPayment(false);
+          }
+        },
+        prefill: { email: user.email },
+        theme: { color: '#4f46e5' },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.on('payment.failed', async function (response: any) {
+        try {
+          await supabase.from('payments').insert({
+            user_id: user.id,
+            gateway: 'razorpay',
+            amount: planDetails.priceINR,
+            currency: 'INR',
+            status: 'failed',
+            plan_type: selectedCheckoutPlan,
+            description: `Failed purchase: ${planDetails.name} (${response.error.description})`
+          });
+        } catch (e) {
+          console.error('Error inserting failed payment record:', e);
+        }
+        toast({ title: 'Payment Failed', description: response.error.description, variant: 'destructive' });
+        setProcessingPayment(false);
       });
-
-      // 2. Upsert subscription record
-      const { error: subErr } = await supabase.from('subscriptions').upsert({
-        user_id: user.id,
-        plan_type: selectedCheckoutPlan,
-        payment_status: 'success',
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        is_valid: true,
-        tests_created: 0,
-        invites_sent: 0,
-        active_test_limit: planDetails.testLimit,
-        invite_limit: planDetails.inviteLimit,
-      }, { onConflict: 'user_id' });
-
-      if (subErr) throw subErr;
-
-      // 3. Update profiles table for backward compatibility
-      await supabase.from('profiles').update({
-        plan_type: selectedCheckoutPlan,
-        study_limit: planDetails.testLimit,
-        subscription_status: 'active',
-        subscription_end: endDate.toISOString(),
-      }).eq('user_id', user.id);
-
-      toast({
-        title: 'Subscription Active!',
-        description: `You are now subscribed to the ${planDetails.name}.`,
-      });
-
-      await refreshProfile();
-      if (onProfileRefresh) await onProfileRefresh();
-      await fetchPayments();
-      setCheckoutOpen(false);
+      rzp.open();
     } catch (err: any) {
-      console.error('Mock Payment Error:', err);
-      toast({
-        title: 'Error updating subscription',
-        description: err.message || 'Payment was recorded but profile update failed.',
-        variant: 'destructive',
-      });
-    } finally {
+      console.error(err);
+      toast({ title: 'Error', description: err.message || 'Failed to start payment.', variant: 'destructive' });
       setProcessingPayment(false);
     }
   };
@@ -919,7 +948,7 @@ export default function RecruiterPaymentsPanel({
         </DialogContent>
       </Dialog>
 
-      {/* ── Mock Checkout Session Modal ── */}
+      {/* ── Secure Checkout Session Modal ── */}
       <Dialog open={checkoutOpen} onOpenChange={setCheckoutOpen}>
         <DialogContent className="sm:max-w-md border border-border/60 shadow-2xl rounded-2xl bg-card">
           <DialogHeader>
@@ -951,20 +980,10 @@ export default function RecruiterPaymentsPanel({
               </p>
             </div>
 
-            {/* Mock Payment Details Inputs */}
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-muted-foreground">Cardholder Name</Label>
-                <Input placeholder="John Doe" defaultValue="Recruiter Account Manager" className="h-9 text-sm" disabled />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs font-semibold text-muted-foreground">Card Details (Mocked)</Label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground"><CreditCard className="h-4 w-4" /></span>
-                  <Input placeholder="4111 •••• •••• 1111" className="pl-9 h-9 text-sm" disabled />
-                </div>
-              </div>
-            </div>
+            {/* Checkout info */}
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              Upon clicking proceed, the secure Razorpay payment window will load. Please complete the transaction to activate your subscription tier.
+            </p>
           </div>
 
           <DialogFooter className="flex flex-col sm:flex-row gap-2 mt-2">
@@ -972,19 +991,11 @@ export default function RecruiterPaymentsPanel({
               Cancel
             </Button>
             <Button
-              onClick={() => processMockPayment('failed')}
-              variant="destructive"
+              onClick={processRazorpayPayment}
               disabled={processingPayment}
-              className="w-full sm:w-auto h-9 text-xs bg-red-600/10 hover:bg-red-600/20 text-red-500 border border-red-500/25"
+              className="w-full sm:w-auto h-9 text-xs bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 text-white font-semibold"
             >
-              Simulate Failure
-            </Button>
-            <Button
-              onClick={() => processMockPayment('success')}
-              disabled={processingPayment}
-              className="w-full sm:w-auto h-9 text-xs bg-gradient-to-r from-primary to-indigo-600 hover:from-primary/90 hover:to-indigo-600/90 text-white font-semibold animate-shimmer"
-            >
-              {processingPayment ? 'Processing...' : 'Simulate Success'}
+              {processingPayment ? 'Processing...' : 'Proceed to Payment'}
             </Button>
           </DialogFooter>
         </DialogContent>

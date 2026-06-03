@@ -113,7 +113,17 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
     setConfirmCheckoutPlan(planKey);
   };
 
-  const processMockCheckout = async (status: 'success' | 'failed') => {
+  const loadRazorpayScript = () =>
+    new Promise<boolean>((resolve) => {
+      if (window.Razorpay) { resolve(true); return; }
+      const script = document.createElement('script');
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+
+  const processRazorpayCheckout = async () => {
     if (!user || !confirmCheckoutPlan) return;
     setLoadingPlan(confirmCheckoutPlan);
 
@@ -127,69 +137,103 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
         yearly: { name: 'Yearly Subscription (Enterprise/Premium Tier)', priceINR: 30590, days: 365, testLimit: 99999, inviteLimit: 3000 }
       }[confirmCheckoutPlan as 'per_test' | 'monthly' | 'yearly'];
 
-      if (status === 'failed') {
-        await supabase.from('payments').insert({
-          user_id: user.id,
-          gateway: 'stripe_mock',
-          amount: plan.priceINR,
-          currency: 'INR',
-          status: 'failed',
-          plan_type: confirmCheckoutPlan,
-          description: `Failed purchase: ${plan.name}`
-        });
-        toast({ title: "Payment Failed", description: "The simulated transaction failed.", variant: "destructive" });
-        setConfirmCheckoutPlan(null);
+      const loaded = await loadRazorpayScript();
+      if (!loaded) {
+        toast({ title: 'Error', description: 'Razorpay SDK failed to load.', variant: 'destructive' });
+        setLoadingPlan(null);
         return;
       }
 
-      // Success
-      const startDate = new Date();
-      const endDate = new Date();
-      endDate.setDate(startDate.getDate() + planDetails.days);
-
-      // 1. Write payment record
-      await supabase.from('payments').insert({
-        user_id: user.id,
-        gateway: 'stripe_mock',
-        amount: plan.priceINR,
+      const amount = plan.priceINR * 100; // in paise
+      const options = {
+        key: 'rzp_live_Sx5YIPbX0SGPU4',
+        amount: amount.toString(),
         currency: 'INR',
-        status: 'successful',
-        plan_type: confirmCheckoutPlan,
-        description: `Purchased: ${plan.name}`
+        name: 'User Ninjas',
+        description: `Upgrade to ${plan.name} Plan`,
+        image: 'https://userninjas.com/logo.png',
+        handler: async function (response: any) {
+          try {
+            const startDate = new Date();
+            const endDate = new Date();
+            endDate.setDate(startDate.getDate() + planDetails.days);
+
+            // 1. Write payment record
+            await supabase.from('payments').insert({
+              user_id: user.id,
+              gateway: 'razorpay',
+              amount: plan.priceINR,
+              currency: 'INR',
+              status: 'successful',
+              plan_type: confirmCheckoutPlan,
+              description: `Purchased: ${plan.name} (Payment ID: ${response.razorpay_payment_id})`
+            });
+
+            // 2. Upsert subscription
+            const { error: subErr } = await supabase.from('subscriptions').upsert({
+              user_id: user.id,
+              plan_type: confirmCheckoutPlan,
+              payment_status: 'success',
+              start_date: startDate.toISOString(),
+              end_date: endDate.toISOString(),
+              is_valid: true,
+              tests_created: 0,
+              invites_sent: 0,
+              active_test_limit: planDetails.testLimit,
+              invite_limit: planDetails.inviteLimit,
+            }, { onConflict: 'user_id' });
+
+            if (subErr) throw subErr;
+
+            // 3. Update profile for backward compatibility
+            await supabase.from('profiles').update({
+              plan_type: confirmCheckoutPlan,
+              study_limit: planDetails.testLimit,
+              subscription_status: 'active',
+              subscription_end: endDate.toISOString(),
+            }).eq('user_id', user.id);
+
+            toast({ title: 'Upgrade Successful!', description: `You have successfully upgraded to the ${plan.name} plan.` });
+            await refreshProfile();
+            setConfirmCheckoutPlan(null);
+            onOpenChange(false);
+          } catch (err: any) {
+            console.error('Error updating profile:', err);
+            toast({ title: 'Setup incomplete', description: 'Payment succeeded but profile update failed. Contact support.', variant: 'destructive' });
+          } finally {
+            setLoadingPlan(null);
+          }
+        },
+        prefill: {
+          email: user.email,
+        },
+        theme: {
+          color: '#4f46e5', // indigo-600
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.on('payment.failed', async function (response: any) {
+        try {
+          await supabase.from('payments').insert({
+            user_id: user.id,
+            gateway: 'razorpay',
+            amount: plan.priceINR,
+            currency: 'INR',
+            status: 'failed',
+            plan_type: confirmCheckoutPlan,
+            description: `Failed purchase: ${plan.name} (${response.error.description})`
+          });
+        } catch (e) {
+          console.error('Error inserting failed payment record:', e);
+        }
+        toast({ title: 'Payment Failed', description: response.error.description, variant: 'destructive' });
+        setLoadingPlan(null);
       });
-
-      // 2. Upsert subscription
-      const { error: subErr } = await supabase.from('subscriptions').upsert({
-        user_id: user.id,
-        plan_type: confirmCheckoutPlan,
-        payment_status: 'success',
-        start_date: startDate.toISOString(),
-        end_date: endDate.toISOString(),
-        is_valid: true,
-        tests_created: 0,
-        invites_sent: 0,
-        active_test_limit: planDetails.testLimit,
-        invite_limit: planDetails.inviteLimit,
-      }, { onConflict: 'user_id' });
-
-      if (subErr) throw subErr;
-
-      // 3. Update profile for backward compatibility
-      await supabase.from('profiles').update({
-        plan_type: confirmCheckoutPlan,
-        study_limit: planDetails.testLimit,
-        subscription_status: 'active',
-        subscription_end: endDate.toISOString(),
-      }).eq('user_id', user.id);
-
-      toast({ title: "Upgrade Successful!", description: `You have successfully upgraded to the ${plan.name} plan.` });
-      await refreshProfile();
-      setConfirmCheckoutPlan(null);
-      onOpenChange(false);
+      paymentObject.open();
     } catch (err: any) {
       console.error(err);
-      toast({ title: "Error upgrading profile", description: err.message || "Failed to update subscription.", variant: "destructive" });
-    } finally {
+      toast({ title: 'Error upgrading profile', description: err.message || 'Failed to update subscription.', variant: 'destructive' });
       setLoadingPlan(null);
     }
   };
@@ -203,7 +247,7 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
               <Shield className="h-5 w-5 text-primary" />
               <div>
                 <h3 className="text-lg font-bold font-display">Secure Payment Checkout</h3>
-                <p className="text-xs text-muted-foreground">Select a payment outcome to simulate the transaction.</p>
+                <p className="text-xs text-muted-foreground">Confirm your plan details and proceed to secure checkout.</p>
               </div>
             </div>
 
@@ -225,19 +269,11 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
                 Cancel
               </Button>
               <Button 
-                variant="destructive" 
-                onClick={() => processMockCheckout('failed')} 
-                disabled={loadingPlan !== null} 
-                className="h-9 text-xs bg-red-600/10 hover:bg-red-600/20 text-red-500 border border-red-500/25"
-              >
-                Simulate Failure
-              </Button>
-              <Button 
-                onClick={() => processMockCheckout('success')} 
+                onClick={processRazorpayCheckout} 
                 disabled={loadingPlan !== null} 
                 className="h-9 text-xs bg-gradient-to-r from-primary to-indigo-600 text-white font-semibold"
               >
-                {loadingPlan !== null ? 'Processing...' : 'Simulate Success'}
+                {loadingPlan !== null ? 'Processing...' : 'Proceed to Payment'}
               </Button>
             </div>
           </div>
