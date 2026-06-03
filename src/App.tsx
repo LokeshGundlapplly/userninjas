@@ -238,7 +238,7 @@ function DashboardRedirect() {
 }
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="light" enableSystem>
+  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
