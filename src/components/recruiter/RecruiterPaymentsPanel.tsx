@@ -249,8 +249,8 @@ export default function RecruiterPaymentsPanel({
 
   const handleAddCredits = async () => {
     const amount = customAmount ? parseInt(customAmount, 10) : selectedPreset;
-    if (!amount || amount < 100) {
-      toast({ title: 'Minimum ₹100', description: 'Please enter at least ₹100.', variant: 'destructive' });
+    if (!amount || amount < 10) {
+      toast({ title: 'Minimum ₹10', description: 'Please enter at least ₹10.', variant: 'destructive' });
       return;
     }
 
@@ -783,9 +783,9 @@ export default function RecruiterPaymentsPanel({
                   <Input
                     id="custom-amount"
                     type="number"
-                    min="100"
-                    step="100"
-                    placeholder="Enter amount (min ₹100)"
+                    min="10"
+                    step="1"
+                    placeholder="Enter amount (min ₹10)"
                     value={customAmount}
                     onChange={e => { setCustomAmount(e.target.value); setSelectedPreset(null); }}
                     className="pl-7"
@@ -963,8 +963,8 @@ export default function RecruiterPaymentsPanel({
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-semibold text-sm">₹</span>
               <Input
                 type="number"
-                min="100"
-                placeholder="Custom amount (min ₹100)"
+                min="10"
+                placeholder="Custom amount (min ₹10)"
                 value={customAmount}
                 onChange={e => { setCustomAmount(e.target.value); setSelectedPreset(null); }}
                 className="pl-7"
