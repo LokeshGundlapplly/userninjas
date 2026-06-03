@@ -50,10 +50,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 [ -f ".env" ]
 check_status ".env file exists"
 
-grep -q "VITE_SUPABASE_PROJECT_ID=itkmsjqiaphxwwekevqp" .env
-check_status "Project ID is correct (itkmsjqiaphxwwekevqp)"
+grep -q "VITE_SUPABASE_PROJECT_ID=jpclnzgouzyroebjvcqp" .env
+check_status "Project ID is correct (jpclnzgouzyroebjvcqp)"
 
-grep -q "VITE_SUPABASE_URL=https://itkmsjqiaphxwwekevqp.supabase.co" .env
+grep -q "VITE_SUPABASE_URL=https://jpclnzgouzyroebjvcqp.supabase.co" .env
 check_status "Supabase URL is correct"
 
 grep -q "VITE_SUPABASE_PUBLISHABLE_KEY=eyJhbGc" .env
@@ -73,10 +73,10 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 [ -f "supabase/config.toml" ]
 check_status "supabase/config.toml exists"
 
-grep -q 'project_id = "itkmsjqiaphxwwekevqp"' supabase/config.toml
+grep -q 'project_id = "jpclnzgouzyroebjvcqp"' supabase/config.toml
 check_status "Config.toml has correct project_id"
 
-grep -q 'site_url = "https://userninjas.in"' supabase/config.toml
+grep -q 'site_url = "https://.*userninjas.in"' supabase/config.toml
 check_status "Auth site_url is configured"
 
 # Display project ID from config
