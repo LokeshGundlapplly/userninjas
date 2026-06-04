@@ -16,6 +16,7 @@ import ScrollReveal from '@/components/ScrollReveal';
 import AIInsightsPanel from '@/components/AIInsightsPanel';
 import AIInterviewReport from '@/components/AIInterviewReport';
 import type { InterviewReport } from '@/hooks/useAIInterviewer';
+import TemplatesPage from './TemplatesPage';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,7 +40,7 @@ import {
   Percent, Award, Sparkles, Play as PlayIcon, LogOut, Settings,
   Layers, Bot, MessageSquare, PieChart, Download, Search,
   LayoutGrid, ClipboardList, Eye, ChevronLeft, ChevronRight,
-  TrendingUp, Zap, Send, ArrowRight, ExternalLink, RefreshCw, CreditCard, Crown,
+  TrendingUp, Zap, Send, ArrowRight, ExternalLink, RefreshCw, CreditCard, Crown, BookOpen,
 } from 'lucide-react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -119,7 +120,7 @@ interface SurveyQuestion {
   logic_branch: { condition: string; skip_to: number } | null;
 }
 
-type Section = 'overview' | 'tests' | 'submissions' | 'insights' | 'ai_interviews' | 'surveys' | 'analytics' | 'payments';
+type Section = 'overview' | 'tests' | 'submissions' | 'insights' | 'ai_interviews' | 'surveys' | 'analytics' | 'payments' | 'templates';
 
 // ─── Constants ────────────────────────────────────────────
 
@@ -133,6 +134,7 @@ const CHART_COLORS = [
 const SIDEBAR_ITEMS: { key: Section; label: string; icon: typeof LayoutGrid }[] = [
   { key: 'overview', label: 'Overview', icon: LayoutGrid },
   { key: 'tests', label: 'My Tests', icon: FileText },
+  { key: 'templates', label: 'Template Library', icon: BookOpen },
   { key: 'submissions', label: 'Submissions', icon: Users },
   { key: 'insights', label: 'AI Insights', icon: Sparkles },
   { key: 'ai_interviews', label: 'AI Interviews', icon: Bot },
@@ -186,7 +188,7 @@ export default function RecruiterDashboard() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['overview', 'tests', 'analytics', 'submissions'].includes(hash)) {
+      if (hash && ['overview', 'tests', 'analytics', 'submissions', 'templates'].includes(hash)) {
         setSection(hash as Section);
       }
     };
@@ -736,6 +738,7 @@ export default function RecruiterDashboard() {
                     {section === 'surveys' && 'Surveys'}
                     {section === 'analytics' && 'Analytics'}
                     {section === 'payments' && 'Billing & Payments'}
+                    {section === 'templates' && 'Template Library'}
                   </h1>
                   <p className="text-sm text-muted-foreground mt-0.5">
                     {section === 'overview' && `${activeTests} active tests · ${totalTesters} submissions · $${totalSpent.toFixed(0)} spent`}
@@ -746,6 +749,7 @@ export default function RecruiterDashboard() {
                     {section === 'surveys' && `${surveys.length} surveys`}
                     {section === 'analytics' && 'Performance metrics and insights'}
                     {section === 'payments' && `${profile?.plan_type || 'free'} plan · manage subscription & credits`}
+                    {section === 'templates' && 'Quickly launch user research studies from pre-built templates'}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -753,11 +757,21 @@ export default function RecruiterDashboard() {
                     <RefreshCw className="h-3.5 w-3.5" /> Refresh
                   </Button>
                   {section === 'tests' && (
-                    <Link to="/recruiter/create-test">
-                      <Button size="sm" className="btn-shimmer gap-1.5 rounded-xl shadow-md shadow-primary/20 font-semibold">
-                        <Plus className="h-3.5 w-3.5" /> New Test
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setSection('templates')}
+                        className="rounded-xl font-semibold gap-1.5 border-border/50 hover:bg-secondary/60"
+                      >
+                        <BookOpen className="h-3.5 w-3.5" /> Browse Templates
                       </Button>
-                    </Link>
+                      <Link to="/recruiter/create-test">
+                        <Button size="sm" className="btn-shimmer gap-1.5 rounded-xl shadow-md shadow-primary/20 font-semibold">
+                          <Plus className="h-3.5 w-3.5" /> New Test
+                        </Button>
+                      </Link>
+                    </div>
                   )}
                 </div>
               </div>
@@ -1772,6 +1786,13 @@ export default function RecruiterDashboard() {
                   onUpgradePlan={() => setPricingModalOpen(true)}
                   onProfileRefresh={refreshProfile}
                 />
+              )}
+
+              {/* ══════════════════════════════════════════════════ */}
+              {/*  TEMPLATES SECTION                                 */}
+              {/* ══════════════════════════════════════════════════ */}
+              {section === 'templates' && (
+                <TemplatesPage />
               )}
             </div>
           </main>

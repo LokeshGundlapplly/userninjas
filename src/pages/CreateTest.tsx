@@ -165,6 +165,51 @@ export default function CreateTest() {
     }
   }, []);
 
+  // Prefill from template if started via "Use Template" from templates library
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('use_template_data');
+      if (!raw) return;
+      const tpl = JSON.parse(raw);
+      
+      if (tpl.name) setTitle(tpl.name);
+      if (tpl.description) {
+        const fullDesc = `${tpl.description}\n\nStudy Objective: ${tpl.objective}`;
+        setDescription(fullDesc);
+      }
+      if (tpl.category) {
+        setCategory(tpl.category);
+      }
+      if (tpl.duration) setDuration(tpl.duration);
+      if (tpl.rewardAmount) setReward(tpl.rewardAmount);
+      if (tpl.testType) setTestType(tpl.testType);
+      
+      if (tpl.questions?.length) {
+        setQuestions(tpl.questions.map((q: any) => ({
+          question_text: q.question_text,
+          question_type: q.question_type || 'open_text',
+          options: q.options || [],
+          required: q.required ?? true,
+          task_index: null,
+        })));
+      }
+      
+      if (tpl.participantCriteria) {
+        setTargetLocation(tpl.participantCriteria);
+      }
+
+      setStep(1);
+      sessionStorage.removeItem('use_template_data');
+
+      toast({
+        title: "Template Loaded",
+        description: `Successfully loaded "${tpl.name}". You can now review and edit details.`,
+      });
+    } catch (err) {
+      console.error('Failed to load template data from sessionStorage', err);
+    }
+  }, [toast]);
+
   if (authLoading || (user && !role)) return null;
   if (!user || role !== 'recruiter') return null;
 

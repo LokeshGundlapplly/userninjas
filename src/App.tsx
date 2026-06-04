@@ -22,6 +22,8 @@ import AuthCallback from "./pages/AuthCallback";
 import CompleteProfile from "./pages/CompleteProfile";
 import VerifyEmail from "./pages/VerifyEmail";
 import CreateTest from "./pages/CreateTest";
+import TemplatesPage from "./pages/TemplatesPage";
+import CreateStudy from "./pages/CreateStudy";
 import SurveyBuilder from "./pages/SurveyBuilder";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
@@ -313,6 +315,8 @@ const App = () => (
               <Route path="/tester/profile" element={<ProtectedDashboardRoute><TesterProfile /></ProtectedDashboardRoute>} />
               <Route path="/recruiter" element={<ProtectedDashboardRoute><RecruiterDashboard /></ProtectedDashboardRoute>} />
               <Route path="/recruiter/create-test" element={<ProtectedDashboardRoute><CreateTest /></ProtectedDashboardRoute>} />
+              <Route path="/recruiter/create-study" element={<ProtectedDashboardRoute><CreateStudy /></ProtectedDashboardRoute>} />
+              <Route path="/recruiter/templates" element={<ProtectedDashboardRoute><TemplatesPage /></ProtectedDashboardRoute>} />
               <Route path="/recruiter/surveys" element={<ProtectedDashboardRoute><SurveyBuilder /></ProtectedDashboardRoute>} />
               <Route path="/admin" element={<ProtectedDashboardRoute><AdminPanel /></ProtectedDashboardRoute>} />
               <Route path="/reset-password" element={<ResetPassword />} />

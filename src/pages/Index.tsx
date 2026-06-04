@@ -4,24 +4,23 @@ import { Helmet } from 'react-helmet-async';
 import { useAuth } from '@/hooks/useAuth';
 import { useSpotlightCards } from '@/hooks/useSpotlightCards';
 import Navbar from '@/components/Navbar';
-import Hero from '@/components/Hero';
+import HeroInteractive from '@/components/HeroInteractive';
 import TrustedBy from '@/components/TrustedBy';
-import MissionProtocol from '@/components/MissionProtocol';
-import ResearchMethods from '@/components/ResearchMethods';
-import Features from '@/components/Features';
-import ProductDemo from '@/components/ProductDemo';
-import Capabilities from '@/components/Capabilities';
-import Testimonials from '@/components/Testimonials';
-import Pricing from '@/components/Pricing';
-import ComparisonTable from '@/components/ComparisonTable';
-import FAQ from '@/components/FAQ';
-import TesterCTA from '@/components/TesterCTA';
+import ProblemSection from '@/components/ProblemSection';
+import AIWorkflow from '@/components/AIWorkflow';
+import ResearchTemplates from '@/components/ResearchTemplates';
+import DashboardPreview from '@/components/DashboardPreview';
+import InsightsShowcase from '@/components/InsightsShowcase';
+import CommandPaletteDemo from '@/components/CommandPaletteDemo';
+import EnterpriseFeatures from '@/components/EnterpriseFeatures';
+import SecurityHub from '@/components/SecurityHub';
+import TestimonialsMarquee from '@/components/TestimonialsMarquee';
+import FAQSection from '@/components/FAQSection';
 import CTA from '@/components/CTA';
 import Footer from '@/components/Footer';
 import Background3D from '@/components/Background3D';
 import ChatWidget from '@/components/ChatWidget';
 import ScrollProgress from '@/components/ScrollProgress';
-import VideoShowcase from '@/components/VideoShowcase';
 import PageTransition from '@/components/PageTransition';
 
 export default function Index() {
@@ -38,8 +37,8 @@ export default function Index() {
   return (
     <>
       <Helmet>
-        <title>User Ninjas - Test Your Product with Real Users | UX Testing Platform</title>
-        <meta name="description" content="Test your product with real users and get insights in hours. Video recordings, AI-powered analysis, and targeted recruitment. Trusted by 500+ companies." />
+        <title>User Ninjas - AI-Powered User Research Operating System</title>
+        <meta name="description" content="Validate decisions, run qualitative AI interviews, and get user insights in minutes. Trusted by product teams globally." />
       </Helmet>
 
       <Background3D />
@@ -48,9 +47,18 @@ export default function Index() {
       
       <main>
         <PageTransition>
-          <Hero />
-          <Capabilities />
-          <Testimonials />
+          <HeroInteractive />
+          <TrustedBy />
+          <ProblemSection />
+          <AIWorkflow />
+          <ResearchTemplates />
+          <DashboardPreview />
+          <InsightsShowcase />
+          <CommandPaletteDemo />
+          <EnterpriseFeatures />
+          <SecurityHub />
+          <TestimonialsMarquee />
+          <FAQSection />
           <CTA />
         </PageTransition>
       </main>
