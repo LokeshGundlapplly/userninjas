@@ -50,10 +50,41 @@ Rules:
 - Be warm, professional, and encouraging in chat_response.
 - NEVER output raw JSON in chat_response — only natural language.`;
 
+// Helper to escape literal newlines in JSON values
+function escapeJSONNewlines(jsonStr: string): string {
+  let inString = false;
+  let escaped = false;
+  let result = '';
+  for (let i = 0; i < jsonStr.length; i++) {
+    const char = jsonStr[i];
+    if (escaped) {
+      result += char;
+      escaped = false;
+      continue;
+    }
+    if (char === '\\') {
+      result += char;
+      escaped = true;
+      continue;
+    }
+    if (char === '"') {
+      inString = !inString;
+    }
+    if (char === '\n' && inString) {
+      result += '\\n';
+    } else if (char === '\r' && inString) {
+      result += '\\r';
+    } else {
+      result += char;
+    }
+  }
+  return result;
+}
+
 // ─── JSON extractor ───────────────────────────────────────────────────────────
 function extractJSON(raw: string): { chat_response: string; ready: boolean; test: TestSuggestion | null } {
   const text = raw.trim();
-  try { return JSON.parse(text); } catch { /* ignore */ }
+  try { return JSON.parse(escapeJSONNewlines(text)); } catch { /* ignore */ }
 
   const start = text.indexOf('{');
   if (start !== -1) {
@@ -68,14 +99,22 @@ function extractJSON(raw: string): { chat_response: string; ready: boolean; test
         else if (c === '}') {
           depth--;
           if (depth === 0) {
-            try { return JSON.parse(text.slice(start, i + 1)); } catch { /* ignore */ }
+            try { return JSON.parse(escapeJSONNewlines(text.slice(start, i + 1))); } catch { /* ignore */ }
           }
         }
       }
     }
   }
-  // Fallback: treat everything as conversational text (never show raw JSON)
-  return { chat_response: raw.replace(/```json[\s\S]*?```/g, '').replace(/\{[\s\S]*\}/g, '').trim() || raw, ready: false, test: null };
+  
+  // Fallback: strip JSON block robustly if parsing failed
+  let cleanText = raw.replace(/```json[\s\S]*?```/g, '');
+  const jsonStart = cleanText.indexOf('{');
+  if (jsonStart !== -1 && (cleanText.includes('"chat_response"') || cleanText.includes('"ready"') || cleanText.includes('"test"'))) {
+    cleanText = cleanText.substring(0, jsonStart).trim();
+  } else {
+    cleanText = cleanText.replace(/\{[\s\S]*\}/g, '').trim();
+  }
+  return { chat_response: cleanText || raw, ready: false, test: null };
 }
 
 // ─── AI providers ─────────────────────────────────────────────────────────────
@@ -218,7 +257,13 @@ export default function RecruiterChat() {
       if (!aiText && parsed?.test) {
         aiText = "I've generated a tailored user research study structure based on your details! Let's check out the details below. If it looks good, click **Open in Test Builder** to load and publish it.";
       }
-      aiText = aiText.replace(/```json[\s\S]*?```/g, '').replace(/\{[\s\S]*\}/g, '').trim();
+      aiText = aiText.replace(/```json[\s\S]*?```/g, '');
+      const jsonStart = aiText.indexOf('{');
+      if (jsonStart !== -1 && (aiText.includes('"chat_response"') || aiText.includes('"ready"') || aiText.includes('"test"'))) {
+        aiText = aiText.substring(0, jsonStart).trim();
+      } else {
+        aiText = aiText.replace(/\{[\s\S]*\}/g, '').trim();
+      }
 
       setMessages(prev => [...prev, { role: 'ai', content: aiText || "I'm not sure I understood — could you rephrase that?" }]);
       if (parsed?.ready && parsed?.test) {

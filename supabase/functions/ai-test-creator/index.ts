@@ -103,12 +103,43 @@ serve(async (req) => {
     const data = await response.json();
     const raw = data.choices?.[0]?.message?.content ?? "";
 
+    // Escape literal newlines inside string values in JSON to avoid parse errors
+    const escapeJSONNewlines = (jsonStr: string): string => {
+      let inString = false;
+      let escaped = false;
+      let result = '';
+      for (let i = 0; i < jsonStr.length; i++) {
+        const char = jsonStr[i];
+        if (escaped) {
+          result += char;
+          escaped = false;
+          continue;
+        }
+        if (char === '\\') {
+          result += char;
+          escaped = true;
+          continue;
+        }
+        if (char === '"') {
+          inString = !inString;
+        }
+        if (char === '\n' && inString) {
+          result += '\\n';
+        } else if (char === '\r' && inString) {
+          result += '\\r';
+        } else {
+          result += char;
+        }
+      }
+      return result;
+    };
+
     // Robust JSON extraction
     let parsed: any = null;
     const text = raw.trim();
     
     try {
-      parsed = JSON.parse(text);
+      parsed = JSON.parse(escapeJSONNewlines(text));
     } catch {
       const start = text.indexOf('{');
       if (start !== -1) {
@@ -125,7 +156,7 @@ serve(async (req) => {
             else if (char === '}') {
               depth--;
               if (depth === 0) {
-                try { parsed = JSON.parse(text.slice(start, i + 1)); break; } catch { /* ignore */ }
+                try { parsed = JSON.parse(escapeJSONNewlines(text.slice(start, i + 1))); break; } catch { /* ignore */ }
               }
             }
           }
@@ -134,7 +165,15 @@ serve(async (req) => {
     }
 
     if (!parsed) {
-      parsed = { chat_response: raw, ready: false, test: null };
+      // Fallback: strip JSON block robustly if parsing completely failed
+      let cleanText = raw.replace(/```json[\s\S]*?```/g, '');
+      const jsonStart = cleanText.indexOf('{');
+      if (jsonStart !== -1 && (cleanText.includes('"chat_response"') || cleanText.includes('"ready"') || cleanText.includes('"test"'))) {
+        cleanText = cleanText.substring(0, jsonStart).trim();
+      } else {
+        cleanText = cleanText.replace(/\{[\s\S]*\}/g, '').trim();
+      }
+      parsed = { chat_response: cleanText || raw, ready: false, test: null };
     }
 
     return new Response(JSON.stringify(parsed), {
