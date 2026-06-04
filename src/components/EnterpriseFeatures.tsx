@@ -1,5 +1,6 @@
 import React from 'react';
 import { ShieldAlert, Users, Key, Search, FileLock, Users2, Database } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 import ScrollReveal from './ScrollReveal';
 
 const ENTERPRISE_CAPABILITIES = [
