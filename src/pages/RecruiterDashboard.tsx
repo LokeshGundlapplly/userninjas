@@ -10,6 +10,7 @@ import RecruiterChat from '@/components/RecruiterChat';
 import TestDetailPanel from '@/components/recruiter/TestDetailPanel';
 import SubmissionDetailPanel from '@/components/recruiter/SubmissionDetailPanel';
 import RecruiterPaymentsPanel from '@/components/recruiter/RecruiterPaymentsPanel';
+import WithdrawalManagementPanel from '@/components/recruiter/WithdrawalManagementPanel';
 import PricingModal from '@/components/PricingModal';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
@@ -35,7 +36,7 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
-  Plus, FileText, Users, DollarSign, Clock, CheckCircle, XCircle,
+  Plus, FileText, Users, DollarSign, Clock, CheckCircle, XCircle, Wallet,
   AlertCircle, Trash2, Edit, BarChart3, Activity, Target, Filter,
   Percent, Award, Sparkles, Play as PlayIcon, LogOut, Settings,
   Layers, Bot, MessageSquare, PieChart, Download, Search,
@@ -120,7 +121,7 @@ interface SurveyQuestion {
   logic_branch: { condition: string; skip_to: number } | null;
 }
 
-type Section = 'overview' | 'tests' | 'submissions' | 'insights' | 'ai_interviews' | 'surveys' | 'analytics' | 'payments' | 'templates';
+type Section = 'overview' | 'tests' | 'submissions' | 'insights' | 'ai_interviews' | 'surveys' | 'analytics' | 'payments' | 'templates' | 'withdrawals';
 
 // ─── Constants ────────────────────────────────────────────
 
@@ -141,6 +142,7 @@ const SIDEBAR_ITEMS: { key: Section; label: string; icon: typeof LayoutGrid }[] 
   { key: 'surveys', label: 'Surveys', icon: ClipboardList },
   { key: 'analytics', label: 'Analytics', icon: BarChart3 },
   { key: 'payments', label: 'Billing & Subscription', icon: CreditCard },
+  { key: 'withdrawals', label: 'Withdrawal Requests', icon: Wallet },
 ];
 
 // ─── Helpers ──────────────────────────────────────────────
@@ -188,7 +190,7 @@ export default function RecruiterDashboard() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['overview', 'tests', 'analytics', 'submissions', 'templates'].includes(hash)) {
+      if (hash && ['overview', 'tests', 'analytics', 'submissions', 'templates', 'payments', 'withdrawals'].includes(hash)) {
         setSection(hash as Section);
       }
     };
@@ -806,6 +808,7 @@ export default function RecruiterDashboard() {
                     {section === 'surveys' && 'Surveys'}
                     {section === 'analytics' && 'Analytics'}
                     {section === 'payments' && 'Billing & Payments'}
+                    {section === 'withdrawals' && 'Withdrawal Requests'}
                     {section === 'templates' && 'Template Library'}
                   </h1>
                   <p className="text-sm text-muted-foreground mt-0.5">
@@ -1861,6 +1864,13 @@ export default function RecruiterDashboard() {
               {/* ══════════════════════════════════════════════════ */}
               {section === 'templates' && (
                 <TemplatesPage />
+              )}
+
+              {/* ══════════════════════════════════════════════════ */}
+              {/*  WITHDRAWALS SECTION                               */}
+              {/* ══════════════════════════════════════════════════ */}
+              {section === 'withdrawals' && (
+                <WithdrawalManagementPanel />
               )}
             </div>
           </main>

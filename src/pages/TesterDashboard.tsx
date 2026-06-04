@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Background3D from '@/components/Background3D';
+import WalletSection from '@/components/tester/WalletSection';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -305,13 +306,14 @@ interface ScheduledSession {
   study_slots?: { start_time: string; end_time: string } | null;
 }
 
-type Section = 'overview' | 'available' | 'my_tests' | 'earnings' | 'schedule' | 'profile';
+type Section = 'overview' | 'available' | 'my_tests' | 'earnings' | 'wallet' | 'schedule' | 'profile';
 
 const SIDEBAR_ITEMS: { key: Section; label: string; icon: typeof LayoutGrid }[] = [
   { key: 'overview', label: 'Overview', icon: LayoutGrid },
   { key: 'available', label: 'Available Tests', icon: FileText },
   { key: 'my_tests', label: 'My Tests', icon: Target },
-  { key: 'earnings', label: 'Earnings', icon: Wallet },
+  { key: 'earnings', label: 'Earnings', icon: DollarSign },
+  { key: 'wallet', label: 'Wallet', icon: Wallet },
   { key: 'schedule', label: 'Schedule', icon: Calendar },
   { key: 'profile', label: 'Profile', icon: User },
 ];
@@ -329,8 +331,9 @@ export default function TesterDashboard() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['overview', 'available', 'my-tests', 'earnings', 'profile'].includes(hash)) {
-        setSection(hash as Section);
+      if (hash && ['overview', 'available', 'my-tests', 'my_tests', 'earnings', 'wallet', 'schedule', 'profile'].includes(hash)) {
+        const mappedHash = hash === 'my-tests' ? 'my_tests' : hash;
+        setSection(mappedHash as Section);
       }
     };
     handleHashChange();
@@ -1239,6 +1242,7 @@ export default function TesterDashboard() {
                     {section === 'available' && 'Available Tests'}
                     {section === 'my_tests' && 'My Tests'}
                     {section === 'earnings' && 'Earnings'}
+                    {section === 'wallet' && 'Wallet'}
                     {section === 'schedule' && 'Schedule'}
                     {section === 'profile' && 'Profile & Settings'}
                   </h1>
@@ -1247,6 +1251,7 @@ export default function TesterDashboard() {
                     {section === 'available' && `${tests.filter(t => !submissions.some(s => s.test_id === t.id)).length} tests available`}
                     {section === 'my_tests' && `${submissions.length} total · ${inProgressTests} in progress`}
                     {section === 'earnings' && `$${totalEarnings.toFixed(2)} total · $${pendingEarnings.toFixed(2)} pending`}
+                    {section === 'wallet' && 'Manage your wallet and request withdrawals'}
                     {section === 'schedule' && `${upcomingSessions} upcoming sessions`}
                     {section === 'profile' && 'Manage your demographics and preferences'}
                   </p>
@@ -1583,6 +1588,15 @@ export default function TesterDashboard() {
                     </Card>
                   )}
                 </div>
+              )}
+
+              {/* ═══════════════ WALLET SECTION ═══════════════ */}
+              {section === 'wallet' && (
+                <WalletSection
+                  userId={user.id}
+                  userEmail={user.email || ''}
+                  totalEarnings={paidEarnings}
+                />
               )}
 
               {/* ═══════════════ SCHEDULE SECTION ═══════════════ */}
