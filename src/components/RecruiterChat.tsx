@@ -181,7 +181,7 @@ export default function RecruiterChat() {
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading]);
+  useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, loading, suggestion]);
   useEffect(() => { setTimeout(() => inputRef.current?.focus(), 200); }, []);
 
   const sendMessage = useCallback(async (overrideText?: string) => {
@@ -195,7 +195,7 @@ export default function RecruiterChat() {
 
     try {
       const apiMessages = nextMessages.map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content }));
-      let parsed: { chat_response?: string; ready?: boolean; test?: TestSuggestion | null };
+      let parsed: any = {};
 
       try {
         const { data, error } = await supabase.functions.invoke('ai-test-creator', { body: { messages: apiMessages } });
@@ -206,12 +206,27 @@ export default function RecruiterChat() {
         parsed = await callAIFallback(apiMessages);
       }
 
-      // Always use chat_response only — never show raw JSON
-      const aiText = parsed?.chat_response?.trim() || "I'm not sure I understood — could you rephrase that?";
-      setMessages(prev => [...prev, { role: 'ai', content: aiText }]);
-      if (parsed?.ready && parsed?.test) setSuggestion(parsed.test as TestSuggestion);
+      if (typeof parsed === 'string') {
+        parsed = extractJSON(parsed);
+      } else if (parsed && !parsed.chat_response && parsed.candidates) {
+        // Gemini raw format fallback
+        parsed = extractJSON(parsed.candidates[0]?.content?.parts?.[0]?.text || '');
+      }
+
+      // Force strip any JSON stringified content out of chat_response
+      let aiText = parsed?.chat_response || '';
+      if (!aiText && parsed?.test) {
+        aiText = "I've generated a tailored user research study structure based on your details! Let's check out the details below. If it looks good, click **Open in Test Builder** to load and publish it.";
+      }
+      aiText = aiText.replace(/```json[\s\S]*?```/g, '').replace(/\{[\s\S]*\}/g, '').trim();
+
+      setMessages(prev => [...prev, { role: 'ai', content: aiText || "I'm not sure I understood — could you rephrase that?" }]);
+      if (parsed?.ready && parsed?.test) {
+        setSuggestion(parsed.test as TestSuggestion);
+      }
     } catch (err: any) {
-      setMessages(prev => [...prev, { role: 'ai', content: "Sorry, something went wrong. Please try again in a moment." }]);
+      console.error('ai-test-creator error:', err);
+      setMessages(prev => [...prev, { role: 'ai', content: "Sorry, I hit an error. Please try again in a moment." }]);
     } finally {
       setLoading(false);
     }
@@ -224,7 +239,7 @@ export default function RecruiterChat() {
   const handleApply = () => {
     if (!suggestion) return;
     try { sessionStorage.setItem('ai_test_suggestion', JSON.stringify(suggestion)); } catch { /* ignore item set error */ }
-    toast({ title: 'Test ready!', description: 'Review and publish your study.' });
+    toast({ title: 'Test structure applied!', description: 'Review and publish your study.' });
     navigate('/recruiter/create-test');
   };
 
@@ -236,26 +251,26 @@ export default function RecruiterChat() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-background via-background to-violet-950/5">
+    <div className="flex flex-col h-full bg-[#0F172A] text-slate-200">
 
       {/* ── Header ── */}
-      <div className="flex-shrink-0 px-5 py-4 border-b border-border/40 bg-gradient-to-r from-violet-600/10 via-indigo-600/5 to-transparent backdrop-blur-sm">
+      <div className="flex-shrink-0 px-5 py-4 border-b border-slate-800/80 bg-gradient-to-r from-violet-600/15 via-indigo-600/10 to-transparent backdrop-blur-sm">
         <div className="flex items-center gap-3">
           <AlexAvatar size={40} />
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h2 className="font-bold text-base text-foreground">Alex</h2>
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/15 text-green-500 border border-green-500/20">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+              <h2 className="font-bold text-base text-slate-100">Alex</h2>
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-green-500/15 text-green-400 border border-green-500/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                 Online
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">AI Research Consultant · UserNinjas</p>
+            <p className="text-xs text-slate-400">AI Research Consultant · UserNinjas</p>
           </div>
           {messages.length > 1 && (
             <button
               onClick={reset}
-              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
+              className="p-2 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all"
               title="Start over"
             >
               <RotateCcw className="h-3.5 w-3.5" />
@@ -273,21 +288,21 @@ export default function RecruiterChat() {
             {/* Avatar */}
             {msg.role === 'ai' && <AlexAvatar size={30} />}
             {msg.role === 'user' && (
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-primary/80 to-primary flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-white shadow-md">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-700 flex items-center justify-center flex-shrink-0 text-[10px] font-bold text-white shadow-md shadow-indigo-600/20">
                 You
               </div>
             )}
 
             {/* Bubble */}
             <div
-              className={`max-w-[78%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
+              className={`max-w-[82%] rounded-2xl px-4 py-3 text-sm leading-relaxed shadow-sm ${
                 msg.role === 'ai'
-                  ? 'bg-card/80 border border-border/50 text-foreground rounded-tl-sm backdrop-blur-sm'
-                  : 'bg-gradient-to-br from-violet-600 to-indigo-600 text-white rounded-tr-sm shadow-lg shadow-violet-500/20'
+                  ? 'bg-slate-900/90 border border-slate-800/80 text-slate-100 rounded-tl-sm backdrop-blur-sm'
+                  : 'bg-gradient-to-br from-indigo-600 via-indigo-500 to-blue-600 text-white rounded-tr-sm shadow-lg shadow-indigo-500/25'
               }`}
             >
               {msg.role === 'ai' ? (
-                <div className="prose prose-sm dark:prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_li]:my-0.5 [&_strong]:font-semibold [&_strong]:text-foreground">
+                <div className="prose prose-sm prose-invert max-w-none [&_p]:my-1 [&_ul]:my-1 [&_li]:my-0.5 [&_strong]:font-semibold [&_strong]:text-white">
                   <ReactMarkdown>{msg.content}</ReactMarkdown>
                 </div>
               ) : (
@@ -301,7 +316,7 @@ export default function RecruiterChat() {
         {loading && (
           <div className="flex gap-3">
             <AlexAvatar size={30} />
-            <div className="bg-card/80 border border-border/50 rounded-2xl rounded-tl-sm px-4 py-3 backdrop-blur-sm shadow-sm">
+            <div className="bg-slate-900/90 border border-slate-800/80 rounded-2xl rounded-tl-sm px-4 py-3 backdrop-blur-sm shadow-sm">
               <TypingDots />
             </div>
           </div>
@@ -309,14 +324,14 @@ export default function RecruiterChat() {
 
         {/* Quick prompts */}
         {showQuickPrompts && messages.length <= 1 && !loading && (
-          <div className="space-y-2 pt-2">
-            <p className="text-xs text-muted-foreground text-center font-medium">Try a quick start:</p>
-            <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-2.5 pt-2">
+            <p className="text-xs text-slate-400 text-center font-medium">Choose a testing area to begin:</p>
+            <div className="grid grid-cols-2 gap-2.5">
               {QUICK_PROMPTS.map(p => (
                 <button
                   key={p}
                   onClick={() => sendMessage(p)}
-                  className="text-left text-xs px-3 py-2.5 rounded-xl border border-border/60 bg-card/60 hover:bg-card hover:border-violet-500/40 hover:shadow-sm hover:shadow-violet-500/10 transition-all text-foreground/80 hover:text-foreground font-medium backdrop-blur-sm"
+                  className="text-left text-xs px-3 py-2.5 rounded-xl border border-slate-800 bg-slate-900/50 hover:bg-slate-900 hover:border-indigo-500/40 hover:shadow-md hover:shadow-indigo-500/10 transition-all text-slate-300 hover:text-white font-medium backdrop-blur-sm"
                 >
                   {p}
                 </button>
@@ -327,28 +342,28 @@ export default function RecruiterChat() {
 
         {/* Test suggestion card */}
         {suggestion && (
-          <div className="rounded-2xl border border-violet-500/30 bg-gradient-to-br from-violet-600/8 to-indigo-600/5 overflow-hidden shadow-lg shadow-violet-500/10">
+          <div className="rounded-2xl border border-indigo-500/30 bg-gradient-to-br from-slate-900 via-slate-950 to-indigo-950/20 overflow-hidden shadow-xl shadow-indigo-950/40">
             {/* Card header */}
-            <div className="px-4 py-3 bg-violet-600/10 border-b border-violet-500/20 flex items-center justify-between">
+            <div className="px-4 py-3 bg-indigo-950/60 border-b border-indigo-500/20 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-lg bg-violet-600/20 flex items-center justify-center">
-                  <Sparkles className="h-3.5 w-3.5 text-violet-400" />
+                <div className="w-6 h-6 rounded-lg bg-indigo-500/20 flex items-center justify-center">
+                  <Sparkles className="h-3.5 w-3.5 text-indigo-400" />
                 </div>
-                <span className="text-sm font-semibold text-violet-400">Study Ready</span>
+                <span className="text-sm font-semibold text-indigo-400">AI Design Ready</span>
               </div>
               <button
                 onClick={() => setShowDetails(v => !v)}
-                className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+                className="flex items-center gap-1 text-xs text-slate-400 hover:text-white transition-colors"
               >
-                {showDetails ? 'Hide' : 'Preview'}
+                {showDetails ? 'Hide Details' : 'Preview Details'}
                 {showDetails ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               </button>
             </div>
 
             {/* Card body */}
-            <div className="px-4 py-3">
-              <p className="font-semibold text-sm text-foreground mb-1 truncate">{suggestion.title}</p>
-              <p className="text-xs text-muted-foreground line-clamp-2 mb-3">{suggestion.description}</p>
+            <div className="px-4 py-4">
+              <p className="font-semibold text-sm text-white mb-1.5 truncate">{suggestion.title}</p>
+              <p className="text-xs text-slate-300 line-clamp-3 mb-4 leading-relaxed">{suggestion.description}</p>
 
               {/* Meta pills */}
               <div className="flex flex-wrap gap-1.5">
@@ -359,7 +374,7 @@ export default function RecruiterChat() {
                   { icon: <Clock className="h-3 w-3" />, text: `${suggestion.estimated_duration} min` },
                   { icon: <DollarSign className="h-3 w-3" />, text: `$${suggestion.recommended_reward}` },
                 ].map((pill, i) => (
-                  <span key={i} className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-1 rounded-full bg-violet-500/10 text-violet-400 border border-violet-500/20">
+                  <span key={i} className="inline-flex items-center gap-1 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
                     {pill.icon} {pill.text}
                   </span>
                 ))}
@@ -368,15 +383,15 @@ export default function RecruiterChat() {
 
             {/* Expanded details */}
             {showDetails && (
-              <div className="px-4 pb-3 space-y-3 border-t border-violet-500/10 pt-3">
+              <div className="px-4 pb-4 space-y-4 border-t border-slate-800/80 pt-4 bg-slate-950/40">
                 {suggestion.tasks?.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Tasks</p>
-                    <ul className="space-y-1.5">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Participant Tasks</p>
+                    <ul className="space-y-2">
                       {suggestion.tasks.map((t, i) => (
                         <li key={i} className="text-xs flex gap-2 items-start">
-                          <span className="w-4 h-4 rounded-full bg-violet-600/20 text-violet-400 text-[9px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
-                          <span className="text-foreground/80">{t.title}</span>
+                          <span className="w-4.5 h-4.5 rounded-md bg-indigo-500/20 text-indigo-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">{i + 1}</span>
+                          <span className="text-slate-300 leading-normal">{t.title}</span>
                         </li>
                       ))}
                     </ul>
@@ -384,13 +399,13 @@ export default function RecruiterChat() {
                 )}
                 {suggestion.screener_questions?.length > 0 && (
                   <div>
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-2">Screeners</p>
-                    <ul className="space-y-1.5">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Screener Questions</p>
+                    <ul className="space-y-2">
                       {suggestion.screener_questions.map((s, i) => (
                         <li key={i} className="text-xs flex gap-2 items-start">
-                          <CheckCircle2 className="h-3 w-3 text-green-500 flex-shrink-0 mt-0.5" />
-                          <span className="text-foreground/80">
-                            {s.question} <span className="text-muted-foreground">→ expect: "{s.expected_answer}"</span>
+                          <CheckCircle2 className="h-3.5 w-3.5 text-green-500 flex-shrink-0 mt-0.5" />
+                          <span className="text-slate-300 leading-normal">
+                            {s.question} <span className="text-slate-400 italic">→ expected: "{s.expected_answer}"</span>
                           </span>
                         </li>
                       ))}
@@ -401,10 +416,10 @@ export default function RecruiterChat() {
             )}
 
             {/* CTA */}
-            <div className="px-4 pb-4">
+            <div className="px-4 pb-4 pt-1">
               <Button
                 onClick={handleApply}
-                className="w-full gap-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-lg shadow-violet-500/25 rounded-xl h-10 font-semibold text-sm transition-all"
+                className="w-full gap-2 bg-gradient-to-r from-indigo-600 via-indigo-500 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-lg shadow-indigo-600/30 rounded-xl h-11 font-semibold text-sm transition-all duration-200 border-t border-white/10"
               >
                 <Wand2 className="h-4 w-4" />
                 Open in Test Builder
@@ -417,8 +432,8 @@ export default function RecruiterChat() {
       </div>
 
       {/* ── Input ── */}
-      <div className="flex-shrink-0 border-t border-border/40 px-4 py-3 bg-card/40 backdrop-blur-sm">
-        <div className="flex gap-2 items-end">
+      <div className="flex-shrink-0 border-t border-slate-800/80 px-4 py-3 bg-slate-950/80 backdrop-blur-md">
+        <div className="flex gap-2.5 items-end">
           <div className="flex-1 relative">
             <textarea
               ref={inputRef}
@@ -426,7 +441,7 @@ export default function RecruiterChat() {
               onChange={e => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder="Describe what you want to test…"
-              className="w-full resize-none text-sm px-4 py-3 pr-10 rounded-xl border border-border/60 bg-secondary/40 focus:bg-secondary/60 focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/20 outline-none placeholder:text-muted-foreground/50 transition-all min-h-[46px] max-h-32 leading-relaxed"
+              className="w-full resize-none text-sm px-4 py-3 pr-10 rounded-xl border border-slate-800 bg-slate-900/60 focus:bg-slate-900 focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 outline-none placeholder:text-slate-500 transition-all min-h-[46px] max-h-32 leading-relaxed text-slate-100"
               rows={1}
               disabled={loading}
               style={{ scrollbarWidth: 'none' }}
@@ -435,13 +450,13 @@ export default function RecruiterChat() {
           <Button
             onClick={() => sendMessage()}
             disabled={!input.trim() || loading}
-            className="h-11 w-11 flex-shrink-0 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white shadow-md shadow-violet-500/30 disabled:opacity-40 transition-all p-0"
+            className="h-11 w-11 flex-shrink-0 rounded-xl bg-gradient-to-br from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white shadow-lg shadow-indigo-600/30 disabled:opacity-40 transition-all p-0 border-t border-white/10"
           >
             {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
-        <p className="text-[10px] text-muted-foreground/50 text-center mt-2">
-          Powered by <span className="text-violet-400 font-semibold">UserNinjas AI</span> · Enter to send · Shift+Enter for new line
+        <p className="text-[10px] text-slate-500 text-center mt-2.5">
+          Powered by <span className="text-indigo-400 font-semibold">UserNinjas AI</span> · Enter to send · Shift+Enter for new line
         </p>
       </div>
     </div>

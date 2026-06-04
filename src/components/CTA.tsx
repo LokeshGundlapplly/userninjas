@@ -12,7 +12,7 @@ const quickStats = [
 
 export default function CTA() {
   return (
-    <section className="py-28 bg-secondary/20">
+    <section className="py-28 bg-[#0F172A] border-t border-slate-800">
       <div className="container mx-auto px-4">
         <ScrollReveal animation="zoom-up">
           <div className="relative max-w-5xl mx-auto rounded-3xl overflow-hidden group noise-overlay">

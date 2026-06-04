@@ -38,7 +38,7 @@ export default function TestimonialsMarquee() {
   const doubleTestimonials = [...TESTIMONIALS, ...TESTIMONIALS];
 
   return (
-    <section className="py-20 relative overflow-hidden bg-[#050816] border-t border-border/25">
+    <section className="py-20 relative overflow-hidden bg-background border-t border-border/25">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/5 rounded-full blur-[130px] pointer-events-none" />
 
       <div className="container mx-auto px-4 relative z-10 mb-12">
@@ -53,12 +53,12 @@ export default function TestimonialsMarquee() {
       </div>
 
       {/* Infinite scrolling marquee wrapper */}
-      <div className="relative flex overflow-x-hidden select-none py-4 border-y border-border/10 bg-[#070919]/45 backdrop-blur-sm">
+      <div className="relative flex overflow-x-hidden select-none py-4 border-y border-border/10 bg-secondary/40 backdrop-blur-sm">
         <div className="flex gap-6 animate-marquee whitespace-nowrap min-w-full">
           {doubleTestimonials.map((item, idx) => (
             <div
               key={idx}
-              className="inline-block w-[320px] rounded-2xl border border-border/40 bg-[#0d1025]/85 p-5 whitespace-normal shadow-lg flex flex-col justify-between shrink-0"
+              className="inline-block w-[320px] rounded-2xl border border-border/40 bg-card p-5 whitespace-normal shadow-lg flex flex-col justify-between shrink-0"
             >
               <div>
                 <div className="flex gap-0.5 text-amber-500 mb-3">

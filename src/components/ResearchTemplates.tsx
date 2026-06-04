@@ -42,7 +42,7 @@ export default function ResearchTemplates() {
   };
 
   return (
-    <section className="py-24 relative overflow-hidden bg-[#050816] border-t border-border/25">
+    <section className="py-24 relative overflow-hidden bg-background border-t border-border/40">
       {/* Glow lines */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
       <div className="absolute bottom-1/3 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-violet-500/5 blur-[120px] pointer-events-none" />
@@ -92,7 +92,7 @@ export default function ResearchTemplates() {
               {featuredTemplates.slice(startIndex, startIndex + 3).map((tpl) => (
                 <div 
                   key={tpl.id}
-                  className="group relative rounded-2xl border border-border/40 bg-[#0d1025]/50 backdrop-blur-sm p-6 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full justify-between"
+                  className="group relative rounded-2xl border border-border/40 bg-card backdrop-blur-sm p-6 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col h-full justify-between"
                 >
                   <div>
                     {/* Header badges */}
@@ -113,7 +113,7 @@ export default function ResearchTemplates() {
 
                   <div className="space-y-4">
                     {/* Parameters details */}
-                    <div className="grid grid-cols-2 gap-2 bg-[#060814]/80 p-2.5 rounded-xl border border-border/25 text-[10px]">
+                    <div className="grid grid-cols-2 gap-2 bg-secondary/40 p-2.5 rounded-xl border border-border/25 text-[10px]">
                       <div className="flex items-center gap-1.5 text-muted-foreground">
                         <Clock className="w-3.5 h-3.5 text-primary shrink-0" />
                         <span>{tpl.duration} mins</span>

@@ -4,9 +4,10 @@ interface NinjaLogoProps {
   className?: string;
   showText?: boolean;
   size?: 'sm' | 'md' | 'lg';
+  dark?: boolean;
 }
 
-export default function NinjaLogo({ className = '', showText = true, size = 'md' }: NinjaLogoProps) {
+export default function NinjaLogo({ className = '', showText = true, size = 'md', dark = false }: NinjaLogoProps) {
   const [imageError, setImageError] = useState(false);
 
   const sizeMap = {
@@ -45,7 +46,7 @@ export default function NinjaLogo({ className = '', showText = true, size = 'md'
       </div>
       {showText && (
         <span className={`font-display font-bold ${textSizeMap[size]} tracking-tight transition-all duration-300`}>
-          <span className="text-foreground">User</span>
+          <span className={dark ? 'text-white' : 'text-slate-900'}>User</span>
           <span className="text-primary group-hover:text-primary/80 transition-colors duration-300">Ninjas</span>
         </span>
       )}

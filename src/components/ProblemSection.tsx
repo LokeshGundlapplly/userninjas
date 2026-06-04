@@ -4,7 +4,7 @@ import ScrollReveal from './ScrollReveal';
 
 export default function ProblemSection() {
   return (
-    <section className="py-24 relative overflow-hidden bg-[#050816] border-t border-border/25">
+    <section className="py-24 relative overflow-hidden bg-background border-t border-border/25">
       {/* Aurora glow highlights */}
       <div className="absolute top-1/2 left-0 -translate-y-1/2 w-96 h-96 bg-rose-500/5 rounded-full blur-[130px] pointer-events-none" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-[130px] pointer-events-none" />
@@ -28,9 +28,9 @@ export default function ProblemSection() {
           
           {/* Legacy pain points */}
           <ScrollReveal animation="fade-up" delay={100}>
-            <div className="p-6 rounded-2xl border border-red-500/10 bg-[#0d1025]/20 backdrop-blur-sm space-y-6 h-full flex flex-col justify-between">
+            <div className="p-6 rounded-2xl border border-red-500/10 bg-card backdrop-blur-sm space-y-6 h-full flex flex-col justify-between">
               <div>
-                <h3 className="font-display font-bold text-base text-rose-400 flex items-center gap-2 mb-4">
+                <h3 className="font-display font-bold text-base text-rose-600 flex items-center gap-2 mb-4">
                   <Frown className="w-5 h-5" /> Traditional Research Platforms
                 </h3>
                 
@@ -71,8 +71,8 @@ export default function ProblemSection() {
           <ScrollReveal animation="fade-up" delay={180}>
             <div className="p-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-sm space-y-6 h-full flex flex-col justify-between">
               <div>
-                <h3 className="font-display font-bold text-base text-emerald-400 flex items-center gap-2 mb-4">
-                  <Sparkles className="w-5 h-5 text-emerald-400" /> The Research OS
+                <h3 className="font-display font-bold text-base text-emerald-600 flex items-center gap-2 mb-4">
+                  <Sparkles className="w-5 h-5 text-emerald-600" /> The Research OS
                 </h3>
                 
                 <div className="space-y-4">
@@ -102,7 +102,7 @@ export default function ProblemSection() {
                 </div>
               </div>
 
-              <div className="text-[10px] text-emerald-400 font-mono pt-4 border-t border-emerald-500/10">
+              <div className="text-[10px] text-emerald-600 font-mono pt-4 border-t border-emerald-500/10">
                 ✅ Zero friction · Speed to insight · Data-backed shipping
               </div>
             </div>

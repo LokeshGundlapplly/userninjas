@@ -45,7 +45,7 @@ const WORKFLOW_STEPS = [
     previewTitle: 'Live AI Moderation Session',
     previewContent: (
       <div className="space-y-3 text-xs">
-        <div className="flex items-center gap-2 bg-[#050714] border border-border/30 rounded-lg p-2.5">
+        <div className="flex items-center gap-2 bg-secondary/50 border border-border/30 rounded-lg p-2.5">
           <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-[9px]">AI</div>
           <p className="text-[10px] text-foreground leading-relaxed font-semibold">"Why did you click on search rather than using the sidebar filter?"</p>
         </div>
@@ -73,7 +73,7 @@ const WORKFLOW_STEPS = [
           <div>
             <div className="flex justify-between items-center w-full">
               <span className="font-bold text-foreground">Friction Detected</span>
-              <span className="text-[9px] text-rose-400 font-mono">0:14 mark</span>
+              <span className="text-[9px] text-rose-600 font-mono">0:14 mark</span>
             </div>
             <p className="text-[10px] text-muted-foreground mt-0.5">Tester hovered index for 8 seconds without clicking.</p>
           </div>
@@ -83,7 +83,7 @@ const WORKFLOW_STEPS = [
           <div>
             <div className="flex justify-between items-center w-full">
               <span className="font-bold text-foreground">NPS Promoter Quote</span>
-              <span className="text-[9px] text-emerald-400 font-mono">0:45 mark</span>
+              <span className="text-[9px] text-emerald-600 font-mono">0:45 mark</span>
             </div>
             <p className="text-[10px] text-muted-foreground mt-0.5">"The billing setup is faster than any tool I've used."</p>
           </div>
@@ -119,7 +119,7 @@ export default function AIWorkflow() {
   const [activeStep, setActiveStep] = useState(1);
 
   return (
-    <section id="workflow" className="py-24 relative overflow-hidden bg-[#050816]">
+    <section id="workflow" className="py-24 relative overflow-hidden bg-background">
       {/* Light highlights */}
       <div className="absolute top-1/2 left-1/4 -translate-y-1/2 w-96 h-96 rounded-full bg-primary/5 blur-[120px] pointer-events-none" />
       <div className="absolute bottom-10 right-1/4 w-[400px] h-[400px] rounded-full bg-accent/5 blur-[100px] pointer-events-none" />
@@ -180,7 +180,7 @@ export default function AIWorkflow() {
           <div className="lg:col-span-6 relative">
             <div className="absolute -inset-4 bg-gradient-to-r from-primary/5 to-accent/5 rounded-3xl blur-xl opacity-75 pointer-events-none" />
             
-            <div className="relative rounded-2xl border border-border/40 bg-[#0d1025]/85 backdrop-blur-md p-6 shadow-2xl min-h-[260px] flex flex-col justify-between">
+            <div className="relative rounded-2xl border border-border/40 bg-card/90 backdrop-blur-md p-6 shadow-2xl min-h-[260px] flex flex-col justify-between">
               
               {/* Header */}
               <div className="flex items-center justify-between pb-3 border-b border-border/20">

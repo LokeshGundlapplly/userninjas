@@ -59,7 +59,7 @@ export default function InsightsShowcase() {
   };
 
   return (
-    <section className="py-24 relative overflow-hidden bg-[#050816] border-t border-border/20">
+    <section className="py-24 relative overflow-hidden bg-background border-t border-border/20">
       {/* Aurora glow backlights */}
       <div className="absolute top-1/3 right-10 w-96 h-96 bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
       <div className="absolute bottom-10 left-10 w-96 h-96 bg-accent/5 rounded-full blur-[100px] pointer-events-none" />
@@ -126,17 +126,17 @@ export default function InsightsShowcase() {
 
           {/* Right panel: Chat UI */}
           <div className="lg:col-span-8">
-            <div className="relative rounded-2xl border border-border/40 bg-[#0d1025]/85 backdrop-blur-md flex flex-col justify-between h-[360px] shadow-2xl overflow-hidden">
+            <div className="relative rounded-2xl border border-border/40 bg-card/90 backdrop-blur-md flex flex-col justify-between h-[360px] shadow-2xl overflow-hidden">
               
               {/* Top Header status */}
-              <div className="flex items-center gap-3 px-5 py-3 border-b border-border/20 bg-[#050715]/40">
+              <div className="flex items-center gap-3 px-5 py-3 border-b border-border/20 bg-secondary/50">
                 <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
                   <Bot className="w-4 h-4" />
                 </div>
                 <div>
                   <h4 className="text-xs font-bold text-foreground">Research Assistant Copilot</h4>
-                  <span className="text-[9px] text-emerald-400 font-medium flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" /> Active in checkout_study
+                  <span className="text-[9px] text-emerald-600 font-medium flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Active in checkout_study
                   </span>
                 </div>
               </div>
@@ -173,7 +173,7 @@ export default function InsightsShowcase() {
                     <div className="w-6 h-6 rounded-full bg-secondary border border-border/40 shrink-0 flex items-center justify-center text-[9px] font-bold text-muted-foreground">
                       AI
                     </div>
-                    <div className="p-3 rounded-2xl text-xs leading-relaxed bg-[#0f122f] border border-primary/30 text-foreground rounded-tl-none shadow-md">
+                    <div className="p-3 rounded-2xl text-xs leading-relaxed bg-secondary/50 border border-primary/10 text-foreground rounded-tl-none shadow-md">
                       {displayedText}
                       <span className="inline-block w-1 h-3.5 bg-primary ml-0.5 animate-pulse" />
                     </div>
@@ -182,7 +182,7 @@ export default function InsightsShowcase() {
               </div>
 
               {/* Input field mockup */}
-              <div className="p-4 border-t border-border/20 bg-[#050715]/40 flex gap-2">
+              <div className="p-4 border-t border-border/20 bg-secondary/50 flex gap-2">
                 <input
                   type="text"
                   placeholder="Ask a custom question... (or click preset questions on the left)"

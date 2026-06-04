@@ -14,14 +14,14 @@ const ENTERPRISE_CAPABILITIES = [
         {['A', 'M', 'J', 'S'].map((letter, i) => (
           <div 
             key={i} 
-            className={`w-7 h-7 rounded-full border-2 border-[#0d1025] flex items-center justify-center text-[10px] font-bold text-white shadow-md ${
+            className={`w-7 h-7 rounded-full border-2 border-card flex items-center justify-center text-[10px] font-bold text-white shadow-md ${
               i === 0 ? 'bg-primary' : i === 1 ? 'bg-accent' : i === 2 ? 'bg-violet-600' : 'bg-emerald-500'
             }`}
           >
             {letter}
           </div>
         ))}
-        <div className="w-7 h-7 rounded-full border-2 border-[#0d1025] bg-secondary flex items-center justify-center text-[9px] font-bold text-muted-foreground shadow-md">
+        <div className="w-7 h-7 rounded-full border-2 border-card bg-secondary flex items-center justify-center text-[9px] font-bold text-muted-foreground shadow-md">
           +12
         </div>
       </div>
@@ -33,7 +33,7 @@ const ENTERPRISE_CAPABILITIES = [
     description: 'Secure access controls. Automatically provision and deprovision researcher seats via Okta, Azure AD, or custom SAML integrations.',
     badge: 'Access',
     visual: (
-      <div className="flex items-center gap-1.5 mt-4 text-[10px] text-muted-foreground font-mono bg-[#060814] p-2 rounded-lg border border-border/30 w-fit">
+      <div className="flex items-center gap-1.5 mt-4 text-[10px] text-muted-foreground font-mono bg-secondary/40 p-2 rounded-lg border border-border/30 w-fit">
         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
         <span>SAML 2.0 Auth: Verified</span>
       </div>
@@ -63,7 +63,7 @@ const ENTERPRISE_CAPABILITIES = [
     description: 'Store every user session, transcript, and survey metric in a globally searchable data hub with automated tagging.',
     badge: 'Governance',
     visual: (
-      <div className="relative mt-4 flex items-center bg-[#060814] border border-border/40 rounded-lg px-2.5 py-1 text-[9px] text-muted-foreground w-full">
+      <div className="relative mt-4 flex items-center bg-secondary/40 border border-border/40 rounded-lg px-2.5 py-1 text-[9px] text-muted-foreground w-full">
         <Search className="w-3 h-3 text-muted-foreground shrink-0 mr-1.5" />
         <span>Search checkout recordings...</span>
       </div>
@@ -73,7 +73,7 @@ const ENTERPRISE_CAPABILITIES = [
 
 export default function EnterpriseFeatures() {
   return (
-    <section className="py-24 relative overflow-hidden bg-[#050816] border-t border-border/20">
+    <section className="py-24 relative overflow-hidden bg-background border-t border-border/20">
       {/* Light highlights */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-96 h-96 rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none" />
 
@@ -97,7 +97,7 @@ export default function EnterpriseFeatures() {
             const Icon = cap.icon;
             return (
               <ScrollReveal key={cap.title} animation="fade-up" delay={i * 80}>
-                <div className="group h-full rounded-2xl border border-border/45 bg-[#0d1025]/50 backdrop-blur-md p-6 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col justify-between spotlight-card">
+                <div className="group h-full rounded-2xl border border-border/45 bg-card backdrop-blur-md p-6 hover:border-primary/20 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 flex flex-col justify-between spotlight-card">
                   <div>
                     {/* Badge */}
                     <div className="flex justify-between items-start mb-4">

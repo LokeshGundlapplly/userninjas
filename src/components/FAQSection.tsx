@@ -33,7 +33,7 @@ export default function FAQSection() {
   };
 
   return (
-    <section className="py-24 relative overflow-hidden bg-[#050816] border-t border-border/25">
+    <section className="py-24 relative overflow-hidden bg-background border-t border-border/25">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/5 rounded-full blur-[130px] pointer-events-none" />
 
       <div className="container mx-auto px-4 relative z-10">
@@ -56,7 +56,7 @@ export default function FAQSection() {
                 <div 
                   className={`rounded-2xl border transition-all duration-300 ${
                     isOpen 
-                      ? 'bg-[#0d1025] border-primary/30 shadow-md' 
+                      ? 'bg-card border-primary/30 shadow-md' 
                       : 'bg-card/40 border-border/30 hover:border-border/60 hover:bg-card/70'
                   }`}
                 >

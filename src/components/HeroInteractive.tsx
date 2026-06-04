@@ -93,7 +93,7 @@ export default function HeroInteractive() {
   ];
 
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center pt-28 pb-16 overflow-hidden bg-[#050816]">
+    <section className="relative min-h-screen flex flex-col items-center justify-center pt-28 pb-16 overflow-hidden bg-background">
       {/* Premium background mesh & Aurora glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[85%] h-[60%] rounded-full bg-gradient-to-tr from-indigo-500/10 via-violet-500/5 to-transparent blur-[130px] pointer-events-none" />
       <div className="absolute -top-40 -left-40 w-96 h-96 bg-primary/10 rounded-full blur-[100px] pointer-events-none animate-pulse" style={{ animationDuration: '8s' }} />
@@ -165,9 +165,9 @@ export default function HeroInteractive() {
             {/* Ambient Backlight Glow */}
             <div className="absolute -inset-2 bg-gradient-to-r from-primary/10 via-accent/5 to-emerald-500/10 rounded-3xl blur-2xl opacity-75 pointer-events-none transition-all duration-500 group-hover:opacity-100" />
 
-            <div className="relative rounded-2xl border border-border/40 bg-[#0d1025]/75 backdrop-blur-xl shadow-2xl overflow-hidden">
+            <div className="relative rounded-2xl border border-border/40 bg-card/75 backdrop-blur-xl shadow-2xl overflow-hidden">
               {/* Window Header */}
-              <div className="flex items-center justify-between px-5 py-3 border-b border-border/30 bg-[#070918]/60">
+              <div className="flex items-center justify-between px-5 py-3 border-b border-border/30 bg-secondary/40">
                 <div className="flex gap-1.5">
                   <div className="w-3 h-3 rounded-full bg-red-500/80" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
@@ -184,9 +184,9 @@ export default function HeroInteractive() {
               <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[380px]">
                 
                 {/* Left panel: File input & Video Playback */}
-                <div className="lg:col-span-7 p-6 border-r border-border/20 flex flex-col justify-center bg-[#090b1c]/30">
+                <div className="lg:col-span-7 p-6 border-r border-border/20 flex flex-col justify-center bg-secondary/10">
                   {phase === 'uploading' && (
-                    <div className="flex flex-col items-center justify-center text-center p-8 border border-dashed border-border/40 rounded-xl bg-[#0e112a]/50">
+                    <div className="flex flex-col items-center justify-center text-center p-8 border border-dashed border-border/40 rounded-xl bg-card">
                       <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-4 animate-bounce">
                         <Upload className="w-6 h-6" />
                       </div>
@@ -221,7 +221,7 @@ export default function HeroInteractive() {
                           <Video className="w-5 h-5 animate-pulse" />
                         </div>
                         {/* Sentiment widget inside video */}
-                        <div className="absolute bottom-3 left-3 bg-[#0d1025]/90 border border-border/30 rounded-lg p-2 flex items-center gap-2 backdrop-blur-sm shadow-md">
+                        <div className="absolute bottom-3 left-3 bg-card/90 border border-border/30 rounded-lg p-2 flex items-center gap-2 backdrop-blur-sm shadow-md">
                           <span className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
                           <span className="text-[9px] text-foreground font-semibold">Sentiment: Negative (Checkout Error)</span>
                         </div>
@@ -260,7 +260,7 @@ export default function HeroInteractive() {
                 </div>
 
                 {/* Right panel: Live Transcript & AI insights output */}
-                <div className="lg:col-span-5 p-6 flex flex-col justify-between bg-[#050714]/40">
+                <div className="lg:col-span-5 p-6 flex flex-col justify-between bg-secondary/20">
                   {phase === 'uploading' && (
                     <div className="flex-1 flex flex-col justify-center items-center text-center py-10 opacity-40">
                       <Sparkles className="w-8 h-8 text-primary animate-spin" />
@@ -278,7 +278,7 @@ export default function HeroInteractive() {
                               key={idx} 
                               className={`p-2.5 rounded-lg border transition-all duration-300 ${
                                 idx === activeTranscriptLine 
-                                  ? 'bg-[#0f122e] border-primary/30 shadow-md translate-x-1' 
+                                  ? 'bg-primary/10 border-primary/30 shadow-md translate-x-1' 
                                   : 'bg-secondary/20 border-border/10 opacity-45'
                               }`}
                             >

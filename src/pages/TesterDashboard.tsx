@@ -457,9 +457,29 @@ export default function TesterDashboard() {
         .order('created_at', { ascending: false });
 
       if (testsError) throw testsError;
+
+      // Merge local storage tests if present
+      let mergedTests = [...(testsData || [])];
+      try {
+        const localTestsRaw = localStorage.getItem('userninjas_local_tests');
+        if (localTestsRaw) {
+          const localTests = JSON.parse(localTestsRaw);
+          if (Array.isArray(localTests)) {
+            // Filter local tests that are active and not already in database tests list to prevent duplicates
+            const activeLocalTests = localTests.filter(lt => {
+              const notDuplicate = !mergedTests.some(dbTest => dbTest.id === lt.id);
+              const isActive = lt.status === 'active';
+              return notDuplicate && isActive;
+            });
+            mergedTests = [...activeLocalTests, ...mergedTests];
+          }
+        }
+      } catch (e) {
+        console.error('Error parsing local tests:', e);
+      }
       
       // Sort tests by match score (highest first)
-      const scored = (testsData || []).map(t => ({
+      const scored = mergedTests.map(t => ({
         ...t,
         _matchScore: calculateMatchScore(t as Test, profileData || null),
       }));

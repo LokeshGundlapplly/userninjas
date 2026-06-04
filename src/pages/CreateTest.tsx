@@ -409,6 +409,18 @@ export default function CreateTest() {
         }
       }
 
+      // Save test to local storage queue sync
+      try {
+        const localTestsRaw = localStorage.getItem('userninjas_local_tests');
+        const localTests = localTestsRaw ? JSON.parse(localTestsRaw) : [];
+        if (Array.isArray(localTests)) {
+          localTests.unshift(test);
+          localStorage.setItem('userninjas_local_tests', JSON.stringify(localTests));
+        }
+      } catch (err) {
+        console.error('Failed to sync created test to local storage:', err);
+      }
+
       toast({ title: 'Test created successfully!' });
 
       navigate('/recruiter');

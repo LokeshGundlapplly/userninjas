@@ -14,7 +14,7 @@ export default function CommandPaletteDemo() {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
 
   return (
-    <section className="py-24 relative overflow-hidden bg-[#050816] border-t border-border/20">
+    <section className="py-24 relative overflow-hidden bg-background border-t border-border/20">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 w-96 h-96 bg-primary/5 rounded-full blur-[130px] pointer-events-none" />
 
       <div className="container mx-auto px-4 relative z-10">
@@ -36,10 +36,10 @@ export default function CommandPaletteDemo() {
           <div className="max-w-xl mx-auto relative">
             <div className="absolute -inset-3 bg-gradient-to-r from-primary/5 to-accent/5 rounded-3xl blur-2xl opacity-75 pointer-events-none" />
             
-            <div className="relative rounded-2xl border border-border/40 bg-[#0d1025]/90 backdrop-blur-xl shadow-2xl overflow-hidden p-4 select-none">
+            <div className="relative rounded-2xl border border-border/40 bg-card/90 backdrop-blur-xl shadow-2xl overflow-hidden p-4 select-none">
               
               {/* Search bar input mockup */}
-              <div className="flex items-center gap-3 bg-[#060814] border border-border/30 rounded-xl px-4 py-3 mb-4">
+              <div className="flex items-center gap-3 bg-secondary/50 border border-border/30 rounded-xl px-4 py-3 mb-4">
                 <Search className="w-4.5 h-4.5 text-muted-foreground shrink-0" />
                 <input
                   type="text"
@@ -82,7 +82,7 @@ export default function CommandPaletteDemo() {
                           
                           <div className="flex items-center gap-2">
                             <span className="text-[8px] opacity-50 font-bold uppercase">{item.category}</span>
-                            <kbd className="bg-[#060814] px-2 py-0.8 rounded border border-border/40 text-[9.5px] font-mono font-bold text-foreground">
+                            <kbd className="bg-secondary/60 px-2 py-0.8 rounded border border-border/40 text-[9.5px] font-mono font-bold text-foreground">
                               {item.shortcut}
                             </kbd>
                           </div>

@@ -312,7 +312,7 @@ export default function RecruiterDashboard() {
       return;
     }
     try {
-      const { error } = await supabase.from('tests').insert({
+      const { data: test, error } = await supabase.from('tests').insert({
         recruiter_id: user!.id,
         title: formData.title,
         description: formData.description || null,
@@ -322,8 +322,22 @@ export default function RecruiterDashboard() {
         category: formData.category || null,
         max_testers: formData.max_testers ? parseInt(formData.max_testers) : 100,
         status: 'active',
-      });
+      }).select().single();
+      
       if (error) throw error;
+
+      // Save test to local storage queue sync
+      try {
+        const localTestsRaw = localStorage.getItem('userninjas_local_tests');
+        const localTests = localTestsRaw ? JSON.parse(localTestsRaw) : [];
+        if (Array.isArray(localTests)) {
+          localTests.unshift(test);
+          localStorage.setItem('userninjas_local_tests', JSON.stringify(localTests));
+        }
+      } catch (err) {
+        console.error('Failed to sync created test in dashboard to local storage:', err);
+      }
+
       toast({ title: 'Test created!', description: 'Your test has been published and is now available to testers.' });
       setCreateDialogOpen(false);
       resetForm();
@@ -347,6 +361,30 @@ export default function RecruiterDashboard() {
         max_testers: formData.max_testers ? parseInt(formData.max_testers) : 100,
       }).eq('id', editingTest.id);
       if (error) throw error;
+
+      // Sync update to local storage
+      try {
+        const localTestsRaw = localStorage.getItem('userninjas_local_tests');
+        if (localTestsRaw) {
+          let localTests = JSON.parse(localTestsRaw);
+          if (Array.isArray(localTests)) {
+            localTests = localTests.map(lt => lt.id === editingTest.id ? {
+              ...lt,
+              title: formData.title,
+              description: formData.description || null,
+              requirements: formData.requirements || null,
+              reward_amount: parseFloat(formData.reward_amount),
+              estimated_duration: parseInt(formData.estimated_duration),
+              category: formData.category || null,
+              max_testers: formData.max_testers ? parseInt(formData.max_testers) : 100,
+            } : lt);
+            localStorage.setItem('userninjas_local_tests', JSON.stringify(localTests));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to update local storage test:', err);
+      }
+
       toast({ title: 'Test updated!', description: 'Your test has been updated successfully.' });
       setEditingTest(null);
       resetForm();
@@ -361,6 +399,21 @@ export default function RecruiterDashboard() {
     try {
       const { error } = await supabase.from('tests').delete().eq('id', testId);
       if (error) throw error;
+
+      // Sync delete to local storage
+      try {
+        const localTestsRaw = localStorage.getItem('userninjas_local_tests');
+        if (localTestsRaw) {
+          let localTests = JSON.parse(localTestsRaw);
+          if (Array.isArray(localTests)) {
+            localTests = localTests.filter(lt => lt.id !== testId);
+            localStorage.setItem('userninjas_local_tests', JSON.stringify(localTests));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to delete local storage test:', err);
+      }
+
       toast({ title: 'Test deleted', description: 'The test has been removed.' });
       if (selectedTestId === testId) setSelectedTestId(null);
       fetchData();
@@ -375,6 +428,21 @@ export default function RecruiterDashboard() {
     try {
       const { error } = await supabase.from('tests').update({ status: newStatus }).eq('id', test.id);
       if (error) throw error;
+
+      // Sync toggle status to local storage
+      try {
+        const localTestsRaw = localStorage.getItem('userninjas_local_tests');
+        if (localTestsRaw) {
+          let localTests = JSON.parse(localTestsRaw);
+          if (Array.isArray(localTests)) {
+            localTests = localTests.map(lt => lt.id === test.id ? { ...lt, status: newStatus } : lt);
+            localStorage.setItem('userninjas_local_tests', JSON.stringify(localTests));
+          }
+        }
+      } catch (err) {
+        console.error('Failed to update status of local storage test:', err);
+      }
+
       toast({ title: `Test ${newStatus === 'active' ? 'activated' : 'paused'}`, description: `The test is now ${newStatus}.` });
       fetchData();
     } catch (error) {
@@ -1808,13 +1876,7 @@ export default function RecruiterDashboard() {
 
       {/* ─── Floating AI Chat Sheet ─── */}
       <Sheet open={chatOpen} onOpenChange={setChatOpen}>
-        <SheetContent side="right" className="w-full sm:w-[540px] sm:max-w-[540px] p-0 flex flex-col">
-          <SheetHeader className="px-6 pt-5 pb-3 border-b border-border/60">
-            <SheetTitle className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-primary" />
-              AI Research Assistant
-            </SheetTitle>
-          </SheetHeader>
+        <SheetContent side="right" className="w-full sm:w-[540px] sm:max-w-[540px] p-0 flex flex-col bg-[#0F172A] border-slate-800 text-white">
           <div className="flex-1 overflow-hidden">
             <RecruiterChat />
           </div>

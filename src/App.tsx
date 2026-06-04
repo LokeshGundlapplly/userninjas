@@ -254,15 +254,18 @@ function MagneticButtonPullListener() {
         const dy = e.clientY - cy;
         const dist = Math.hypot(dx, dy);
         
-        const threshold = Math.max(rect.width, rect.height) / 2 + 50;
+        const threshold = 60; // focused 60px activation threshold
         
-        if (dist < threshold) {
-          const pullStrength = 0.22;
-          const mx = dx * pullStrength;
-          const my = dy * pullStrength;
+        if (dist < threshold && dist > 0) {
+          const ratio = 1 - dist / threshold;
+          const pull = ratio * 12; // soft damping ratio, max 12px translation
+          const mx = (dx / dist) * pull;
+          const my = (dy / dist) * pull;
           
+          btn.style.transition = 'transform 0.15s cubic-bezier(0.25, 1, 0.5, 1)';
           btn.style.transform = `translate(${mx}px, ${my}px) scale(1.02)`;
         } else {
+          btn.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
           btn.style.transform = '';
         }
       });
@@ -272,6 +275,7 @@ function MagneticButtonPullListener() {
       const buttons = document.querySelectorAll('.btn-magnetic');
       buttons.forEach((el) => {
         const btn = el as HTMLElement;
+        btn.style.transition = 'transform 0.35s cubic-bezier(0.25, 1, 0.5, 1)';
         btn.style.transform = '';
       });
     };
@@ -289,7 +293,7 @@ function MagneticButtonPullListener() {
 }
 
 const App = () => (
-  <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+  <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

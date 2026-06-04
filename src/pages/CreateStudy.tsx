@@ -190,6 +190,18 @@ export default function CreateStudy() {
 
       if (error) throw error;
 
+      // Save test to local storage queue sync
+      try {
+        const localTestsRaw = localStorage.getItem('userninjas_local_tests');
+        const localTests = localTestsRaw ? JSON.parse(localTestsRaw) : [];
+        if (Array.isArray(localTests)) {
+          localTests.unshift(data);
+          localStorage.setItem('userninjas_local_tests', JSON.stringify(localTests));
+        }
+      } catch (err) {
+        console.error('Failed to sync created study to local storage:', err);
+      }
+
       toast({
         title: 'Study Published!',
         description: 'Your research study has been created and is now active for testers.',
