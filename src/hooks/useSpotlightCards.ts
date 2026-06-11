@@ -1,22 +1,24 @@
-import { useEffect, useCallback } from 'react';
+import { useEffect } from 'react';
 
 /**
- * Attaches mousemove listeners to all `.spotlight-card` elements
- * so the CSS pseudo-element spotlight actually follows the cursor.
+ * Attaches a single global mousemove listener to document
+ * so any element with `.spotlight-card` (even dynamically added ones)
+ * gets its --mouse-x and --mouse-y CSS variables updated.
  */
 export function useSpotlightCards() {
-  const handleMouseMove = useCallback((e: MouseEvent) => {
-    const el = (e.currentTarget as HTMLElement);
-    const rect = el.getBoundingClientRect();
-    el.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
-    el.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
-  }, []);
-
   useEffect(() => {
-    const cards = document.querySelectorAll<HTMLElement>('.spotlight-card');
-    cards.forEach((card) => card.addEventListener('mousemove', handleMouseMove));
-    return () => {
-      cards.forEach((card) => card.removeEventListener('mousemove', handleMouseMove));
+    const handleMouseMove = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      const card = target.closest<HTMLElement>('.spotlight-card');
+      if (card) {
+        const rect = card.getBoundingClientRect();
+        card.style.setProperty('--mouse-x', `${e.clientX - rect.left}px`);
+        card.style.setProperty('--mouse-y', `${e.clientY - rect.top}px`);
+      }
     };
-  });
+    window.addEventListener('mousemove', handleMouseMove, { passive: true });
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+    };
+  }, []);
 }

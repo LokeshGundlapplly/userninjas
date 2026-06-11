@@ -819,3 +819,27 @@
   max-width: 100%;
   margin: 0 auto;
 }
+
+/* Custom premium Framer style additions */
+.dark .bg-card {
+  background-color: hsl(var(--card) / 0.55) !important;
+  backdrop-filter: blur(16px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(120%) !important;
+  border-color: hsl(var(--border) / 0.35) !important;
+}
+
+.light .bg-card {
+  background-color: hsl(var(--card) / 0.75) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border-color: hsl(var(--border) / 0.6) !important;
+}
+
+.bg-card {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease, border-color 0.3s ease, background-color 0.3s ease !important;
+}
+
+.bg-card:hover {
+  border-color: hsl(var(--primary) / 0.25) !important;
+  box-shadow: 0 12px 30px -10px hsl(var(--primary) / 0.1) !important;
+}

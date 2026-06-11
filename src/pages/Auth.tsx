@@ -705,8 +705,8 @@ export default function Auth() {
             <p className="text-sm text-muted-foreground">{pageSubtitle}</p>
           </div>
 
-          <Card className="border-border/60 shadow-lg">
-            <CardContent className="pt-6">
+          <Card className="border-border/60 shadow-lg spotlight-card relative overflow-hidden transition-all duration-300">
+            <CardContent className="pt-6 relative z-10">
 
               {/* ─── FORGOT PASSWORD ─── */}
               {step === 'forgot' && (

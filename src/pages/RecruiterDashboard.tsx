@@ -18,6 +18,7 @@ import AIInsightsPanel from '@/components/AIInsightsPanel';
 import AIInterviewReport from '@/components/AIInterviewReport';
 import type { InterviewReport } from '@/hooks/useAIInterviewer';
 import TemplatesPage from './TemplatesPage';
+import PageTransition from '@/components/PageTransition';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -722,8 +723,9 @@ export default function RecruiterDashboard() {
 
       <TooltipProvider delayDuration={200}>
         <div className="min-h-screen pt-16 flex">
+
           {/* ─── Sidebar ─── */}
-          <aside className={`fixed top-16 left-0 bottom-0 z-40 bg-card/95 backdrop-blur-md border-r border-border/60 transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
+          <aside className={`fixed top-16 left-0 bottom-0 z-40 bg-card/60 backdrop-blur-xl border-r border-border/40 transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
             <ScrollArea className="flex-1 py-3">
               <div className="space-y-1 px-2">
                 {SIDEBAR_ITEMS.map(item => {
@@ -735,37 +737,53 @@ export default function RecruiterDashboard() {
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => setSection(item.key)}
-                          className={`flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200
-                            ${isActive ? 'bg-primary/10 text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}`}
+                          className={`relative flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-300 group
+                            ${isActive 
+                              ? 'bg-primary/15 text-primary border border-primary/20 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.2)]' 
+                              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40 border border-transparent'}`}
                         >
-                          <item.icon className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-primary' : ''}`} />
+                          {isActive && (
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/5 bg-primary rounded-r-md" />
+                          )}
+                          <item.icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-300 group-hover:scale-105 ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`} />
                           {!sidebarCollapsed && (
                             <>
                               <span className="truncate flex-1 text-left">{item.label}</span>
-                              {badge && <span className="ml-auto bg-yellow-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{badge}</span>}
+                              {badge && (
+                                <span className="ml-auto bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center shadow-md shadow-yellow-500/10">
+                                  {badge}
+                                </span>
+                              )}
                             </>
                           )}
-                          {sidebarCollapsed && badge && <span className="absolute left-10 top-1 bg-yellow-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{badge}</span>}
+                          {sidebarCollapsed && badge && (
+                            <span className="absolute left-10 top-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-md">
+                              {badge}
+                            </span>
+                          )}
                         </button>
                       </TooltipTrigger>
-                      {sidebarCollapsed && <TooltipContent side="right">{item.label}{badge ? ` (${badge})` : ''}</TooltipContent>}
+                      {sidebarCollapsed && <TooltipContent side="right" className="bg-popover/90 backdrop-blur-md border border-border/60 text-foreground font-medium">{item.label}{badge ? ` (${badge})` : ''}</TooltipContent>}
                     </Tooltip>
                   );
                 })}
               </div>
 
-              <Separator className="my-3 mx-2" />
+              <Separator className="my-3 mx-2 bg-border/40" />
 
               <div className="space-y-1 px-2">
                 {/* Create Test */}
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link to="/recruiter/create-test" className={`flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all`}>
-                      <Plus className="h-4.5 w-4.5 shrink-0" />
+                    <Link 
+                      to="/recruiter/create-test" 
+                      className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/40 border border-transparent transition-all duration-300 group"
+                    >
+                      <Plus className="h-4.5 w-4.5 shrink-0 transition-transform duration-300 group-hover:rotate-90 group-hover:scale-110 text-muted-foreground group-hover:text-foreground" />
                       {!sidebarCollapsed && <span>Create Test</span>}
                     </Link>
                   </TooltipTrigger>
-                  {sidebarCollapsed && <TooltipContent side="right">Create Test</TooltipContent>}
+                  {sidebarCollapsed && <TooltipContent side="right" className="bg-popover/90 backdrop-blur-md border border-border/60 text-foreground font-medium">Create Test</TooltipContent>}
                 </Tooltip>
 
                 {/* AI Chat */}
@@ -773,13 +791,13 @@ export default function RecruiterDashboard() {
                   <TooltipTrigger asChild>
                     <button
                       onClick={() => setChatOpen(true)}
-                      className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all"
+                      className="flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-semibold text-muted-foreground hover:text-foreground hover:bg-secondary/40 border border-transparent transition-all duration-300 group"
                     >
-                      <MessageSquare className="h-4.5 w-4.5 shrink-0" />
+                      <MessageSquare className="h-4.5 w-4.5 shrink-0 transition-transform duration-300 group-hover:scale-105 text-muted-foreground group-hover:text-foreground" />
                       {!sidebarCollapsed && <span>AI Assistant</span>}
                     </button>
                   </TooltipTrigger>
-                  {sidebarCollapsed && <TooltipContent side="right">AI Assistant</TooltipContent>}
+                  {sidebarCollapsed && <TooltipContent side="right" className="bg-popover/90 backdrop-blur-md border border-border/60 text-foreground font-medium">AI Assistant</TooltipContent>}
                 </Tooltip>
               </div>
             </ScrollArea>
@@ -795,7 +813,7 @@ export default function RecruiterDashboard() {
 
           {/* ─── Main Content ─── */}
           <main className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-56'}`}>
-            <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+            <PageTransition trigger={section} className="max-w-7xl mx-auto px-6 py-6 space-y-6">
               {/* ── Header ── */}
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -863,8 +881,8 @@ export default function RecruiterDashboard() {
                       { label: 'Avg Rating', value: avgRating > 0 ? avgRating.toFixed(1) : '—', icon: Award, color: 'text-amber-500', bg: 'bg-amber-500/10' },
                     ].map((s, i) => (
                       <ScrollReveal key={s.label} animation="zoom-up" delay={i * 60}>
-                        <Card className="border border-border/50 shadow-sm spring-card hover:shadow-md transition-shadow">
-                          <CardContent className="p-4">
+                        <Card className="border border-border/50 bg-card/60 backdrop-blur-md shadow-sm spring-card spotlight-card lift-glow relative overflow-hidden transition-all duration-300">
+                          <CardContent className="p-4 relative z-10">
                             <div className="flex items-center justify-between mb-2">
                               <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">{s.label}</p>
                               <div className={`w-8 h-8 rounded-lg ${s.bg} flex items-center justify-center`}>
@@ -879,25 +897,25 @@ export default function RecruiterDashboard() {
                   </div>
 
                   {/* Quick Actions */}
-                  <Card className="border border-border/50">
-                    <CardHeader className="pb-3">
+                  <Card className="border border-border/50 bg-card/60 backdrop-blur-md shadow-sm spring-card spotlight-card relative overflow-hidden transition-all duration-300">
+                    <CardHeader className="pb-3 relative z-10">
                       <CardTitle className="text-base flex items-center gap-2"><Zap className="h-4 w-4 text-primary" /> Quick Actions</CardTitle>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="relative z-10">
                       <div className="flex flex-wrap gap-3">
                         <Link to="/recruiter/create-test">
-                          <Button size="sm" className="gap-2 rounded-xl"><Plus className="h-3.5 w-3.5" /> Create Test</Button>
+                          <Button size="sm" className="gap-2 rounded-xl bg-primary hover:bg-primary/90 shadow-md shadow-primary/20"><Plus className="h-3.5 w-3.5" /> Create Test</Button>
                         </Link>
-                        <Button size="sm" variant="outline" className="gap-2 rounded-xl" onClick={() => setSection('submissions')}>
+                        <Button size="sm" variant="outline" className="gap-2 rounded-xl border-border/60 hover:bg-secondary/40" onClick={() => setSection('submissions')}>
                           <Users className="h-3.5 w-3.5" /> Review Submissions {pendingReviews > 0 && <Badge className="bg-yellow-500 text-white text-[10px] px-1.5 py-0">{pendingReviews}</Badge>}
                         </Button>
-                        <Button size="sm" variant="outline" className="gap-2 rounded-xl" onClick={() => setChatOpen(true)}>
+                        <Button size="sm" variant="outline" className="gap-2 rounded-xl border-border/60 hover:bg-secondary/40" onClick={() => setChatOpen(true)}>
                           <MessageSquare className="h-3.5 w-3.5" /> AI Assistant
                         </Button>
-                        <Button size="sm" variant="outline" className="gap-2 rounded-xl" onClick={() => setSection('analytics')}>
+                        <Button size="sm" variant="outline" className="gap-2 rounded-xl border-border/60 hover:bg-secondary/40" onClick={() => setSection('analytics')}>
                           <BarChart3 className="h-3.5 w-3.5" /> View Analytics
                         </Button>
-                        <Button size="sm" variant="outline" className="gap-2 rounded-xl" onClick={() => { setSection('surveys'); setSurveyTab('create'); }}>
+                        <Button size="sm" variant="outline" className="gap-2 rounded-xl border-border/60 hover:bg-secondary/40" onClick={() => { setSection('surveys'); setSurveyTab('create'); }}>
                           <ClipboardList className="h-3.5 w-3.5" /> Create Survey
                         </Button>
                       </div>
@@ -907,11 +925,11 @@ export default function RecruiterDashboard() {
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     {/* Mini charts */}
                     {submissionStatusData.some(d => d.value > 0) && (
-                      <Card className="border border-border/50">
-                        <CardHeader className="pb-2">
+                      <Card className="border border-border/50 bg-card/60 backdrop-blur-md shadow-sm spotlight-card relative overflow-hidden transition-all duration-300">
+                        <CardHeader className="pb-2 relative z-10">
                           <CardTitle className="text-base flex items-center gap-2"><PieChart className="h-4 w-4 text-primary" /> Submission Status</CardTitle>
                         </CardHeader>
-                        <CardContent>
+                        <CardContent className="relative z-10">
                           <ResponsiveContainer width="100%" height={220}>
                             <RechartsPie>
                               <Pie data={submissionStatusData.filter(d => d.value > 0)} cx="50%" cy="50%" innerRadius={55} outerRadius={90} paddingAngle={4} dataKey="value" label={({ name, value }) => `${name}: ${value}`}>
@@ -927,11 +945,11 @@ export default function RecruiterDashboard() {
                     )}
 
                     {/* Recent Activity */}
-                    <Card className="border border-border/50">
-                      <CardHeader className="pb-2">
+                    <Card className="border border-border/50 bg-card/60 backdrop-blur-md shadow-sm spotlight-card relative overflow-hidden transition-all duration-300">
+                      <CardHeader className="pb-2 relative z-10">
                         <CardTitle className="text-base flex items-center gap-2"><Activity className="h-4 w-4 text-primary" /> Recent Activity</CardTitle>
                       </CardHeader>
-                      <CardContent>
+                      <CardContent className="relative z-10">
                         {recentActivity.length === 0 ? (
                           <div className="flex flex-col items-center justify-center py-8 text-center">
                             <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center mb-3">
@@ -1872,7 +1890,7 @@ export default function RecruiterDashboard() {
               {section === 'withdrawals' && (
                 <WithdrawalManagementPanel />
               )}
-            </div>
+            </PageTransition>
           </main>
         </div>
       </TooltipProvider>

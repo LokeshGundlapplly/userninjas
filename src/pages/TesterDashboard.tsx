@@ -6,6 +6,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import Navbar from '@/components/Navbar';
 import Background3D from '@/components/Background3D';
+import PageTransition from '@/components/PageTransition';
 import WalletSection from '@/components/tester/WalletSection';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -1184,10 +1185,10 @@ export default function TesterDashboard() {
       <Background3D />
       <Navbar />
 
-      <TooltipProvider delayDuration={200}>
+       <TooltipProvider delayDuration={200}>
         <div className="min-h-screen pt-16 flex">
           {/* ─── Sidebar ─── */}
-          <aside className={`fixed top-16 left-0 bottom-0 z-40 bg-card/95 backdrop-blur-md border-r border-border/60 transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
+          <aside className={`fixed top-16 left-0 bottom-0 z-40 bg-card/60 backdrop-blur-xl border-r border-border/40 transition-all duration-300 flex flex-col ${sidebarCollapsed ? 'w-16' : 'w-56'}`}>
             <ScrollArea className="flex-1 py-3">
               <div className="space-y-1 px-2">
                 {SIDEBAR_ITEMS.map(item => {
@@ -1202,27 +1203,39 @@ export default function TesterDashboard() {
                       <TooltipTrigger asChild>
                         <button
                           onClick={() => setSection(item.key)}
-                          className={`flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-200
-                            ${isActive ? 'bg-primary/10 text-primary shadow-sm' : 'text-muted-foreground hover:text-foreground hover:bg-secondary/60'}`}
+                          className={`relative flex items-center gap-3 w-full rounded-xl px-3 py-2.5 text-sm font-semibold transition-all duration-300 group
+                            ${isActive 
+                              ? 'bg-primary/15 text-primary border border-primary/20 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.2)]' 
+                              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/40 border border-transparent'}`}
                         >
-                          <item.icon className={`h-4.5 w-4.5 shrink-0 ${isActive ? 'text-primary' : ''}`} />
+                          {isActive && (
+                            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-3/5 bg-primary rounded-r-md" />
+                          )}
+                          <item.icon className={`h-4.5 w-4.5 shrink-0 transition-transform duration-300 group-hover:scale-105 ${isActive ? 'text-primary' : 'text-muted-foreground group-hover:text-foreground'}`} />
                           {!sidebarCollapsed && (
                             <>
                               <span className="truncate flex-1 text-left">{item.label}</span>
-                              {badge && <span className="ml-auto bg-yellow-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[20px] text-center">{badge}</span>}
+                              {badge && (
+                                <span className="ml-auto bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full min-w-[20px] text-center shadow-md shadow-yellow-500/10">
+                                  {badge}
+                                </span>
+                              )}
                             </>
                           )}
-                          {sidebarCollapsed && badge && <span className="absolute left-10 top-1 bg-yellow-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{badge}</span>}
+                          {sidebarCollapsed && badge && (
+                            <span className="absolute left-10 top-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-md">
+                              {badge}
+                            </span>
+                          )}
                         </button>
                       </TooltipTrigger>
-                      {sidebarCollapsed && <TooltipContent side="right">{item.label}{badge ? ` (${badge})` : ''}</TooltipContent>}
+                      {sidebarCollapsed && <TooltipContent side="right" className="bg-popover/90 backdrop-blur-md border border-border/60 text-foreground font-medium">{item.label}{badge ? ` (${badge})` : ''}</TooltipContent>}
                     </Tooltip>
                   );
                 })}
               </div>
             </ScrollArea>
-
-            {/* Collapse toggle */}
+             {/* Collapse toggle */}
             <button
               onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
               className="flex items-center justify-center h-10 border-t border-border/60 text-muted-foreground hover:text-foreground transition-colors"
@@ -1233,7 +1246,7 @@ export default function TesterDashboard() {
 
           {/* ─── Main Content ─── */}
           <main className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'ml-16' : 'ml-56'}`}>
-            <div className="max-w-7xl mx-auto px-6 py-6 space-y-6">
+            <PageTransition trigger={section} className="max-w-7xl mx-auto px-6 py-6 space-y-6">
               {/* ── Header ── */}
               <div className="flex items-center justify-between gap-4">
                 <div>
@@ -1275,8 +1288,8 @@ export default function TesterDashboard() {
                       { label: 'In Progress', value: String(inProgressTests), Icon: PlayCircle, color: 'text-blue-500', bg: 'bg-blue-500/10' },
                       { label: 'Reputation', value: ratedSubmissions.length > 0 ? averageRating.toFixed(1) : '—', Icon: Star, color: 'text-yellow-500', bg: 'bg-yellow-500/10' },
                     ].map(({ label, value, Icon, color, bg }) => (
-                      <Card key={label} className="bg-card border border-border/60 shadow-sm">
-                        <CardContent className="p-4">
+                      <Card key={label} className="bg-card border border-border/60 shadow-sm spotlight-card relative overflow-hidden transition-all duration-300">
+                        <CardContent className="p-4 relative z-10">
                           <div className="flex items-start justify-between mb-2">
                             <p className="text-xs text-muted-foreground font-medium">{label}</p>
                             <div className={`p-1.5 ${bg} rounded-lg`}><Icon className={`h-3.5 w-3.5 ${color}`} /></div>
@@ -1303,8 +1316,8 @@ export default function TesterDashboard() {
                             const matchColor = matchScore >= 80 ? 'bg-green-500/15 text-green-400 border-green-500/30' : matchScore >= 60 ? 'bg-primary/15 text-primary border-primary/30' : 'bg-yellow-500/15 text-yellow-400 border-yellow-500/30';
                             const isModerated = test.test_type === 'moderated';
                             return (
-                              <Card key={test.id} className="bg-card border border-border/60 shadow-sm">
-                                <CardHeader className="pb-3">
+                              <Card key={test.id} className="bg-card border border-border/60 shadow-sm spotlight-card relative overflow-hidden transition-all duration-300">
+                                <CardHeader className="pb-3 relative z-10">
                                   <div className="flex items-center gap-2">
                                     <Badge className={`${matchColor} border text-xs`}>{matchScore}%</Badge>
                                     {test.test_type && <Badge variant="outline" className="text-xs capitalize">{(test.test_type || '').replace('_', ' ')}</Badge>}
@@ -1312,7 +1325,7 @@ export default function TesterDashboard() {
                                   <CardTitle className="text-lg mt-2">{test.title}</CardTitle>
                                   <CardDescription className="line-clamp-2">{test.description}</CardDescription>
                                 </CardHeader>
-                                <CardContent className="pt-0">
+                                <CardContent className="pt-0 relative z-10">
                                   <div className="flex items-center gap-4 mb-3 text-sm text-muted-foreground">
                                     <span className="flex items-center gap-1 font-semibold text-foreground"><DollarSign className="h-3.5 w-3.5" />${Number(test.reward_amount).toFixed(2)}</span>
                                     <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{test.estimated_duration} min</span>
@@ -1922,7 +1935,7 @@ export default function TesterDashboard() {
                   )}
                 </div>
               )}
-            </div>
+            </PageTransition>
           </main>
         </div>
       </TooltipProvider>

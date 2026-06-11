@@ -446,7 +446,7 @@ export default function RecruiterPaymentsPanel({
       };
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', async function (response: any) {
-        try { await supabase.from('payments').insert({ user_id: user.id, gateway: 'razorpay', amount: planDetails.priceINR, currency: 'INR', status: 'failed', plan_type: selectedCheckoutPlan, description: `Failed: ${planDetails.name} (${response.error.description})` }); } catch {}
+        try { await supabase.from('payments').insert({ user_id: user.id, gateway: 'razorpay', amount: planDetails.priceINR, currency: 'INR', status: 'failed', plan_type: selectedCheckoutPlan, description: `Failed: ${planDetails.name} (${response.error.description})` }); } catch (error) { console.error('Error recording payment failure:', error); }
         toast({ title: 'Payment Failed', description: response.error.description, variant: 'destructive' }); setProcessingPayment(false);
       });
       rzp.open();

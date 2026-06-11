@@ -5,9 +5,10 @@ import { cn } from '@/lib/utils';
 interface PageTransitionProps {
   children: ReactNode;
   className?: string;
+  trigger?: any;
 }
 
-export default function PageTransition({ children, className }: PageTransitionProps) {
+export default function PageTransition({ children, className, trigger }: PageTransitionProps) {
   const location = useLocation();
   const [isVisible, setIsVisible] = useState(false);
 
@@ -17,7 +18,7 @@ export default function PageTransition({ children, className }: PageTransitionPr
       requestAnimationFrame(() => setIsVisible(true));
     });
     return () => cancelAnimationFrame(frame);
-  }, [location.pathname]);
+  }, [location.pathname, trigger]);
 
   return (
     <div
