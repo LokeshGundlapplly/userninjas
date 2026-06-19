@@ -15,7 +15,7 @@ import {
   Sparkles, Crown,
   Ticket, Shield, ArrowRight,
   FileText, BarChart3, Users, Activity, ChevronRight,
-  Lock,
+  Lock, Building2, AlertCircle, ShieldCheck,
 } from 'lucide-react';
 import { useAuth, type UserProfile } from '@/hooks/useAuth';
 import type { User } from '@supabase/supabase-js';

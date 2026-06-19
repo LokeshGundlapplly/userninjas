@@ -62,6 +62,7 @@ import {
   Award,
   Video,
   Search,
+  Trash2,
 } from 'lucide-react';
 import StarRating from '@/components/StarRating';
 import ScrollReveal from '@/components/ScrollReveal';
