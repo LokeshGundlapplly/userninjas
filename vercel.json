@@ -5,6 +5,22 @@
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "env": {
-    "NODE_ENV": "production"
+    "NODE_ENV": "production",
+    "VITE_SUPABASE_URL": "https://jpclnzgouzyroebjvcqp.supabase.co",
+    "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwY2xuemdvdXp5cm9lYmp2Y3FwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzgxNzQsImV4cCI6MjA5MTUxNDE3NH0.4_-lqvso4fBKd3T_E669dVTAt5e7pKDRZWndFFz5TB4",
+    "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_9ZzJz2DMLEawYKyzTHdhMw_knx2IdQ6",
+    "VITE_SUPABASE_PROJECT_ID": "jpclnzgouzyroebjvcqp",
+    "VITE_GROQ_API_KEY": "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",
+    "VITE_APP_DOMAIN": "https://www.userninjas.in"
+  },
+  "build": {
+    "env": {
+      "VITE_SUPABASE_URL": "https://jpclnzgouzyroebjvcqp.supabase.co",
+      "VITE_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpwY2xuemdvdXp5cm9lYmp2Y3FwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU5MzgxNzQsImV4cCI6MjA5MTUxNDE3NH0.4_-lqvso4fBKd3T_E669dVTAt5e7pKDRZWndFFz5TB4",
+      "VITE_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_9ZzJz2DMLEawYKyzTHdhMw_knx2IdQ6",
+      "VITE_SUPABASE_PROJECT_ID": "jpclnzgouzyroebjvcqp",
+      "VITE_GROQ_API_KEY": "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",
+      "VITE_APP_DOMAIN": "https://www.userninjas.in"
+    }
   }
 }
