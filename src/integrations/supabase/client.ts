@@ -3,16 +3,14 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || "";
-const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
+// Use the anon key (JWT) - required by @supabase/supabase-js
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || "";
 
-if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-  console.warn("⚠️ Supabase credentials are missing! Please define VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY in your environment.");
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.warn("⚠️ Supabase credentials are missing! Please define VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.");
 }
 
-const fallbackUrl = SUPABASE_URL || "https://placeholder-project-id.supabase.co";
-const fallbackKey = SUPABASE_PUBLISHABLE_KEY || "placeholder-anon-key";
-
-export const supabase = createClient<Database>(fallbackUrl, fallbackKey, {
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     persistSession: true,
