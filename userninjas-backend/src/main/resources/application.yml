@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: userninjas-backend
+
+  datasource:
+    url: ${SUPABASE_DB_URL:jdbc:postgresql://db.jpclnzgouzyroebjvcqp.supabase.co:5432/postgres}
+    username: ${SUPABASE_DB_USER:postgres}
+    password: ${SUPABASE_DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: ${PORT:8080}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET:userninjas-super-secret-jwt-key-2024-change-in-production}
+    expiration: 86400000 # 24 hours in ms
+
+  supabase:
+    url: ${VITE_SUPABASE_URL:https://jpclnzgouzyroebjvcqp.supabase.co}
+    anon-key: ${VITE_SUPABASE_ANON_KEY:}
+    service-key: ${SUPABASE_SERVICE_KEY:}
+
+  groq:
+    api-key: ${VITE_GROQ_API_KEY:}
+    base-url: https://api.groq.com/openai/v1
+
+  cors:
+    allowed-origins: http://localhost:4200,https://www.userninjas.in,https://userninjas.in
