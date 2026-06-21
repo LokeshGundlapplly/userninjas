@@ -449,8 +449,7 @@ export function generateInvoiceHTML(payment: PaymentRecord, userEmail: string, p
             <p>102, Innovation Hub, Phase 2</p>
             <p>HITEC City, Hyderabad</p>
             <p>Telangana - 500081, India</p>
-            <p>GSTIN: 36AAAAA0000A1Z5</p>
-            <p>Email: billing@userninjas.com</p>
+            <p>Email: workside367@gmail.com</p>
           </div>
         </div>
         
@@ -511,8 +510,7 @@ export function generateInvoiceHTML(payment: PaymentRecord, userEmail: string, p
     <div class="footer">
       <p>This is a computer-generated tax invoice and does not require a physical signature.</p>
       <p style="margin-top: 6px;">
-        For billing questions, contact <a href="mailto:support@userninjas.com">support@userninjas.com</a> · 
-        Visit <a href="https://userninjas.com" target="_blank">userninjas.com</a>
+        Visit <a href="https://userninjas.in" target="_blank">userninjas.in</a>
       </p>
     </div>
   </div>
@@ -684,7 +682,7 @@ export default function RecruiterPaymentsPanel({
 
       const options = {
         key: 'rzp_live_Sx5YIPbX0SGPU4', amount: (amount * 100).toString(), currency: 'INR',
-        name: 'User Ninjas', description: 'Wallet Credit Top-up', image: 'https://userninjas.com/logo.png',
+        name: 'User Ninjas', description: 'Wallet Credit Top-up', image: 'https://userninjas.in/logo.png',
         order_id: order.id,
         handler: async function (response: any) {
           try {
@@ -732,7 +730,7 @@ export default function RecruiterPaymentsPanel({
 
       const options = {
         key: 'rzp_live_Sx5YIPbX0SGPU4', amount: (planDetails.priceINR * 100).toString(), currency: 'INR',
-        name: 'User Ninjas', description: `Upgrade to ${planDetails.name}`, image: 'https://userninjas.com/logo.png',
+        name: 'User Ninjas', description: `Upgrade to ${planDetails.name}`, image: 'https://userninjas.in/logo.png',
         order_id: order.id,
         handler: async function (response: any) {
           try {
