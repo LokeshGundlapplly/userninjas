@@ -155,6 +155,8 @@ function downloadCSV(filename: string, headers: string[], rows: string[][]) {
   URL.revokeObjectURL(url);
 }
 
+const LOGO_BASE64 = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAAEACAYAAABccqhmAAAISElEQVR4nO3dy5EcVRaA4YuCtVjjAb5gBh3IJhHCjPFlPGBNOwALTQ6loqq7Hpn3nsf3bQmiM2+e83d26TUGAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8IzvVl9AVL/8+udfq6+Bff3+2w/m/YwDGZa9s+5RaHnzFp5rugWh1c1afG7VJQTlb9LS86zKMSh7YxafvVUMQbkbsvgcrVIIPqy+gD1ZfmaoNGclSlbpgZBL9reB9G8Alp+Vss9f6gBkP3xqyDyHKV9fMh84tWX7kSDdG4DlJ7Js85kqANkOl54yzWmaAGQ6VMgyrykCkOUw4VSGuQ0fgAyHCNdEn9/QAYh+eHCLyHMcOgDAscIGIHI14V5R5zlkAKIeFjwj4lyHC0DEQ4K9RJvvcAEA5gkVgGh1hCNEmvMwAYh0KHC0KPMeJgDAfCECEKWGMFOEuQ8RAGCN5QGIUEFYZfX8Lw8AsI4AQGNLA7D69QciWLkH3gCa+/L54x+rr4F1lv0Npr77r3Vp8V8+vf644lr4asXfKPz97C/IWm99x9/+mxD0IQBN3POqLwR9CEBxz/yMLwT1LfkMwM//xzviwz0hON7szwG8ARRz5Kf63gjqEYAiZv5ynhDUIQDJrfx1fCHITwCSivQbeIQgr+kfAvoA8DmRFv8aIXjOzA8CvQEkkWHxN94I8hCA4DIt/jkhiE8Agsq8+OeEIC4BCKbS4p8TgngEIIjKi39OCOIQgMU6Lf45IVjPXwiyyJfPH//ovPynnMM63gAmM+yXeRtYQwAmsfi3EYK5BOBgFv8xQjCHABzE4u9DCI4lADuz+McQgmMIwE4s/hxCsC8BeJLFX0MI9iEAD7L4MQjBcwTgThY/JiF4jADcyOLnIAT3EYB3WPychOA2AnCFxa9BCN4mAGcsfk1CcJkA/I/F70EIvtU+ABa/JyH4qm0ALD5jCEG7AFh8LukagnYB2B6wEHCq2+Jv2gVgIwSM0XfxN20DsBGCnrov/qZ9ADZC0IPF/5YAnBGCmiz+ZQJwhRDUYPHfJgDvEIKcLP5tBOBGQpCDxb+PANxJCGKy+I8RgAcJQQwW/zkC8CQhWMPi70MAdiIEc1j8fQnAzoTgGBb/GAJwECHYh8U/lgAcTAgeY/HnEIBJhOA2Fn8uAZhMCC6z+Gt8WH0BXb18ev3R0H/lHNbxBrBY5zcCi7+eAATRKQQWPw4BCKZyCCx+PAIQVKUQWPy4BCC4zCGw+PEJQBKZQmDx8xCAZCKHwOLnIwBJRQqBxc9LAJJbGQKLn58AFDEzBBa/DgEo5sgQWPx6BKCoPUNg8esSgOKeCYHFr08AmrgnBBa/j5Z/HPjL54//XX0Nq7z1x5A7/xHlrjPR9g1ge+Avn15/Wn0tK5y+EXRd+jH6Lv7mu9lf8Jdf//xr9tc8de2Bdw1BV5Hn4Pfffpi2l23fAM51fyPoovt3/HPt3gA27w2CENSS6XnPfANoG4BNpsHgfhmfrwAskHFQuC7z8xSAhTIPDdWenwAEUGGQOqn0vAQgkFs+Nc40XNVUWvyNAAQkBLFUXPyNAAQmBGtVXvyNACTRYRij6HTWApBMp+GcrePZCkBSHYf1KJ3PUgCS6zy8z3J2AlCGYb6ds/qHABRjuC/zKyqXCUBRQvCVxX+bABTXNQQW/zYC0ESXEHS5z70IQDNVF6TqfR1NAJqqsjBV7mMVAWgu6wJlve5oBIAxRp6FynKzOBEAAAAABJRU5CYII=';
+
 export function generateInvoiceHTML(payment: PaymentRecord, userEmail: string, profile: any) {
   const date = new Date(payment.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
   const desc = payment.description || (payment.plan_type ? `${payment.plan_type.charAt(0).toUpperCase() + payment.plan_type.slice(1)} Plan` : 'Wallet Credit Top-up');
@@ -239,21 +241,40 @@ export function generateInvoiceHTML(payment: PaymentRecord, userEmail: string, p
       color: white; 
       display: flex;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: center;
     }
     
-    .logo-container h1 { 
+    .logo-container {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    
+    .invoice-logo {
+      height: 48px;
+      width: 48px;
+      object-fit: contain;
+      border-radius: 8px;
+      background: white;
+      padding: 4px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .logo-text h1 { 
       font-size: 26px; 
       font-weight: 800; 
       letter-spacing: -0.5px; 
-      margin-bottom: 4px;
+      margin-bottom: 2px;
+      line-height: 1;
     }
-    .logo-container span { 
+    
+    .logo-text span { 
       opacity: 0.85; 
       font-weight: 400; 
       font-size: 13px; 
       letter-spacing: 0.5px;
       text-transform: uppercase;
+      display: block;
     }
     
     .invoice-meta {
@@ -414,8 +435,11 @@ export function generateInvoiceHTML(payment: PaymentRecord, userEmail: string, p
   <div class="wrapper">
     <div class="header">
       <div class="logo-container">
-        <h1>UserNinjas</h1>
-        <span>Tax Invoice / Receipt</span>
+        <img src="${LOGO_BASE64}" alt="UserNinjas Logo" class="invoice-logo" />
+        <div class="logo-text">
+          <h1>UserNinjas</h1>
+          <span>Tax Invoice / Receipt</span>
+        </div>
       </div>
       <div class="invoice-meta">
         <div class="invoice-id">${invoiceNumber}</div>
