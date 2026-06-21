@@ -215,25 +215,28 @@ export default function AdminPanel() {
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      // Fetch users with roles
-      const { data: rolesData, error: rolesError } = await supabase.from('user_roles').select('*');
-      if (rolesError) {
-        console.error('❌ Error fetching roles:', rolesError);
-        console.error('Full error details:', JSON.stringify(rolesError, null, 2));
-        toast({ title: 'Error', description: `Failed to load roles: ${rolesError.message}`, variant: 'destructive' });
+      // Fetch profiles first
+      const { data: profilesData, error: profilesError } = await supabase.from('profiles').select('*');
+      if (profilesError) {
+        console.error('❌ Error fetching profiles:', profilesError);
+        toast({ title: 'Error', description: `Failed to load profiles: ${profilesError.message}`, variant: 'destructive' });
         setUsers([]);
       } else {
-        const userIds = (rolesData || []).map((r: any) => r.user_id);
-        const { data: profilesData, error: profilesError } = await supabase.from('profiles').select('*').in('user_id', userIds);
-        
-        if (profilesError) {
-          console.error('❌ Error fetching profiles:', profilesError);
+        const { data: rolesData, error: rolesError } = await supabase.from('user_roles').select('*');
+        if (rolesError) {
+          console.error('❌ Error fetching roles:', rolesError);
         }
         
-        const merged = (rolesData || []).map((r: any) => ({
-          ...r,
-          profile: (profilesData || []).find((p: any) => p.user_id === r.user_id)
-        }));
+        const merged = (profilesData || []).map((p: any) => {
+          const roleRecord = (rolesData || []).find((r: any) => r.user_id === p.user_id);
+          return {
+            id: p.id,
+            user_id: p.user_id,
+            role: roleRecord?.role || 'recruiter', // Default to recruiter if no role record exists
+            created_at: p.created_at,
+            profile: p
+          };
+        });
         setUsers(merged);
         console.log('✓ Loaded users:', merged.length);
       }
@@ -437,8 +440,23 @@ export default function AdminPanel() {
   };
 
   const handleCreateManualInvoice = async () => {
-    if (!manualInvoiceUserId) {
-      toast({ title: 'Error', description: 'Please select a recruiter', variant: 'destructive' });
+    const isNoUserSelected = !manualInvoiceUserId || manualInvoiceUserId === 'none_selected';
+    if (isNoUserSelected && !customBilledToName.trim() && !customBilledToEmail.trim()) {
+      toast({ 
+        title: 'Error', 
+        description: 'Please select a database recruiter profile or fill in the custom recruiter name/email override.', 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    let finalUserId = manualInvoiceUserId;
+    if (isNoUserSelected) {
+      finalUserId = user?.id || '';
+    }
+
+    if (!finalUserId) {
+      toast({ title: 'Error', description: 'Could not resolve database user reference', variant: 'destructive' });
       return;
     }
     if (!manualInvoiceAmount || parseFloat(manualInvoiceAmount) <= 0) {
@@ -473,7 +491,7 @@ export default function AdminPanel() {
 
       // 1. Insert payment record
       const paymentPayload = {
-        user_id: manualInvoiceUserId,
+        user_id: finalUserId,
         amount,
         currency: manualInvoiceCurrency,
         gateway: manualInvoiceGateway,
@@ -491,8 +509,8 @@ export default function AdminPanel() {
 
       if (paymentError) throw paymentError;
 
-      // 2. If successful status, apply effects to subscription or wallet
-      if (manualInvoiceStatus === 'successful') {
+      // 2. If successful status and a database recruiter profile is linked, apply effects to subscription or wallet
+      if (manualInvoiceStatus === 'successful' && manualInvoiceUserId && manualInvoiceUserId !== 'none_selected') {
         if (isSub) {
           // Calculate active test and invite limits
           let testLimit = 2;
@@ -613,7 +631,7 @@ export default function AdminPanel() {
     if (defaultRecruiter) {
       setManualInvoiceUserId(defaultRecruiter.user_id);
     } else {
-      setManualInvoiceUserId('');
+      setManualInvoiceUserId('none_selected');
     }
     setManualInvoiceRequestId('');
     setCustomBilledToName('');
@@ -1841,17 +1859,18 @@ export default function AdminPanel() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Select Recruiter (Database Profile Reference) *</Label>
+              <Label>Select Recruiter (Database Profile Reference) - Optional</Label>
               <Select value={manualInvoiceUserId} onValueChange={setManualInvoiceUserId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a recruiter..." />
+                  <SelectValue placeholder="Choose a recruiter (optional)..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.filter(u => u.role === 'recruiter' || u.profile?.email === 'in.gundlapplly@gmail.com').length === 0 ? (
-                    <div className="text-center py-2 text-sm text-muted-foreground">No recruiters found</div>
+                  <SelectItem value="none_selected">None (Override details only)</SelectItem>
+                  {users.filter(u => u.role !== 'admin').length === 0 ? (
+                    <div className="text-center py-2 text-sm text-muted-foreground">No database profiles found</div>
                   ) : (
                     users
-                      .filter(u => u.role === 'recruiter' || u.profile?.email === 'in.gundlapplly@gmail.com')
+                      .filter(u => u.role !== 'admin')
                       .map(u => (
                         <SelectItem key={u.user_id} value={u.user_id}>
                           {u.profile?.full_name || 'No Name'} ({u.profile?.email || 'N/A'})
@@ -2005,7 +2024,7 @@ export default function AdminPanel() {
             </Button>
             <Button 
               onClick={handleCreateManualInvoice}
-              disabled={savingManualInvoice || !manualInvoiceUserId || !manualInvoiceAmount}
+              disabled={savingManualInvoice || !manualInvoiceAmount}
             >
               {savingManualInvoice ? 'Generating...' : 'Save & Issue Invoice'}
             </Button>
