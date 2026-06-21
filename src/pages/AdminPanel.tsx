@@ -216,19 +216,22 @@ export default function AdminPanel() {
     setLoading(true);
     try {
       // Fetch profiles first
+      let rolesData: any[] = [];
       const { data: profilesData, error: profilesError } = await supabase.from('profiles').select('*');
       if (profilesError) {
         console.error('❌ Error fetching profiles:', profilesError);
         toast({ title: 'Error', description: `Failed to load profiles: ${profilesError.message}`, variant: 'destructive' });
         setUsers([]);
       } else {
-        const { data: rolesData, error: rolesError } = await supabase.from('user_roles').select('*');
+        const { data: rData, error: rolesError } = await supabase.from('user_roles').select('*');
         if (rolesError) {
           console.error('❌ Error fetching roles:', rolesError);
+        } else if (rData) {
+          rolesData = rData;
         }
         
         const merged = (profilesData || []).map((p: any) => {
-          const roleRecord = (rolesData || []).find((r: any) => r.user_id === p.user_id);
+          const roleRecord = rolesData.find((r: any) => r.user_id === p.user_id);
           return {
             id: p.id,
             user_id: p.user_id,
