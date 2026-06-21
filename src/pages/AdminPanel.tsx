@@ -151,6 +151,9 @@ export default function AdminPanel() {
   const [manualInvoiceStatus, setManualInvoiceStatus] = useState('successful');
   const [manualInvoiceDate, setManualInvoiceDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [manualInvoiceDescription, setManualInvoiceDescription] = useState('');
+  const [manualInvoiceRequestId, setManualInvoiceRequestId] = useState('');
+  const [customBilledToName, setCustomBilledToName] = useState('');
+  const [customBilledToEmail, setCustomBilledToEmail] = useState('');
   const [savingManualInvoice, setSavingManualInvoice] = useState(false);
 
   // Ticket state
@@ -457,6 +460,17 @@ export default function AdminPanel() {
         }
       }
 
+      // Format custom overrides inside the description column
+      if (customBilledToName.trim()) {
+        description += ` | Name: ${customBilledToName.trim()}`;
+      }
+      if (customBilledToEmail.trim()) {
+        description += ` | Email: ${customBilledToEmail.trim()}`;
+      }
+      if (manualInvoiceRequestId.trim()) {
+        description += ` | Request ID: ${manualInvoiceRequestId.trim()}`;
+      }
+
       // 1. Insert payment record
       const paymentPayload = {
         user_id: manualInvoiceUserId,
@@ -567,6 +581,9 @@ export default function AdminPanel() {
       setManualInvoiceStatus('successful');
       setManualInvoiceDate(format(new Date(), 'yyyy-MM-dd'));
       setManualInvoiceDescription('');
+      setManualInvoiceRequestId('');
+      setCustomBilledToName('');
+      setCustomBilledToEmail('');
       
       // Refresh statistics
       fetchAll();
@@ -588,6 +605,26 @@ export default function AdminPanel() {
     } catch (err: any) {
       toast({ title: 'Error', description: err.message, variant: 'destructive' });
     }
+  };
+
+  const handleOpenManualInvoice = () => {
+    const defaultRecruiter = users.find(u => u.profile?.email === 'in.gundlapplly@gmail.com') || 
+                             users.find(u => u.role === 'recruiter');
+    if (defaultRecruiter) {
+      setManualInvoiceUserId(defaultRecruiter.user_id);
+    } else {
+      setManualInvoiceUserId('');
+    }
+    setManualInvoiceRequestId('');
+    setCustomBilledToName('');
+    setCustomBilledToEmail('');
+    setManualInvoiceAmount('');
+    setManualInvoicePlanType('none');
+    setManualInvoiceGateway('manual');
+    setManualInvoiceStatus('successful');
+    setManualInvoiceDate(format(new Date(), 'yyyy-MM-dd'));
+    setManualInvoiceDescription('');
+    setManualInvoiceOpen(true);
   };
 
   const handleDownloadInvoice = (payment: PaymentRecord) => {
@@ -1567,7 +1604,7 @@ export default function AdminPanel() {
                     </CardTitle>
                     <CardDescription>View transaction histories and record manual payments</CardDescription>
                   </div>
-                  <Button onClick={() => setManualInvoiceOpen(true)} className="gap-2 shrink-0">
+                  <Button onClick={handleOpenManualInvoice} className="gap-2 shrink-0">
                     <PlusCircle className="h-4 w-4" /> Create Manual Invoice
                   </Button>
                 </div>
@@ -1633,17 +1670,37 @@ export default function AdminPanel() {
                           const isINR = p.currency === 'INR';
                           const symbol = isINR ? '₹' : '$';
                           
+                          let displayDesc = p.description || '';
+                          let displayName = recruiter?.profile?.full_name || 'Unknown Recruiter';
+                          let displayEmail = recruiter?.profile?.email || 'N/A';
+                          let invoiceNumber = `INV-${p.id.slice(0, 8).toUpperCase()}`;
+
+                          if (displayDesc && displayDesc.includes('|')) {
+                            const parts = displayDesc.split('|');
+                            displayDesc = parts[0].trim();
+                            for (let i = 1; i < parts.length; i++) {
+                              const part = parts[i].trim();
+                              if (part.startsWith('Name:')) {
+                                displayName = part.substring(5).trim();
+                              } else if (part.startsWith('Email:')) {
+                                displayEmail = part.substring(6).trim();
+                              } else if (part.startsWith('Request ID:')) {
+                                invoiceNumber = part.substring(11).trim();
+                              }
+                            }
+                          }
+                          
                           return (
                             <TableRow key={p.id} className="hover:bg-secondary/30">
                               <TableCell>
-                                <div className="font-mono text-xs font-semibold text-white">INV-{p.id.slice(0, 8).toUpperCase()}</div>
+                                <div className="font-mono text-xs font-semibold text-white">{invoiceNumber}</div>
                                 <div className="text-xs text-muted-foreground mt-1">
                                   {format(new Date(p.created_at), 'MMM d, yyyy HH:mm')}
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="font-medium text-sm">{recruiter?.profile?.full_name || 'Unknown Recruiter'}</div>
-                                <div className="text-xs text-muted-foreground mt-0.5">{recruiter?.profile?.email || 'N/A'}</div>
+                                <div className="font-medium text-sm">{displayName}</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">{displayEmail}</div>
                               </TableCell>
                               <TableCell>
                                 <div className="flex flex-col gap-1 items-start">
@@ -1655,8 +1712,8 @@ export default function AdminPanel() {
                                   }`}>
                                     {p.plan_type ? p.plan_type.replace('_', ' ') : 'Credits'}
                                   </Badge>
-                                  <span className="text-xs text-muted-foreground max-w-[180px] truncate" title={p.description || ''}>
-                                    {p.description || 'Wallet Credit Top-up'}
+                                  <span className="text-xs text-muted-foreground max-w-[180px] truncate" title={displayDesc || ''}>
+                                    {displayDesc || 'Wallet Credit Top-up'}
                                   </span>
                                 </div>
                               </TableCell>
@@ -1784,7 +1841,7 @@ export default function AdminPanel() {
 
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Select Recruiter *</Label>
+              <Label>Select Recruiter (Database Profile Reference) *</Label>
               <Select value={manualInvoiceUserId} onValueChange={setManualInvoiceUserId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Choose a recruiter..." />
@@ -1803,6 +1860,43 @@ export default function AdminPanel() {
                   )}
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 border border-border/10 p-3.5 rounded-xl bg-slate-900/40">
+              <div className="col-span-2 text-xs font-semibold text-primary uppercase tracking-wider mb-0.5">
+                Invoice & Billing Overrides (Optional)
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <Label>Request ID / Transaction ID Override</Label>
+                <Input 
+                  value={manualInvoiceRequestId}
+                  onChange={e => setManualInvoiceRequestId(e.target.value)}
+                  placeholder="e.g. req_pay_xxxx (Overrides Invoice ID)"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Manual Recruiter Name</Label>
+                <Input 
+                  value={customBilledToName}
+                  onChange={e => setCustomBilledToName(e.target.value)}
+                  placeholder={
+                    users.find(u => u.user_id === manualInvoiceUserId)?.profile?.full_name || 
+                    "e.g. John Doe"
+                  }
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Manual Recruiter Email</Label>
+                <Input 
+                  type="email"
+                  value={customBilledToEmail}
+                  onChange={e => setCustomBilledToEmail(e.target.value)}
+                  placeholder={
+                    users.find(u => u.user_id === manualInvoiceUserId)?.profile?.email || 
+                    "e.g. email@example.com"
+                  }
+                />
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

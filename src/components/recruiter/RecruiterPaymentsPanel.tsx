@@ -157,7 +157,7 @@ function downloadCSV(filename: string, headers: string[], rows: string[][]) {
 
 export function generateInvoiceHTML(payment: PaymentRecord, userEmail: string, profile: any) {
   const date = new Date(payment.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
-  const desc = payment.description || (payment.plan_type ? `${payment.plan_type.charAt(0).toUpperCase() + payment.plan_type.slice(1)} Plan` : 'Wallet Credit Top-up');
+  let itemDescription = payment.description || (payment.plan_type ? `${payment.plan_type.charAt(0).toUpperCase() + payment.plan_type.slice(1)} Plan` : 'Wallet Credit Top-up');
   
   const isINR = payment.currency === 'INR' || String(payment.gateway).toLowerCase() === 'razorpay';
   const currencySymbol = isINR ? '₹' : payment.currency === 'USD' ? '$' : payment.currency || '₹';
@@ -175,8 +175,27 @@ export function generateInvoiceHTML(payment: PaymentRecord, userEmail: string, p
     </div>
   `;
 
-  const invoiceNumber = `INV-${payment.id.slice(0, 8).toUpperCase()}`;
-  const billedToName = profile?.full_name || 'Valued Recruiter';
+  let invoiceNumber = `INV-${payment.id.slice(0, 8).toUpperCase()}`;
+  let billedToName = profile?.full_name || 'Valued Recruiter';
+  let userEmailToDisplay = userEmail || 'in.gundlapplly@gmail.com';
+
+  // Check for custom manual overrides inside description
+  const desc = payment.description || '';
+  if (desc && desc.includes('|')) {
+    const parts = desc.split('|');
+    itemDescription = parts[0].trim();
+    for (let i = 1; i < parts.length; i++) {
+      const part = parts[i].trim();
+      if (part.startsWith('Name:')) {
+        billedToName = part.substring(5).trim();
+      } else if (part.startsWith('Email:')) {
+        userEmailToDisplay = part.substring(6).trim();
+      } else if (part.startsWith('Request ID:')) {
+        invoiceNumber = part.substring(11).trim();
+      }
+    }
+  }
+
   const billedToCompany = profile?.company || 'N/A';
   const billedToLocation = profile?.location || 'N/A';
   const billedToPhone = profile?.phone || 'N/A';
@@ -441,7 +460,7 @@ export function generateInvoiceHTML(payment: PaymentRecord, userEmail: string, p
             <strong>${billedToName}</strong>
             ${billedToCompany !== 'N/A' ? '<p>Company: ' + billedToCompany + '</p>' : ''}
             ${billedToLocation !== 'N/A' ? '<p>Location: ' + billedToLocation + '</p>' : ''}
-            <p>Email: ${userEmail}</p>
+            <p>Email: ${userEmailToDisplay}</p>
             ${billedToPhone !== 'N/A' ? '<p>Phone: ' + billedToPhone + '</p>' : ''}
           </div>
         </div>
@@ -461,7 +480,7 @@ export function generateInvoiceHTML(payment: PaymentRecord, userEmail: string, p
           <tbody>
             <tr>
               <td>
-                <div class="item-desc">${desc}</div>
+                <div class="item-desc">${itemDescription}</div>
                 <div class="item-sub">${payment.plan_type ? 'Subscription Plan' : 'Wallet Credits Top-up'}</div>
               </td>
               <td style="text-align: right;">${currencySymbol}${subtotal.toFixed(2)}</td>
@@ -742,7 +761,7 @@ export default function RecruiterPaymentsPanel({
 
   const exportPaymentHistory = () => {
     const headers = ['Date', 'Description', 'Amount (INR)', 'Status', 'Type', 'Gateway'];
-    const rows = payments.map(p => [new Date(p.created_at).toLocaleDateString('en-IN'), p.description || (p.plan_type ? `${p.plan_type} Plan` : 'Credit top-up'), p.amount.toString(), p.status, p.plan_type ? 'Subscription' : 'Wallet Credit', p.gateway]);
+    const rows = payments.map(p => [new Date(p.created_at).toLocaleDateString('en-IN'), (p.description || '').split('|')[0].trim() || (p.plan_type ? `${p.plan_type} Plan` : 'Credit top-up'), p.amount.toString(), p.status, p.plan_type ? 'Subscription' : 'Wallet Credit', p.gateway]);
     downloadCSV(`payments_${new Date().toISOString().slice(0, 10)}.csv`, headers, rows);
     toast({ title: 'Exported', description: `${rows.length} records downloaded.` });
   };
@@ -970,7 +989,7 @@ export default function RecruiterPaymentsPanel({
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-white truncate">
-                        {p.description || (p.plan_type ? `${p.plan_type.charAt(0).toUpperCase() + p.plan_type.slice(1)} Plan` : 'Wallet Top-up')}
+                        {(p.description || '').split('|')[0].trim() || (p.plan_type ? `${p.plan_type.charAt(0).toUpperCase() + p.plan_type.slice(1)} Plan` : 'Wallet Top-up')}
                       </p>
                       <p className="text-xs text-slate-500">{new Date(p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                     </div>
@@ -1294,7 +1313,7 @@ export default function RecruiterPaymentsPanel({
                     {/* Info */}
                     <div className="min-w-0">
                       <p className="text-sm font-medium text-white truncate">
-                        {p.description || (p.plan_type ? `${p.plan_type.charAt(0).toUpperCase() + p.plan_type.slice(1)} Plan` : 'Wallet Top-up')}
+                        {(p.description || '').split('|')[0].trim() || (p.plan_type ? `${p.plan_type.charAt(0).toUpperCase() + p.plan_type.slice(1)} Plan` : 'Wallet Top-up')}
                       </p>
                       <div className="flex items-center gap-3 mt-0.5">
                         <span className="text-xs text-slate-500">{new Date(p.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
