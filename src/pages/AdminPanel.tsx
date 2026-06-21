@@ -21,9 +21,11 @@ import {
   Users, FileText, Shield, AlertTriangle, Activity, MessageCircle, Send, ArrowLeft, X as XIcon,
   TrendingUp, DollarSign, CheckCircle, Clock, Zap, BarChart3, Eye, Search, Filter, Download,
   Edit, Trash2, Eye as EyeIcon, Star, Award, Briefcase, Target, PlusCircle, Settings, RefreshCw,
-  ArrowUpRight, ArrowDownRight, ExternalLink, Ticket, Mail, Tag, StickyNote
+  ArrowUpRight, ArrowDownRight, ExternalLink, Ticket, Mail, Tag, StickyNote,
+  CreditCard, Wallet, Receipt
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { generateInvoiceHTML, type PaymentRecord } from '@/components/recruiter/RecruiterPaymentsPanel';
 
 interface UserWithRole {
   id: string;
@@ -127,7 +129,29 @@ export default function AdminPanel() {
     escalatedChats: 0,
     avgTestRating: 0,
     openTickets: 0,
+    totalRevenueINR: 0,
+    totalRevenueUSD: 0,
   });
+
+  // Payments State
+  const [payments, setPayments] = useState<PaymentRecord[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
+  const [paymentSearchQuery, setPaymentSearchQuery] = useState('');
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all');
+  const [paymentGatewayFilter, setPaymentGatewayFilter] = useState<string>('all');
+  const [paymentPlanFilter, setPaymentPlanFilter] = useState<string>('all');
+
+  // Manual Invoice dialog form states
+  const [manualInvoiceOpen, setManualInvoiceOpen] = useState(false);
+  const [manualInvoiceUserId, setManualInvoiceUserId] = useState('');
+  const [manualInvoiceAmount, setManualInvoiceAmount] = useState('');
+  const [manualInvoiceCurrency, setManualInvoiceCurrency] = useState('INR');
+  const [manualInvoicePlanType, setManualInvoicePlanType] = useState('none');
+  const [manualInvoiceGateway, setManualInvoiceGateway] = useState('manual');
+  const [manualInvoiceStatus, setManualInvoiceStatus] = useState('successful');
+  const [manualInvoiceDate, setManualInvoiceDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [manualInvoiceDescription, setManualInvoiceDescription] = useState('');
+  const [savingManualInvoice, setSavingManualInvoice] = useState(false);
 
   // Ticket state
   const [ticketFilter, setTicketFilter] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'closed'>('open');
@@ -146,7 +170,7 @@ export default function AdminPanel() {
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace('#', '');
-      if (hash && ['overview', 'tests', 'users', 'recruiting', 'testing', 'chats', 'tickets'].includes(hash)) {
+      if (hash && ['overview', 'tests', 'users', 'recruiting', 'testing', 'chats', 'tickets', 'payments'].includes(hash)) {
         setActiveTab(hash);
       }
     };
@@ -263,6 +287,23 @@ export default function AdminPanel() {
         setTickets(ticketsData as SupportTicket[] || []);
       }
 
+      // Fetch payments
+      setLoadingPayments(true);
+      const { data: paymentsData, error: paymentsError } = await supabase
+        .from('payments')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      let fetchedPayments: PaymentRecord[] = [];
+      if (paymentsError) {
+        console.error('❌ Error fetching payments:', paymentsError);
+      } else {
+        fetchedPayments = (paymentsData as PaymentRecord[]) || [];
+        setPayments(fetchedPayments);
+        console.log('✓ Loaded payments:', fetchedPayments.length);
+      }
+      setLoadingPayments(false);
+
       // Calculate stats
       const totalRecruiters = (rolesData || []).filter((r: any) => r.role === 'recruiter').length;
       const totalTesters = (rolesData || []).filter((r: any) => r.role === 'tester').length;
@@ -277,6 +318,10 @@ export default function AdminPanel() {
         .select('id', { count: 'exact' })
         .eq('status', 'escalated');
 
+      const successfulPayments = fetchedPayments.filter(p => p.status === 'successful');
+      const totalRevenueINR = successfulPayments.filter(p => p.currency === 'INR').reduce((sum, p) => sum + Number(p.amount), 0);
+      const totalRevenueUSD = successfulPayments.filter(p => p.currency === 'USD').reduce((sum, p) => sum + Number(p.amount), 0);
+
       setStats({
         totalUsers: (rolesData || []).length,
         totalRecruiters,
@@ -288,6 +333,8 @@ export default function AdminPanel() {
         escalatedChats: escalatedChats?.length || 0,
         avgTestRating: parseFloat(avgRating as string),
         openTickets: (ticketsData || []).filter((t: any) => t.status === 'open' || t.status === 'in_progress').length,
+        totalRevenueINR,
+        totalRevenueUSD,
       });
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown error';
@@ -386,7 +433,195 @@ export default function AdminPanel() {
     }
   };
 
+  const handleCreateManualInvoice = async () => {
+    if (!manualInvoiceUserId) {
+      toast({ title: 'Error', description: 'Please select a recruiter', variant: 'destructive' });
+      return;
+    }
+    if (!manualInvoiceAmount || parseFloat(manualInvoiceAmount) <= 0) {
+      toast({ title: 'Error', description: 'Please enter a valid amount', variant: 'destructive' });
+      return;
+    }
+    setSavingManualInvoice(true);
+    try {
+      const amount = parseFloat(manualInvoiceAmount);
+      const isSub = manualInvoicePlanType !== 'none';
+      
+      let description = manualInvoiceDescription.trim();
+      if (!description) {
+        if (isSub) {
+          const planLabel = manualInvoicePlanType.charAt(0).toUpperCase() + manualInvoicePlanType.slice(1);
+          description = `Manual invoice – ${planLabel} Subscription`;
+        } else {
+          description = `Manual invoice – Wallet Top-up (${manualInvoiceCurrency === 'INR' ? '₹' : '$'}${amount.toLocaleString('en-IN')})`;
+        }
+      }
+
+      // 1. Insert payment record
+      const paymentPayload = {
+        user_id: manualInvoiceUserId,
+        amount,
+        currency: manualInvoiceCurrency,
+        gateway: manualInvoiceGateway,
+        status: manualInvoiceStatus,
+        plan_type: isSub ? manualInvoicePlanType : null,
+        description,
+        created_at: new Date(manualInvoiceDate).toISOString()
+      };
+
+      const { data: newPayment, error: paymentError } = await supabase
+        .from('payments')
+        .insert(paymentPayload)
+        .select()
+        .single();
+
+      if (paymentError) throw paymentError;
+
+      // 2. If successful status, apply effects to subscription or wallet
+      if (manualInvoiceStatus === 'successful') {
+        if (isSub) {
+          // Calculate active test and invite limits
+          let testLimit = 2;
+          let inviteLimit = 25;
+          let durationDays = 30;
+
+          if (manualInvoicePlanType === 'per_test') {
+            testLimit = 1;
+            inviteLimit = 50;
+            durationDays = 30;
+          } else if (manualInvoicePlanType === 'monthly') {
+            testLimit = 5;
+            inviteLimit = 200;
+            durationDays = 30;
+          } else if (manualInvoicePlanType === 'yearly') {
+            testLimit = 99999;
+            inviteLimit = 3000;
+            durationDays = 365;
+          }
+
+          const startDate = new Date(manualInvoiceDate);
+          const endDate = new Date(startDate);
+          endDate.setDate(startDate.getDate() + durationDays);
+
+          // Upsert subscription
+          const { error: subError } = await supabase
+            .from('subscriptions')
+            .upsert({
+              user_id: manualInvoiceUserId,
+              plan_type: manualInvoicePlanType,
+              payment_status: 'success',
+              start_date: startDate.toISOString(),
+              end_date: endDate.toISOString(),
+              is_valid: true,
+              tests_created: 0,
+              invites_sent: 0,
+              active_test_limit: testLimit,
+              invite_limit: inviteLimit,
+              updated_at: new Date().toISOString()
+            }, { onConflict: 'user_id' });
+
+          if (subError) throw subError;
+
+          // Update profile
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              plan_type: manualInvoicePlanType,
+              study_limit: testLimit,
+              subscription_status: 'active',
+              subscription_end: endDate.toISOString()
+            })
+            .eq('user_id', manualInvoiceUserId);
+
+          if (profileError) throw profileError;
+
+        } else {
+          // Wallet Top-up: Increment balance
+          const { data: profData, error: fetchErr } = await supabase
+            .from('profiles')
+            .select('wallet_balance')
+            .eq('user_id', manualInvoiceUserId)
+            .single();
+
+          if (fetchErr) throw fetchErr;
+
+          const currentBalance = (profData as any)?.wallet_balance || 0;
+          const { error: profileError } = await supabase
+            .from('profiles')
+            .update({
+              wallet_balance: currentBalance + amount
+            })
+            .eq('user_id', manualInvoiceUserId);
+
+          if (profileError) throw profileError;
+        }
+      }
+
+      toast({ title: 'Success', description: 'Manual payment & invoice generated successfully' });
+      setManualInvoiceOpen(false);
+      // Reset form
+      setManualInvoiceUserId('');
+      setManualInvoiceAmount('');
+      setManualInvoicePlanType('none');
+      setManualInvoiceGateway('manual');
+      setManualInvoiceStatus('successful');
+      setManualInvoiceDate(format(new Date(), 'yyyy-MM-dd'));
+      setManualInvoiceDescription('');
+      
+      // Refresh statistics
+      fetchAll();
+    } catch (err: any) {
+      console.error('❌ Error saving manual invoice:', err);
+      toast({ title: 'Error generating invoice', description: err.message, variant: 'destructive' });
+    } finally {
+      setSavingManualInvoice(false);
+    }
+  };
+
+  const handleDeletePayment = async (paymentId: string) => {
+    if (!confirm('Are you sure you want to delete this payment record? This will not revert profile subscription or wallet balance changes.')) return;
+    try {
+      const { error } = await supabase.from('payments').delete().eq('id', paymentId);
+      if (error) throw error;
+      toast({ title: 'Success', description: 'Payment record deleted' });
+      fetchAll();
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const handleDownloadInvoice = (payment: PaymentRecord) => {
+    const recruiterUser = users.find(u => u.user_id === payment.user_id);
+    const html = generateInvoiceHTML(payment, recruiterUser?.profile?.email || 'recruiter@userninjas.com', recruiterUser?.profile);
+    const blob = new Blob([html], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const win = window.open(url, '_blank');
+    if (win) win.onload = () => { win.print(); };
+  };
+
   // Filters
+  const filteredPayments = payments.filter(p => {
+    const matchesSearch = !paymentSearchQuery || 
+                          p.id.toLowerCase().includes(paymentSearchQuery.toLowerCase()) ||
+                          p.description?.toLowerCase().includes(paymentSearchQuery.toLowerCase()) ||
+                          users.find(u => u.user_id === p.user_id)?.profile?.full_name?.toLowerCase().includes(paymentSearchQuery.toLowerCase()) ||
+                          users.find(u => u.user_id === p.user_id)?.profile?.email?.toLowerCase().includes(paymentSearchQuery.toLowerCase());
+    
+    const matchesStatus = paymentStatusFilter === 'all' || p.status === paymentStatusFilter;
+    const matchesGateway = paymentGatewayFilter === 'all' || p.gateway === paymentGatewayFilter;
+    
+    let matchesType = true;
+    if (paymentPlanFilter !== 'all') {
+      if (paymentPlanFilter === 'credits') {
+        matchesType = !p.plan_type;
+      } else {
+        matchesType = p.plan_type === paymentPlanFilter;
+      }
+    }
+
+    return matchesSearch && matchesStatus && matchesGateway && matchesType;
+  });
+
   const filteredUsers = users.filter(u => {
     const matchesSearch = !userSearchQuery || u.profile?.full_name?.toLowerCase().includes(userSearchQuery.toLowerCase()) ||
                          u.profile?.email?.toLowerCase().includes(userSearchQuery.toLowerCase());
@@ -542,6 +777,7 @@ export default function AdminPanel() {
                 <Badge className="ml-2 h-5 px-1.5 text-[10px] bg-orange-500 text-white">{stats.openTickets}</Badge>
               )}
             </TabsTrigger>
+            <TabsTrigger value="payments" className="gap-2"><CreditCard className="h-4 w-4" />Payments & Invoices</TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW TAB */}
@@ -1267,6 +1503,214 @@ export default function AdminPanel() {
               </Card>
             </div>
           </TabsContent>
+
+          {/* PAYMENTS & INVOICES TAB */}
+          <TabsContent value="payments" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+              <Card className="border-border/50 bg-card/85 backdrop-blur-sm">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Revenue (INR)</p>
+                    <h3 className="text-2xl font-bold mt-1 text-emerald-400">₹{stats.totalRevenueINR.toLocaleString('en-IN')}</h3>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/15">
+                    <TrendingUp className="h-5 w-5 text-emerald-400" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/50 bg-card/85 backdrop-blur-sm">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Revenue (USD)</p>
+                    <h3 className="text-2xl font-bold mt-1 text-violet-400">${stats.totalRevenueUSD.toLocaleString('en-US')}</h3>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-violet-500/10 flex items-center justify-center border border-violet-500/15">
+                    <DollarSign className="h-5 w-5 text-violet-400" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/50 bg-card/85 backdrop-blur-sm">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total Invoices</p>
+                    <h3 className="text-2xl font-bold mt-1 text-blue-400">{payments.length}</h3>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/15">
+                    <Receipt className="h-5 w-5 text-blue-400" />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-border/50 bg-card/85 backdrop-blur-sm">
+                <CardContent className="p-4 flex items-center justify-between">
+                  <div>
+                    <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Active Subscriptions</p>
+                    <h3 className="text-2xl font-bold mt-1 text-amber-500">
+                      {users.filter(u => u.profile?.plan_type && u.profile.plan_type !== 'free').length}
+                    </h3>
+                  </div>
+                  <div className="w-10 h-10 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/15">
+                    <Zap className="h-5 w-5 text-amber-500" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+              <CardHeader className="pb-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <CreditCard className="h-5 w-5 text-primary" /> Recruiter Invoices & Payments
+                    </CardTitle>
+                    <CardDescription>View transaction histories and record manual payments</CardDescription>
+                  </div>
+                  <Button onClick={() => setManualInvoiceOpen(true)} className="gap-2 shrink-0">
+                    <PlusCircle className="h-4 w-4" /> Create Manual Invoice
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                  <div className="relative col-span-1 sm:col-span-2">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                    <Input 
+                      placeholder="Search by Invoice ID, description, or recruiter..." 
+                      value={paymentSearchQuery}
+                      onChange={(e) => setPaymentSearchQuery(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+
+                  <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
+                    <SelectTrigger><SelectValue placeholder="All Status" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Status</SelectItem>
+                      <SelectItem value="successful">Successful</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                    </SelectContent>
+                  </Select>
+
+                  <Select value={paymentPlanFilter} onValueChange={setPaymentPlanFilter}>
+                    <SelectTrigger><SelectValue placeholder="All Types" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="credits">Credits Top-up</SelectItem>
+                      <SelectItem value="per_test">Pay-Per-Test</SelectItem>
+                      <SelectItem value="monthly">Standard (Monthly)</SelectItem>
+                      <SelectItem value="yearly">Enterprise (Yearly)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </CardHeader>
+
+              <CardContent>
+                <ScrollArea className="h-[600px]">
+                  {filteredPayments.length === 0 ? (
+                    <div className="text-center py-20 text-muted-foreground">
+                      <Receipt className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                      <p className="font-semibold text-lg">No payments found</p>
+                      <p className="text-sm mt-1">Try resetting the filters or record a manual transaction.</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Invoice ID / Date</TableHead>
+                          <TableHead>Recruiter</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Gateway</TableHead>
+                          <TableHead style={{ textAlign: 'right' }}>Amount</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead style={{ textAlign: 'right' }}>Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredPayments.map(p => {
+                          const recruiter = users.find(u => u.user_id === p.user_id);
+                          const isINR = p.currency === 'INR';
+                          const symbol = isINR ? '₹' : '$';
+                          
+                          return (
+                            <TableRow key={p.id} className="hover:bg-secondary/30">
+                              <TableCell>
+                                <div className="font-mono text-xs font-semibold text-white">INV-{p.id.slice(0, 8).toUpperCase()}</div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  {format(new Date(p.created_at), 'MMM d, yyyy HH:mm')}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="font-medium text-sm">{recruiter?.profile?.full_name || 'Unknown Recruiter'}</div>
+                                <div className="text-xs text-muted-foreground mt-0.5">{recruiter?.profile?.email || 'N/A'}</div>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex flex-col gap-1 items-start">
+                                  <Badge variant="outline" className={`text-[10px] uppercase font-bold ${
+                                    p.plan_type === 'monthly' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' :
+                                    p.plan_type === 'yearly' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                    p.plan_type === 'per_test' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                                    'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                  }`}>
+                                    {p.plan_type ? p.plan_type.replace('_', ' ') : 'Credits'}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground max-w-[180px] truncate" title={p.description || ''}>
+                                    {p.description || 'Wallet Credit Top-up'}
+                                  </span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className="capitalize text-xs font-medium bg-slate-500/5 text-slate-300 border-slate-800">
+                                  {p.gateway}
+                                </Badge>
+                              </TableCell>
+                              <TableCell style={{ textAlign: 'right' }} className="font-semibold text-white">
+                                {symbol}{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                              </TableCell>
+                              <TableCell>
+                                <Badge variant="outline" className={`capitalize font-semibold text-xs py-0.5 px-2 rounded-full border ${
+                                  p.status === 'successful' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                  p.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                  'bg-red-500/10 text-red-400 border-red-500/20'
+                                }`}>
+                                  {p.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell style={{ textAlign: 'right' }}>
+                                <div className="flex gap-1.5 justify-end">
+                                  {p.status === 'successful' && (
+                                    <Button 
+                                      size="sm" 
+                                      variant="ghost" 
+                                      onClick={() => handleDownloadInvoice(p)}
+                                      title="Print/Download Invoice"
+                                      className="h-8 w-8 p-0"
+                                    >
+                                      <Download className="h-3.5 w-3.5 text-slate-400 hover:text-white" />
+                                    </Button>
+                                  )}
+                                  <Button 
+                                    size="sm" 
+                                    variant="ghost" 
+                                    onClick={() => handleDeletePayment(p.id)}
+                                    title="Delete Transaction"
+                                    className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                  >
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  )}
+                </ScrollArea>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -1324,6 +1768,153 @@ export default function AdminPanel() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditDialogOpen(false)}>Cancel</Button>
             <Button onClick={handleUpdateTest}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Manual Invoice Dialog */}
+      <Dialog open={manualInvoiceOpen} onOpenChange={setManualInvoiceOpen}>
+        <DialogContent className="bg-card/95 backdrop-blur-sm border-border/50 max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-primary" /> Create Manual Invoice
+            </DialogTitle>
+            <DialogDescription>Record a manual invoice and provision access features or credits to a recruiter.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Select Recruiter *</Label>
+              <Select value={manualInvoiceUserId} onValueChange={setManualInvoiceUserId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a recruiter..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.filter(u => u.role === 'recruiter').length === 0 ? (
+                    <div className="text-center py-2 text-sm text-muted-foreground">No recruiters found</div>
+                  ) : (
+                    users
+                      .filter(u => u.role === 'recruiter')
+                      .map(u => (
+                        <SelectItem key={u.user_id} value={u.user_id}>
+                          {u.profile?.full_name || 'No Name'} ({u.profile?.email || 'N/A'})
+                        </SelectItem>
+                      ))
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Amount *</Label>
+                <Input 
+                  type="number" 
+                  min="0.01" 
+                  step="0.01" 
+                  value={manualInvoiceAmount} 
+                  onChange={e => setManualInvoiceAmount(e.target.value)} 
+                  placeholder="0.00" 
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Currency *</Label>
+                <Select value={manualInvoiceCurrency} onValueChange={setManualInvoiceCurrency}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="INR">INR (₹)</SelectItem>
+                    <SelectItem value="USD">USD ($)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Invoice Type / Plan *</Label>
+                <Select value={manualInvoicePlanType} onValueChange={setManualInvoicePlanType}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Wallet Credits Top-up</SelectItem>
+                    <SelectItem value="per_test">Pay-Per-Test Plan</SelectItem>
+                    <SelectItem value="monthly">Standard (Monthly) Plan</SelectItem>
+                    <SelectItem value="yearly">Enterprise (Yearly) Plan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Payment Date *</Label>
+                <Input 
+                  type="date" 
+                  value={manualInvoiceDate} 
+                  onChange={e => setManualInvoiceDate(e.target.value)} 
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Payment Method / Gateway *</Label>
+                <Select value={manualInvoiceGateway} onValueChange={setManualInvoiceGateway}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual Bank Transfer</SelectItem>
+                    <SelectItem value="cash">Cash / Cheque</SelectItem>
+                    <SelectItem value="stripe">Stripe</SelectItem>
+                    <SelectItem value="razorpay">Razorpay</SelectItem>
+                    <SelectItem value="other">Other / Custom</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Status *</Label>
+                <Select value={manualInvoiceStatus} onValueChange={setManualInvoiceStatus}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="successful">Paid (Successful)</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Description / Invoice Remarks</Label>
+              <Textarea 
+                value={manualInvoiceDescription} 
+                onChange={e => setManualInvoiceDescription(e.target.value)} 
+                placeholder="Remarks, invoice details, PO numbers, reference keys, or custom item line names..." 
+                className="h-20"
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setManualInvoiceOpen(false)}
+              disabled={savingManualInvoice}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleCreateManualInvoice}
+              disabled={savingManualInvoice || !manualInvoiceUserId || !manualInvoiceAmount}
+            >
+              {savingManualInvoice ? 'Generating...' : 'Save & Issue Invoice'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

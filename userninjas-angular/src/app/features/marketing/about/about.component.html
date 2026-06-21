@@ -1,0 +1,122 @@
+<div class="about-page bg-slate-950 text-white min-h-screen pt-28 pb-20 px-4 relative">
+  <!-- Glowing Background Orbs -->
+  <div class="absolute top-20 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+  <div class="absolute bottom-20 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <main class="max-w-5xl mx-auto space-y-20 relative z-10">
+    <!-- Hero Section -->
+    <div class="text-center max-w-3xl mx-auto space-y-4">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-xs font-semibold text-primary">
+        <mat-icon class="scale-75 text-primary">public</mat-icon> Our Story
+      </div>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">
+        Making user research <span class="bg-gradient-to-r from-primary to-purple-400 bg-clip-text text-transparent">fast, affordable</span>, and genuinely useful
+      </h1>
+      <p class="text-slate-400 text-lg leading-relaxed">
+        We started User Ninjas because every product team deserves real user insights — not just the ones with enterprise budgets and six-week timelines.
+      </p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div *ngFor="let stat of stats" class="text-center p-6 rounded-2xl bg-slate-900/40 border border-white/5 backdrop-blur-md">
+        <p class="text-3xl md:text-4xl font-extrabold text-primary mb-1">{{ stat.value }}</p>
+        <p class="text-sm font-semibold text-white mb-0.5">{{ stat.label }}</p>
+        <p class="text-xs text-slate-400">{{ stat.sublabel }}</p>
+      </div>
+    </div>
+
+    <!-- Details Grid -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div class="bg-slate-900/40 rounded-2xl border border-white/5 p-8 backdrop-blur-md">
+        <h2 class="text-xl font-bold text-white mb-4">Origin story</h2>
+        <div class="text-slate-300 space-y-3 leading-relaxed text-xs">
+          <p>Arjun spent years watching product teams skip user research — not because they didn't value it, but because it was too slow and too expensive. A single UserTesting study could cost $3,000 and take five days.</p>
+          <p>He joined forces with Priya to rebuild the research stack from scratch: a global tester network with instant access, AI that replaces 90% of manual analysis, and pricing that startups can afford.</p>
+          <p>From the first line of code in early 2024 to 4,000+ teams today, the mission has stayed the same — make every product team as research-powered as the best in the world.</p>
+        </div>
+      </div>
+      <div class="bg-slate-900/40 rounded-2xl border border-white/5 p-8 backdrop-blur-md">
+        <h2 class="text-xl font-bold text-white mb-4">What sets us apart</h2>
+        <ul class="space-y-3">
+          <li *ngFor="let item of advantages" class="flex items-start gap-2.5 text-xs text-slate-300">
+            <mat-icon class="scale-75 text-primary shrink-0 mt-0.5">verified</mat-icon>
+            <span>{{ item }}</span>
+          </li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Milestones Timeline -->
+    <div class="space-y-8">
+      <h2 class="text-2xl font-bold text-center">Milestones</h2>
+      <div class="relative max-w-2xl mx-auto">
+        <div class="absolute left-6 top-0 bottom-0 w-px bg-white/10"></div>
+        <div class="space-y-6">
+          <div *ngFor="let m of milestones" class="flex gap-5 relative pl-4">
+            <div class="w-5 h-5 rounded-full bg-primary border-2 border-slate-950 ring-2 ring-primary/20 shrink-0 mt-1 relative z-10"></div>
+            <div class="bg-slate-900/40 rounded-xl border border-white/5 p-4 flex-1 backdrop-blur-md">
+              <div class="flex items-center gap-3 mb-1">
+                <span class="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded">{{ m.year }}</span>
+                <h3 class="font-bold text-sm text-white">{{ m.title }}</h3>
+              </div>
+              <p class="text-xs text-slate-400 leading-relaxed">{{ m.body }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Team Section -->
+    <div class="space-y-6">
+      <div class="text-center">
+        <h2 class="text-2xl font-bold text-white">Meet the team</h2>
+        <p class="text-slate-400 text-xs mt-1">42 people across 14 countries, building the future of user research.</p>
+      </div>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div *ngFor="let member of team" class="rounded-2xl bg-slate-900/40 border border-white/5 p-5 backdrop-blur-md">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-bold text-sm shrink-0">
+              {{ member.initials }}
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-white">{{ member.name }}</h3>
+              <p class="text-xs text-primary font-semibold">{{ member.role }}</p>
+            </div>
+          </div>
+          <p class="text-xs text-slate-400 leading-relaxed">{{ member.bio }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Backed By Investors -->
+    <div class="space-y-6">
+      <h2 class="text-2xl font-bold text-center text-white">Backed by world-class investors</h2>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div *ngFor="let inv of investors" class="rounded-2xl bg-slate-900/40 border border-white/5 p-5 text-center backdrop-blur-md">
+          <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-800 flex items-center justify-center text-white font-bold text-xs mx-auto mb-3">
+            {{ inv.initials }}
+          </div>
+          <p class="font-bold text-sm text-white">{{ inv.name }}</p>
+          <p class="text-[10px] text-slate-400 mt-1">{{ inv.stage }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Careers CTA -->
+    <div class="rounded-2xl bg-gradient-to-br from-primary/5 to-purple-600/5 border border-white/10 p-10 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div>
+        <h3 class="text-xl font-bold text-white mb-2">Want to join the team?</h3>
+        <p class="text-xs text-slate-400 max-w-sm">We're hiring across engineering, research, design, and growth. Fully remote-friendly.</p>
+      </div>
+      <button
+        mat-flat-button
+        color="primary"
+        [routerLink]="['/careers']"
+        class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-1 text-xs h-10 px-6 font-bold flex items-center shrink-0 shadow-lg shadow-indigo-600/15"
+      >
+        View open roles <mat-icon class="scale-75">arrow_forward</mat-icon>
+      </button>
+    </div>
+  </main>
+</div>

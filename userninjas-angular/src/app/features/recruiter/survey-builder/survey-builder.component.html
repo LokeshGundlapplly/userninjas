@@ -1,0 +1,304 @@
+<div class="survey-builder-page bg-slate-950 text-white min-h-screen pt-24 pb-16 px-4 relative">
+  <!-- Glowing Background Orbs -->
+  <div class="absolute top-20 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+  <div class="absolute bottom-20 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <main class="max-w-4xl mx-auto space-y-6 relative z-10">
+    <!-- Header with Back Button -->
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <button
+          mat-stroked-button
+          [routerLink]="['/recruiter']"
+          class="rounded-xl border border-white/10 text-white hover:bg-white/5 text-xs font-semibold gap-1.5 flex items-center py-4 h-9"
+        >
+          <mat-icon class="scale-75">arrow_back</mat-icon> Back
+        </button>
+        <h1 class="text-3xl font-bold tracking-tight">Standalone Surveys</h1>
+      </div>
+    </div>
+
+    <!-- Glassmorphic Tabs (matches Shadcn/ui) -->
+    <div class="flex items-center gap-1.5 p-1 bg-slate-900/60 border border-white/5 rounded-xl w-fit">
+      <button
+        type="button"
+        (click)="setTab('create')"
+        [class.bg-indigo-600]="tab() === 'create'"
+        [class.text-white]="tab() === 'create'"
+        [class.text-slate-400]="tab() !== 'create'"
+        class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold hover:text-white transition-all"
+      >
+        <mat-icon class="scale-75">add</mat-icon> Create
+      </button>
+      <button
+        type="button"
+        (click)="setTab('manage')"
+        [class.bg-indigo-600]="tab() === 'manage'"
+        [class.text-white]="tab() === 'manage'"
+        [class.text-slate-400]="tab() !== 'manage'"
+        class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold hover:text-white transition-all"
+      >
+        <mat-icon class="scale-75">assignment</mat-icon> Manage
+      </button>
+      <button
+        type="button"
+        (click)="setTab('results')"
+        [class.bg-indigo-600]="tab() === 'results'"
+        [class.text-white]="tab() === 'results'"
+        [class.text-slate-400]="tab() !== 'results'"
+        class="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold hover:text-white transition-all"
+      >
+        <mat-icon class="scale-75">bar_chart</mat-icon> Results
+      </button>
+    </div>
+
+    <!-- Tab 1: Create -->
+    <div *ngIf="tab() === 'create'" class="card bg-slate-900/80 border border-white/5 shadow-2xl space-y-6">
+      <div>
+        <h2 class="text-xl font-bold tracking-tight text-white">Create standalone survey</h2>
+        <p class="text-xs text-slate-400 mt-1">Build a custom standalone survey with multiple question types for your target audience.</p>
+      </div>
+
+      <form (submit)="$event.preventDefault(); handleCreate()" class="space-y-6">
+        <div class="grid grid-cols-1 gap-4">
+          <div class="input-group">
+            <label class="text-xs font-semibold text-slate-300">Survey Title *</label>
+            <input
+              [(ngModel)]="title"
+              name="title"
+              placeholder="e.g. User Experience Feedback"
+              required
+              class="form-input text-xs"
+            />
+          </div>
+
+          <div class="input-group">
+            <label class="text-xs font-semibold text-slate-300">Description</label>
+            <textarea
+              [(ngModel)]="description"
+              name="description"
+              placeholder="Brief description of the survey..."
+              rows="3"
+              class="form-textarea text-xs"
+            ></textarea>
+          </div>
+        </div>
+
+        <!-- Questions section -->
+        <div class="space-y-4 pt-2">
+          <div class="flex items-center justify-between border-l-2 border-primary pl-2">
+            <h3 class="text-sm font-bold uppercase tracking-wider text-indigo-400">
+              Questions
+            </h3>
+            <button
+              type="button"
+              (click)="addQ()"
+              mat-stroked-button
+              class="border-primary/20 text-primary hover:bg-primary/5 text-[10px] h-7 flex items-center"
+            >
+              <mat-icon class="scale-75 mr-0.5">add</mat-icon> Add Question
+            </button>
+          </div>
+
+          <div class="space-y-4">
+            <div *ngFor="let q of questions; let qIdx = index; trackBy: trackByIndex" class="p-5 rounded-xl bg-white/[0.01] border border-white/5 space-y-4">
+              <!-- Question number and Remove -->
+              <div class="flex items-center justify-between gap-4">
+                <span class="text-[10px] font-bold text-slate-500 uppercase">
+                  Question {{ qIdx + 1 }}
+                </span>
+                <button
+                  type="button"
+                  (click)="removeQ(qIdx)"
+                  class="delete-icon-btn"
+                >
+                  <mat-icon class="scale-90">delete</mat-icon>
+                </button>
+              </div>
+
+              <!-- Question text and type selection -->
+              <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div class="md:col-span-2">
+                  <input
+                    [(ngModel)]="q.question_text"
+                    [name]="'q-text-' + qIdx"
+                    placeholder="Type your question here..."
+                    required
+                    class="form-input text-xs w-full"
+                  />
+                </div>
+                <div>
+                  <select
+                    [ngModel]="q.question_type"
+                    [name]="'q-type-' + qIdx"
+                    (ngModelChange)="onQuestionTypeChange(qIdx, $event)"
+                    class="form-select text-xs w-full"
+                  >
+                    <option value="open_text">Open Text</option>
+                    <option value="mcq">Multiple Choice</option>
+                    <option value="rating">Rating (1-5)</option>
+                    <option value="yes_no">Yes / No</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- MCQ options editor -->
+              <div *ngIf="q.question_type === 'mcq'" class="pl-6 border-l border-white/5 space-y-3 pt-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[9px] font-bold text-slate-400 uppercase tracking-wider">
+                    Multiple Choice Options
+                  </span>
+                  <button
+                    type="button"
+                    (click)="addOption(qIdx)"
+                    class="text-[10px] text-primary font-semibold flex items-center hover:underline bg-transparent border-none p-0 cursor-pointer"
+                  >
+                    <mat-icon class="scale-75 mr-0.5">add</mat-icon> Add Option
+                  </button>
+                </div>
+                <div class="space-y-2">
+                  <div *ngFor="let opt of q.options; let oIdx = index; trackBy: trackByIndex" class="flex items-center gap-2">
+                    <div class="w-1.5 h-1.5 rounded-full bg-slate-500"></div>
+                    <input
+                      [(ngModel)]="q.options[oIdx]"
+                      [name]="'q-' + qIdx + '-opt-' + oIdx"
+                      required
+                      placeholder="Option {{ oIdx + 1 }}"
+                      class="form-input text-xs flex-1 py-1"
+                    />
+                    <button
+                      type="button"
+                      *ngIf="q.options.length > 2"
+                      (click)="removeOption(qIdx, oIdx)"
+                      class="delete-icon-btn py-1"
+                    >
+                      <mat-icon class="scale-75">close</mat-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Question options like Required -->
+              <div class="flex items-center gap-2 pt-1">
+                <input
+                  type="checkbox"
+                  [id]="'req-' + qIdx"
+                  [(ngModel)]="q.required"
+                  [name]="'q-req-' + qIdx"
+                  class="rounded border-white/10 bg-slate-900 w-3.5 h-3.5 cursor-pointer"
+                />
+                <label [htmlFor]="'req-' + qIdx" class="text-[10px] font-medium text-slate-400 select-none cursor-pointer">
+                  Required Question
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          [disabled]="saving()"
+          mat-flat-button
+          color="primary"
+          class="w-full bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl gap-2 text-xs h-11 font-bold flex items-center justify-center shadow-lg shadow-primary/20"
+        >
+          <mat-icon class="scale-90">send</mat-icon>
+          {{ saving() ? 'Creating Survey...' : 'Create & Publish Survey' }}
+        </button>
+      </form>
+    </div>
+
+    <!-- Tab 2: Manage -->
+    <div *ngIf="tab() === 'manage'" class="card bg-slate-900/80 border border-white/5 shadow-2xl">
+      <div class="flex items-center justify-between border-b border-white/5 pb-4 mb-4">
+        <div>
+          <h2 class="text-xl font-bold tracking-tight text-white">Your Surveys</h2>
+          <p class="text-xs text-slate-400 mt-1">Review active and draft surveys you have published.</p>
+        </div>
+      </div>
+
+      <div *ngIf="loading()" class="flex flex-col items-center justify-center py-12 gap-3">
+        <mat-spinner diameter="32" color="primary"></mat-spinner>
+        <span class="text-xs text-slate-400">Loading your surveys...</span>
+      </div>
+
+      <div *ngIf="!loading() && surveys().length === 0" class="text-center py-12 text-slate-400">
+        <mat-icon class="scale-150 mb-3 text-slate-600">assignment</mat-icon>
+        <p class="text-sm font-semibold">No surveys yet</p>
+        <p class="text-xs text-slate-500 mt-1">Create your first standalone survey using the Create tab.</p>
+      </div>
+
+      <div *ngIf="!loading() && surveys().length > 0" class="overflow-x-auto">
+        <table class="dark-table">
+          <thead>
+            <tr>
+              <th class="text-left py-3 px-4">Title</th>
+              <th class="text-left py-3 px-4">Status</th>
+              <th class="text-left py-3 px-4">Created Date</th>
+              <th class="text-right py-3 px-4">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let survey of surveys()" class="hover:bg-white/[0.01]">
+              <td class="py-3 px-4 font-medium text-white">{{ survey.title }}</td>
+              <td class="py-3 px-4">
+                <span [class.bg-emerald-500/10]="survey.status === 'active'"
+                      [class.text-emerald-400]="survey.status === 'active'"
+                      [class.bg-slate-500/10]="survey.status !== 'active'"
+                      [class.text-slate-400]="survey.status !== 'active'"
+                      class="px-2 py-0.5 rounded-full text-[10px] font-semibold tracking-wide uppercase border border-current/10">
+                  {{ survey.status }}
+                </span>
+              </td>
+              <td class="py-3 px-4 text-xs text-slate-400">{{ survey.created_at | date:'MMM d, yyyy' }}</td>
+              <td class="py-3 px-4 text-right">
+                <button
+                  mat-stroked-button
+                  (click)="viewSurveyResults(survey.id)"
+                  class="border-white/10 text-white hover:bg-white/5 text-[10px] h-7 px-3 flex items-center justify-center gap-1 ml-auto"
+                >
+                  <mat-icon class="scale-75">visibility</mat-icon> Results
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Tab 3: Results -->
+    <div *ngIf="tab() === 'results'" class="card bg-slate-900/80 border border-white/5 shadow-2xl space-y-6">
+      <div>
+        <h2 class="text-xl font-bold tracking-tight text-white">Survey Results</h2>
+        <p class="text-xs text-slate-400 mt-1">
+          {{ selectedSurvey() ? (responses().length + ' responses found') : 'Select a survey from the Manage tab to see results.' }}
+        </p>
+      </div>
+
+      <div *ngIf="!selectedSurvey()" class="text-center py-12 text-slate-500">
+        <mat-icon class="scale-125 mb-2">bar_chart</mat-icon>
+        <p class="text-xs">No survey selected. Please navigate to the Manage tab and click "Results" on a survey.</p>
+      </div>
+
+      <div *ngIf="selectedSurvey() && responses().length === 0" class="text-center py-12 text-slate-400">
+        <mat-icon class="scale-125 mb-2 text-slate-600">hourglass_empty</mat-icon>
+        <p class="text-xs">No responses recorded for this survey yet.</p>
+      </div>
+
+      <div *ngIf="selectedSurvey() && responses().length > 0" class="space-y-4">
+        <div *ngFor="let resp of responses(); let rIdx = index" class="response-card">
+          <div class="flex justify-between items-center border-b border-white/5 pb-2 mb-3">
+            <span class="text-[10px] font-bold text-indigo-400 uppercase tracking-wider">
+              Response #{{ rIdx + 1 }}
+            </span>
+            <span class="text-[10px] text-slate-500">
+              {{ resp.created_at | date:'MMM d, yyyy HH:mm' }}
+            </span>
+          </div>
+          <pre class="text-xs text-slate-300 font-mono overflow-x-auto bg-slate-950/60 p-3 rounded-lg border border-white/5 max-h-60">{{ resp.answers | json }}</pre>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>

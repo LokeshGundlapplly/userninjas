@@ -41,23 +41,52 @@ export interface UserProfile {
 export interface Test {
   id: string;
   title: string;
-  description: string;
-  status: 'draft' | 'active' | 'completed';
-  createdAt: string;
-  recruiterId: string;
+  description?: string;
+  requirements?: string;
+  status: 'draft' | 'active' | 'completed' | 'paused';
+  createdAt?: string;
+  created_at?: string;
+  recruiterId?: string;
+  recruiter_id?: string;
+  reward_amount?: number;
+  rewardAmount?: number;
+  estimated_duration?: number;
+  estimatedDuration?: number;
+  category?: string;
+  test_type?: string;
+  testType?: string;
+  max_testers?: number;
+  maxTesters?: number;
+  prototype_url?: string;
+  prototypeUrl?: string;
+  screener_questions?: any[];
+  screenerQuestions?: any[];
 }
 
 export interface Submission {
   id: string;
-  testId: string;
-  testerId: string;
+  testId?: string;
+  test_id?: string;
+  testerId?: string;
+  tester_id?: string;
   status: string;
-  createdAt: string;
+  createdAt?: string;
+  created_at?: string;
+  video_url?: string;
+  videoUrl?: string;
+  transcript?: string;
+  transcript_summary?: string;
+  transcriptSummary?: string;
+  rating?: number | null;
+  feedback?: string | null;
+  submitted_at?: string;
+  submittedAt?: string;
 }
 
 export interface AIResponse {
   response: string;
   success: boolean;
+  content?: string;
 }
 
 export interface ApiError {

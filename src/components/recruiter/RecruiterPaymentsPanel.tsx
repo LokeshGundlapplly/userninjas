@@ -22,7 +22,7 @@ import type { User } from '@supabase/supabase-js';
 
 // ─── Types ────────────────────────────────────────────────
 
-interface PaymentRecord {
+export interface PaymentRecord {
   id: string;
   user_id: string;
   gateway: string;
@@ -155,63 +155,352 @@ function downloadCSV(filename: string, headers: string[], rows: string[][]) {
   URL.revokeObjectURL(url);
 }
 
-function generateInvoiceHTML(payment: PaymentRecord, userEmail: string) {
+export function generateInvoiceHTML(payment: PaymentRecord, userEmail: string, profile: any) {
   const date = new Date(payment.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
   const desc = payment.description || (payment.plan_type ? `${payment.plan_type.charAt(0).toUpperCase() + payment.plan_type.slice(1)} Plan` : 'Wallet Credit Top-up');
-  return `<!DOCTYPE html><html><head><title>Invoice – UserNinjas</title>
+  
+  const isINR = payment.currency === 'INR' || String(payment.gateway).toLowerCase() === 'razorpay';
+  const currencySymbol = isINR ? '₹' : payment.currency === 'USD' ? '$' : payment.currency || '₹';
+  const totalAmount = Number(payment.amount);
+  
+  let subtotal = totalAmount;
+  let taxDetailsHTML = '';
+
+  if (isINR) {
+    // 18% GST calculation (GST included in total)
+    subtotal = totalAmount / 1.18;
+    const cgst = subtotal * 0.09;
+    const sgst = subtotal * 0.09;
+    taxDetailsHTML = `
+      <div class="summary-row">
+        <span>Subtotal (Excl. Tax)</span>
+        <span>₹${subtotal.toFixed(2)}</span>
+      </div>
+      <div class="summary-row">
+        <span>CGST (9%)</span>
+        <span>₹${cgst.toFixed(2)}</span>
+      </div>
+      <div class="summary-row">
+        <span>SGST (9%)</span>
+        <span>₹${sgst.toFixed(2)}</span>
+      </div>
+    `;
+  } else {
+    // USD / Stripe (Export of services, 0% tax)
+    taxDetailsHTML = `
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span>${currencySymbol}${subtotal.toFixed(2)}</span>
+      </div>
+      <div class="summary-row">
+        <span>Tax (0% Export)</span>
+        <span>${currencySymbol}0.00</span>
+      </div>
+    `;
+  }
+
+  const invoiceNumber = `INV-${payment.id.slice(0, 8).toUpperCase()}`;
+  const billedToName = profile?.full_name || 'Valued Recruiter';
+  const billedToCompany = profile?.company || 'N/A';
+  const billedToLocation = profile?.location || 'N/A';
+  const billedToPhone = profile?.phone || 'N/A';
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Invoice - UserNinjas</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+    
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', 'Helvetica Neue', sans-serif; background: #f8fafc; color: #0f172a; padding: 40px 20px; }
-    .wrapper { max-width: 640px; margin: 0 auto; background: #fff; border-radius: 16px; box-shadow: 0 4px 24px rgba(0,0,0,0.08); overflow: hidden; }
-    .header { background: linear-gradient(135deg, #4f46e5, #7c3aed); padding: 36px 40px; color: white; }
-    .logo { font-size: 22px; font-weight: 800; letter-spacing: -0.5px; }
-    .logo span { opacity: 0.7; font-weight: 400; font-size: 14px; display: block; margin-top: 4px; }
-    .invoice-id { background: rgba(255,255,255,0.15); border-radius: 8px; padding: 8px 14px; font-size: 12px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; margin-top: 20px; display: inline-block; }
-    .body { padding: 36px 40px; }
-    .section-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #64748b; margin-bottom: 12px; }
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 32px; }
-    .info-item .label { font-size: 12px; color: #94a3b8; margin-bottom: 4px; }
-    .info-item .value { font-size: 14px; font-weight: 600; color: #1e293b; }
-    .divider { border: none; border-top: 1px solid #e2e8f0; margin: 24px 0; }
-    .line-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 16px 0; border-bottom: 1px solid #f1f5f9; }
-    .line-item .name { font-size: 14px; font-weight: 500; color: #1e293b; }
-    .line-item .sub { font-size: 12px; color: #94a3b8; margin-top: 3px; }
-    .line-item .price { font-size: 15px; font-weight: 700; color: #1e293b; }
-    .total-row { display: flex; justify-content: space-between; align-items: center; padding: 20px 0 0; }
-    .total-row .label { font-size: 14px; font-weight: 600; color: #475569; }
-    .total-row .value { font-size: 28px; font-weight: 800; color: #4f46e5; }
-    .status-badge { display: inline-flex; align-items: center; gap: 6px; background: #d1fae5; color: #065f46; border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; margin-top: 16px; }
-    .footer { background: #f8fafc; padding: 24px 40px; text-align: center; font-size: 12px; color: #94a3b8; border-top: 1px solid #e2e8f0; }
-    .footer a { color: #4f46e5; text-decoration: none; }
-  </style></head><body>
+    body { 
+      font-family: 'Inter', sans-serif; 
+      background: #f8fafc; 
+      color: #0f172a; 
+      padding: 40px 20px;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+    }
+    
+    .wrapper { 
+      max-width: 800px; 
+      margin: 0 auto; 
+      background: #fff; 
+      border-radius: 16px; 
+      box-shadow: 0 4px 30px rgba(0,0,0,0.05); 
+      border: 1px solid #e2e8f0;
+      overflow: hidden; 
+    }
+    
+    .header { 
+      background: linear-gradient(135deg, #4f46e5, #7c3aed); 
+      padding: 40px; 
+      color: white; 
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    
+    .logo-container h1 { 
+      font-size: 26px; 
+      font-weight: 800; 
+      letter-spacing: -0.5px; 
+      margin-bottom: 4px;
+    }
+    .logo-container span { 
+      opacity: 0.85; 
+      font-weight: 400; 
+      font-size: 13px; 
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+    }
+    
+    .invoice-meta {
+      text-align: right;
+    }
+    .invoice-id { 
+      background: rgba(255,255,255,0.15); 
+      border-radius: 8px; 
+      padding: 8px 16px; 
+      font-size: 13px; 
+      font-weight: 700; 
+      letter-spacing: 1px; 
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .invoice-date {
+      font-size: 14px;
+      opacity: 0.9;
+    }
+    
+    .body { padding: 40px; }
+    
+    .addresses-grid { 
+      display: grid; 
+      grid-template-columns: 1fr 1fr; 
+      gap: 40px; 
+      margin-bottom: 40px; 
+    }
+    
+    .address-col h3 {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #64748b;
+      margin-bottom: 12px;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 6px;
+    }
+    
+    .address-details {
+      font-size: 14px;
+      color: #334155;
+    }
+    .address-details strong {
+      color: #0f172a;
+      font-size: 15px;
+      display: block;
+      margin-bottom: 4px;
+    }
+    .address-details p {
+      margin-bottom: 3px;
+    }
+    
+    .table-container {
+      margin-bottom: 30px;
+    }
+    
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+    
+    th {
+      background: #f8fafc;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #475569;
+      padding: 14px 16px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+    
+    td {
+      padding: 16px;
+      font-size: 14px;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: top;
+    }
+    
+    .item-desc {
+      font-weight: 600;
+      color: #0f172a;
+    }
+    .item-sub {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 3px;
+    }
+    
+    .totals-section {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 20px;
+    }
+    
+    .totals-box {
+      width: 320px;
+      background: #f8fafc;
+      border-radius: 12px;
+      padding: 20px;
+      border: 1px solid #e2e8f0;
+    }
+    
+    .summary-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #475569;
+      margin-bottom: 10px;
+    }
+    
+    .summary-row.grand-total {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 2px dashed #cbd5e1;
+      font-size: 18px;
+      font-weight: 800;
+      color: #4f46e5;
+    }
+    
+    .payment-status-banner {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: #d1fae5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+      border-radius: 8px;
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 700;
+      margin-top: 20px;
+    }
+    
+    .footer { 
+      background: #f8fafc; 
+      padding: 30px 40px; 
+      text-align: center; 
+      font-size: 12px; 
+      color: #94a3b8; 
+      border-top: 1px solid #e2e8f0; 
+      line-height: 1.6;
+    }
+    .footer a { color: #4f46e5; text-decoration: none; font-weight: 500; }
+    
+    @media print {
+      body { background: white; padding: 0; }
+      .wrapper { border: none; box-shadow: none; max-width: 100%; }
+      .header { background: #4f46e5 !important; -webkit-print-color-adjust: exact; color: white !important; }
+      .totals-box { background: #f8fafc !important; -webkit-print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
   <div class="wrapper">
     <div class="header">
-      <div class="logo">UserNinjas<span>Tax Invoice / Receipt</span></div>
-      <div class="invoice-id">INV-${payment.id.slice(0,8).toUpperCase()}</div>
+      <div class="logo-container">
+        <h1>UserNinjas</h1>
+        <span>Tax Invoice / Receipt</span>
+      </div>
+      <div class="invoice-meta">
+        <div class="invoice-id">${invoiceNumber}</div>
+        <div class="invoice-date">Date: ${date}</div>
+      </div>
     </div>
+    
     <div class="body">
-      <div class="section-label">Billing Details</div>
-      <div class="info-grid">
-        <div class="info-item"><div class="label">Billed To</div><div class="value">${userEmail}</div></div>
-        <div class="info-item"><div class="label">Invoice Date</div><div class="value">${date}</div></div>
-        <div class="info-item"><div class="label">Payment Method</div><div class="value">${payment.gateway.charAt(0).toUpperCase() + payment.gateway.slice(1)}</div></div>
-        <div class="info-item"><div class="label">Currency</div><div class="value">INR (₹)</div></div>
+      <div class="addresses-grid">
+        <div class="address-col">
+          <h3>Billed From (Seller)</h3>
+          <div class="address-details">
+            <strong>UserNinjas Technologies Pvt. Ltd.</strong>
+            <p>102, Innovation Hub, Phase 2</p>
+            <p>HITEC City, Hyderabad</p>
+            <p>Telangana - 500081, India</p>
+            <p>GSTIN: 36AAAAA0000A1Z5</p>
+            <p>Email: billing@userninjas.com</p>
+          </div>
+        </div>
+        
+        <div class="address-col">
+          <h3>Billed To (Buyer)</h3>
+          <div class="address-details">
+            <strong>${billedToName}</strong>
+            ${billedToCompany !== 'N/A' ? '<p>Company: ' + billedToCompany + '</p>' : ''}
+            ${billedToLocation !== 'N/A' ? '<p>Location: ' + billedToLocation + '</p>' : ''}
+            <p>Email: ${userEmail}</p>
+            ${billedToPhone !== 'N/A' ? '<p>Phone: ' + billedToPhone + '</p>' : ''}
+          </div>
+        </div>
       </div>
-      <div class="section-label">Summary</div>
-      <div class="line-item">
-        <div><div class="name">${desc}</div><div class="sub">${payment.plan_type ? 'Subscription Plan' : 'Wallet Credit'}</div></div>
-        <div class="price">₹${Number(payment.amount).toLocaleString('en-IN')}</div>
+      
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Item & Description</th>
+              <th style="text-align: right;">Unit Price</th>
+              <th style="text-align: center;">Qty</th>
+              <th style="text-align: right;">Tax Rate</th>
+              <th style="text-align: right;">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="item-desc">${desc}</div>
+                <div class="item-sub">${payment.plan_type ? 'Subscription Plan' : 'Wallet Credits Top-up'}</div>
+              </td>
+              <td style="text-align: right;">${currencySymbol}${subtotal.toFixed(2)}</td>
+              <td style="text-align: center;">1</td>
+              <td style="text-align: right;">${isINR ? '18% GST' : '0% Export'}</td>
+              <td style="text-align: right;">${currencySymbol}${subtotal.toFixed(2)}</td>
+            </tr>
+          </tbody>
+        </table>
       </div>
-      <div class="total-row">
-        <div class="label">Total Charged</div>
-        <div class="value">₹${Number(payment.amount).toLocaleString('en-IN')}</div>
+      
+      <div class="totals-section">
+        <div class="totals-box">
+          ${taxDetailsHTML}
+          <div class="summary-row grand-total">
+            <span>Total Paid</span>
+            <span>${currencySymbol}${totalAmount.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+        </div>
       </div>
-      <div class="status-badge">✓ Payment ${payment.status}</div>
+      
+      <div class="payment-status-banner">
+        <span>✔</span>
+        <span>Payment ${payment.status.toUpperCase()} — Thank you!</span>
+      </div>
     </div>
+    
     <div class="footer">
-      Thank you for using UserNinjas · <a href="mailto:support@userninjas.com">support@userninjas.com</a> · <a href="https://userninjas.com">userninjas.com</a>
+      <p>This is a computer-generated tax invoice and does not require a physical signature.</p>
+      <p style="margin-top: 6px;">
+        For billing questions, contact <a href="mailto:support@userninjas.com">support@userninjas.com</a> · 
+        Visit <a href="https://userninjas.com" target="_blank">userninjas.com</a>
+      </p>
     </div>
-  </div></body></html>`;
+  </div>
+</body>
+</html>`;
 }
 
 // ─── Plan Cards ────────────────────────────────────────────
@@ -461,7 +750,7 @@ export default function RecruiterPaymentsPanel({
   };
 
   const downloadInvoice = (payment: PaymentRecord) => {
-    const html = generateInvoiceHTML(payment, user.email || '');
+    const html = generateInvoiceHTML(payment, user.email || '', profile);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const win = window.open(url, '_blank');

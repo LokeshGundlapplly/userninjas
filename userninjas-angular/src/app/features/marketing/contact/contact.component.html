@@ -1,0 +1,139 @@
+<div class="contact-page bg-slate-950 text-white min-h-screen pt-28 pb-20 px-4 md:px-8 relative">
+  <!-- Glowing Background Orbs -->
+  <div class="absolute top-20 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+  <div class="absolute bottom-20 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <div class="max-w-5xl mx-auto space-y-10 relative z-10">
+    <!-- Header -->
+    <div class="text-center max-w-xl mx-auto space-y-4">
+      <p class="text-xs font-bold text-primary uppercase tracking-wider">Contact</p>
+      <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight">Get in touch</h1>
+      <p class="text-slate-400 text-sm">
+        Have a question or need support? Our team is standing by.
+      </p>
+    </div>
+
+    <!-- Layout Grid -->
+    <div class="contact-layout">
+      <!-- Left column: Info Cards -->
+      <div class="contact-info-panel space-y-4">
+        <div *ngFor="let ch of contactChannels" class="card backdrop-blur-md flex gap-4 items-start">
+          <div class="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+            <mat-icon class="text-primary">{{ ch.iconName }}</mat-icon>
+          </div>
+          <div class="space-y-1">
+            <h3 class="font-bold text-sm text-white">{{ ch.title }}</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">{{ ch.description }}</p>
+            <a [href]="'mailto:' + ch.email" class="text-xs text-primary font-semibold hover:underline block pt-1">
+              {{ ch.email }}
+            </a>
+          </div>
+        </div>
+
+        <!-- Office & Phone -->
+        <div class="card backdrop-blur-md space-y-4">
+          <div class="flex gap-4 items-start">
+            <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
+              <mat-icon class="text-slate-400">place</mat-icon>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-white">Office</h3>
+              <p class="text-xs text-slate-400">Hyderabad, Hightech City 500081, India</p>
+            </div>
+          </div>
+          <div class="flex gap-4 items-start border-t border-white/5 pt-3">
+            <div class="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
+              <mat-icon class="text-slate-400">phone</mat-icon>
+            </div>
+            <div>
+              <h3 class="font-bold text-sm text-white">Phone</h3>
+              <p class="text-xs text-slate-400">Mon-Fri, 9am-6pm IST</p>
+              <p class="text-xs font-semibold text-white mt-0.5">+91 9618495013</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column: Message Form -->
+      <div class="contact-form-panel">
+        <div class="card bg-slate-900/60 backdrop-blur-md p-8">
+          <h2 class="text-lg font-bold text-white mb-6">Send us a message</h2>
+          <form (submit)="$event.preventDefault(); handleSubmit()" class="space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="form-group">
+                <label class="text-xs font-semibold text-slate-300">First Name</label>
+                <input
+                  type="text"
+                  placeholder="Jane"
+                  required
+                  [(ngModel)]="formData.firstName"
+                  name="firstName"
+                  class="form-input text-xs"
+                />
+              </div>
+              <div class="form-group">
+                <label class="text-xs font-semibold text-slate-300">Last Name</label>
+                <input
+                  type="text"
+                  placeholder="Doe"
+                  required
+                  [(ngModel)]="formData.lastName"
+                  name="lastName"
+                  class="form-input text-xs"
+                />
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="text-xs font-semibold text-slate-300">Email Address</label>
+              <input
+                type="email"
+                placeholder="jane@company.com"
+                required
+                [(ngModel)]="formData.email"
+                name="email"
+                class="form-input text-xs"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="text-xs font-semibold text-slate-300">Subject</label>
+              <select
+                [(ngModel)]="formData.subject"
+                name="subject"
+                required
+                class="form-select text-xs"
+              >
+                <option value="" disabled selected>Select a topic</option>
+                <option *ngFor="let s of subjects" [value]="s">{{ s }}</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="text-xs font-semibold text-slate-300">Message</label>
+              <textarea
+                placeholder="How can we help?"
+                required
+                rows="4"
+                [(ngModel)]="formData.message"
+                name="message"
+                class="form-textarea text-xs"
+              ></textarea>
+            </div>
+
+            <button
+              type="submit"
+              [disabled]="saving()"
+              mat-flat-button
+              color="primary"
+              class="w-full bg-gradient-to-r from-primary to-purple-600 text-white rounded-xl gap-2 text-xs h-11 font-bold flex items-center justify-center shadow-lg shadow-primary/20"
+            >
+              <mat-icon class="scale-90">send</mat-icon>
+              {{ saving() ? 'Sending Message...' : 'Send Message' }}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

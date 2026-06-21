@@ -1,0 +1,258 @@
+<div class="templates-page bg-slate-950 text-white min-h-screen pt-24 pb-16 px-4 md:px-8 relative">
+  <!-- Glowing Background Orbs -->
+  <div class="absolute top-20 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[120px] pointer-events-none"></div>
+  <div class="absolute bottom-20 right-1/4 w-96 h-96 bg-purple-500/5 rounded-full blur-[120px] pointer-events-none"></div>
+
+  <div class="max-w-7xl mx-auto space-y-6 relative z-10">
+    <!-- Top Header Card -->
+    <div class="relative rounded-2xl overflow-hidden border border-white/5 bg-slate-900/40 backdrop-blur-md p-6 flex flex-col md:flex-row md:items-center justify-between gap-6">
+      <div class="absolute inset-0 bg-gradient-to-r from-primary/5 to-purple-600/5 pointer-events-none"></div>
+      <div class="space-y-2 max-w-2xl relative z-10">
+        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+          <mat-icon class="text-indigo-400">book</mat-icon>
+          Pre-built UX Research Templates
+        </h2>
+        <p class="text-xs text-slate-400 leading-relaxed">
+          Accelerate your product insights. Select a vetted template for your research goals, customize questions, set participant criteria, and launch in minutes.
+        </p>
+      </div>
+      <div class="shrink-0 relative z-10 flex gap-2">
+        <button
+          mat-flat-button
+          [color]="showBookmarksOnly() ? 'accent' : 'primary'"
+          (click)="toggleBookmarksFilter()"
+          class="rounded-xl gap-1.5 transition-all text-xs font-semibold py-4 h-9 flex items-center"
+          [class.bg-amber-500]="showBookmarksOnly()"
+          [class.text-white]="showBookmarksOnly()"
+        >
+          <mat-icon class="scale-75">bookmark</mat-icon>
+          Bookmarked ({{ bookmarkedIds().length }})
+        </button>
+      </div>
+    </div>
+
+    <!-- Search and Filters Bar -->
+    <div class="flex flex-col md:flex-row items-stretch md:items-center gap-3">
+      <div class="relative flex-1">
+        <mat-icon class="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 scale-90">search</mat-icon>
+        <input
+          type="text"
+          placeholder="Search templates by name, description, objective..."
+          [(ngModel)]="searchQuery"
+          class="form-input pl-10 h-10 rounded-xl bg-slate-900/40 border-white/10 focus:border-primary text-xs"
+        />
+      </div>
+
+      <!-- Category Filter -->
+      <div class="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+        <button
+          *ngFor="let cat of categories"
+          type="button"
+          (click)="selectCategory(cat)"
+          [class.bg-indigo-600]="selectedCategory() === cat"
+          [class.text-white]="selectedCategory() === cat"
+          [class.bg-slate-900/60]="selectedCategory() !== cat"
+          [class.border-white/5]="selectedCategory() !== cat"
+          [class.text-slate-400]="selectedCategory() !== cat"
+          class="rounded-full px-4 h-9 text-xs transition-all shrink-0 font-semibold border"
+        >
+          {{ cat }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Templates Grid -->
+    <div *ngIf="filteredTemplates().length > 0" class="templates-grid">
+      <div *ngFor="let tpl of filteredTemplates()" class="template-card">
+        <!-- Bookmark icon -->
+        <button
+          type="button"
+          (click)="toggleBookmark(tpl.id); $event.stopPropagation()"
+          class="absolute top-4 right-4 text-slate-400 hover:text-amber-400 bg-transparent border-none cursor-pointer flex items-center justify-center p-1.5 rounded-lg hover:bg-white/5 transition-all"
+        >
+          <mat-icon [class.text-amber-400]="isBookmarked(tpl.id)">
+            {{ isBookmarked(tpl.id) ? 'bookmark' : 'bookmark_border' }}
+          </mat-icon>
+        </button>
+
+        <div class="template-card-header">
+          <div class="flex items-center gap-2 mb-2">
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 uppercase">
+              {{ tpl.category }}
+            </span>
+            <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-500/10 text-slate-400 border border-white/5 capitalize">
+              {{ tpl.testType.replace('_', ' ') }}
+            </span>
+          </div>
+          <h3 class="text-base font-bold text-white tracking-tight mt-1 line-clamp-1">
+            {{ tpl.name }}
+          </h3>
+          <p class="text-xs text-slate-400 mt-2 line-clamp-2 leading-relaxed">
+            {{ tpl.description }}
+          </p>
+        </div>
+
+        <div class="space-y-2 mb-4">
+          <div class="flex items-center gap-2 text-xs text-slate-400">
+            <mat-icon class="scale-75 text-slate-500">schedule</mat-icon>
+            <span>{{ tpl.duration }} mins</span>
+            <span class="text-slate-600">•</span>
+            <mat-icon class="scale-75 text-slate-500">stars</mat-icon>
+            <span>${{ tpl.rewardAmount }} reward</span>
+          </div>
+          <div class="text-[11px] text-slate-500 italic line-clamp-1">
+            Objective: {{ tpl.objective }}
+          </div>
+        </div>
+
+        <div class="template-card-footer">
+          <button
+            mat-stroked-button
+            (click)="previewTemplate(tpl)"
+            class="border-white/10 text-white hover:bg-white/5 text-[10px] h-8 px-3 rounded-lg flex items-center justify-center gap-1"
+          >
+            <mat-icon class="scale-75">visibility</mat-icon> Preview
+          </button>
+          <button
+            mat-flat-button
+            color="primary"
+            (click)="useTemplate(tpl)"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] h-8 px-4 rounded-lg font-bold flex items-center justify-center gap-1 shadow-lg shadow-indigo-600/15"
+          >
+            Use Template <mat-icon class="scale-75">arrow_forward</mat-icon>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div *ngIf="filteredTemplates().length === 0" class="rounded-2xl border border-dashed border-white/10 bg-slate-900/20 p-12 text-center max-w-lg mx-auto">
+      <mat-icon class="scale-150 text-slate-600 mb-3">error_outline</mat-icon>
+      <h3 class="text-sm font-bold text-white mb-1">No templates found</h3>
+      <p class="text-xs text-slate-500 leading-relaxed">
+        We couldn't find any templates matching your search criteria. Try adjusting your filters or clearing your search query.
+      </p>
+      <button
+        mat-stroked-button
+        (click)="resetFilters()"
+        class="mt-4 rounded-xl border-white/10 text-xs text-white hover:bg-white/5 py-4 h-9 flex items-center justify-center gap-1 mx-auto"
+      >
+        Reset Filters
+      </button>
+    </div>
+  </div>
+
+  <!-- Template Detail Preview Modal -->
+  <div *ngIf="selectedPreviewTemplate()" class="preview-modal-overlay" (click)="selectedPreviewTemplate.set(null)">
+    <div class="preview-modal-container bg-slate-900 border border-white/10 max-w-2xl text-white rounded-2xl p-6" (click)="$event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="pb-4 border-b border-white/5 relative">
+        <button
+          (click)="selectedPreviewTemplate.set(null)"
+          class="absolute top-0 right-0 text-slate-400 hover:text-white bg-transparent border-none cursor-pointer"
+        >
+          <mat-icon>close</mat-icon>
+        </button>
+
+        <div class="flex items-center gap-2 mb-2">
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/20 uppercase">
+            {{ selectedPreviewTemplate()?.category }}
+          </span>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-bold bg-slate-500/10 text-slate-400 border border-white/5 capitalize">
+            {{ selectedPreviewTemplate()?.testType?.replace('_', ' ') }}
+          </span>
+        </div>
+        <h2 class="text-xl font-bold text-white">
+          {{ selectedPreviewTemplate()?.name }}
+        </h2>
+        <p class="text-xs text-slate-400 mt-1.5 leading-relaxed">
+          {{ selectedPreviewTemplate()?.description }}
+        </p>
+      </div>
+
+      <!-- Parameters Grid -->
+      <div class="grid grid-cols-2 gap-4 py-4 border-b border-white/5">
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+          <mat-icon class="text-indigo-400 scale-90">schedule</mat-icon>
+          <div>
+            <span class="text-[9px] text-slate-500 block font-bold uppercase tracking-wider">Estimated Duration</span>
+            <span class="font-bold text-xs text-white">{{ selectedPreviewTemplate()?.duration }} minutes</span>
+          </div>
+        </div>
+        <div class="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/5">
+          <mat-icon class="text-purple-400 scale-90">stars</mat-icon>
+          <div>
+            <span class="text-[9px] text-slate-500 block font-bold uppercase tracking-wider">Tester Reward</span>
+            <span class="font-bold text-xs text-white">${{ selectedPreviewTemplate()?.rewardAmount }} per session</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Objective & Audience -->
+      <div class="py-4 space-y-3 border-b border-white/5">
+        <div class="flex gap-3">
+          <mat-icon class="text-indigo-400 scale-75 mt-0.5">track_changes</mat-icon>
+          <div>
+            <span class="font-bold text-[10px] text-slate-400 uppercase tracking-wider block">Study Objective</span>
+            <p class="text-xs text-slate-300 leading-relaxed mt-0.5">{{ selectedPreviewTemplate()?.objective }}</p>
+          </div>
+        </div>
+        <div class="flex gap-3 pt-3 border-t border-white/5">
+          <mat-icon class="text-purple-400 scale-75 mt-0.5">groups</mat-icon>
+          <div>
+            <span class="font-bold text-[10px] text-slate-400 uppercase tracking-wider block">Target Participants</span>
+            <p class="text-xs text-slate-300 leading-relaxed mt-0.5">{{ selectedPreviewTemplate()?.participantCriteria }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Study Questions List -->
+      <div class="py-4">
+        <span class="font-bold text-[10px] text-slate-400 uppercase tracking-wider block mb-3">
+          Pre-defined Study Questions ({{ selectedPreviewTemplate()?.questions?.length }})
+        </span>
+        <div class="space-y-2 max-h-48 overflow-y-auto pr-1">
+          <div *ngFor="let q of selectedPreviewTemplate()?.questions; let idx = index" class="p-3 rounded-xl bg-white/[0.01] border border-white/5 flex gap-3 items-start">
+            <span class="w-5 h-5 rounded-full bg-indigo-500/10 flex items-center justify-center text-[10px] font-bold text-indigo-400 shrink-0 mt-0.5">
+              {{ idx + 1 }}
+            </span>
+            <div class="space-y-1">
+              <p class="text-xs font-semibold text-white leading-relaxed">{{ q.question_text }}</p>
+              <div class="flex items-center gap-2 mt-1.5 flex-wrap">
+                <span class="px-2 py-0.5 rounded text-[8px] bg-slate-800 text-slate-400 capitalize">
+                  Type: {{ q.question_type.replace('_', ' ') }}
+                </span>
+                <span *ngIf="q.required" class="px-2 py-0.5 rounded text-[8px] bg-red-500/10 text-red-400">
+                  Required
+                </span>
+                <span *ngIf="q.options.length > 0" class="text-[9px] text-slate-500">
+                  Options: {{ q.options.join(', ') }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer Buttons -->
+      <div class="pt-4 border-t border-white/5 flex justify-end gap-3">
+        <button
+          mat-stroked-button
+          (click)="selectedPreviewTemplate.set(null)"
+          class="rounded-xl border-white/10 text-white hover:bg-white/5 text-xs h-10 px-5"
+        >
+          Close
+        </button>
+        <button
+          mat-flat-button
+          color="primary"
+          (click)="useTemplate(selectedPreviewTemplate()!)"
+          class="bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl gap-1 text-xs h-10 px-6 font-bold flex items-center shadow-lg shadow-indigo-600/15"
+        >
+          Use This Template <mat-icon class="scale-75">arrow_forward</mat-icon>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
