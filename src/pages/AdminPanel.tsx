@@ -592,7 +592,7 @@ export default function AdminPanel() {
 
   const handleDownloadInvoice = (payment: PaymentRecord) => {
     const recruiterUser = users.find(u => u.user_id === payment.user_id);
-    const html = generateInvoiceHTML(payment, recruiterUser?.profile?.email || 'recruiter@userninjas.com', recruiterUser?.profile);
+    const html = generateInvoiceHTML(payment, recruiterUser?.profile?.email || 'in.gundlapplly@gmail.com', recruiterUser?.profile);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const win = window.open(url, '_blank');
@@ -1790,11 +1790,11 @@ export default function AdminPanel() {
                   <SelectValue placeholder="Choose a recruiter..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {users.filter(u => u.role === 'recruiter').length === 0 ? (
+                  {users.filter(u => u.role === 'recruiter' || u.profile?.email === 'in.gundlapplly@gmail.com').length === 0 ? (
                     <div className="text-center py-2 text-sm text-muted-foreground">No recruiters found</div>
                   ) : (
                     users
-                      .filter(u => u.role === 'recruiter')
+                      .filter(u => u.role === 'recruiter' || u.profile?.email === 'in.gundlapplly@gmail.com')
                       .map(u => (
                         <SelectItem key={u.user_id} value={u.user_id}>
                           {u.profile?.full_name || 'No Name'} ({u.profile?.email || 'N/A'})
