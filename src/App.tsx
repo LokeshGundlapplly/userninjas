@@ -10,6 +10,13 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { useChatEscalationNotifier } from "@/hooks/useChatEscalation";
 import { supabase } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
+import PricingPage from "./pages/PricingPage";
+import CheckoutPage from "./pages/CheckoutPage";
+import PaymentSuccessPage from "./pages/PaymentSuccessPage";
+import PaymentFailedPage from "./pages/PaymentFailedPage";
+import SubscriptionManagementPage from "./pages/SubscriptionManagementPage";
+import BillingHistoryPage from "./pages/BillingHistoryPage";
+import InvoicesPage from "./pages/InvoicesPage";
 import Auth from "./pages/Auth";
 import Contact from "./pages/Contact";
 import FeaturesPage from "./pages/FeaturesPage";
@@ -305,6 +312,10 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/payment/success" element={<PaymentSuccessPage />} />
+              <Route path="/payment/failed" element={<PaymentFailedPage />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/login" element={<Auth />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
@@ -322,6 +333,9 @@ const App = () => (
               <Route path="/recruiter/create-study" element={<ProtectedDashboardRoute><CreateStudy /></ProtectedDashboardRoute>} />
               <Route path="/recruiter/templates" element={<ProtectedDashboardRoute><TemplatesPage /></ProtectedDashboardRoute>} />
               <Route path="/recruiter/surveys" element={<ProtectedDashboardRoute><SurveyBuilder /></ProtectedDashboardRoute>} />
+              <Route path="/recruiter/subscription" element={<ProtectedDashboardRoute><SubscriptionManagementPage /></ProtectedDashboardRoute>} />
+              <Route path="/recruiter/billing" element={<ProtectedDashboardRoute><BillingHistoryPage /></ProtectedDashboardRoute>} />
+              <Route path="/recruiter/invoices/:paymentId" element={<ProtectedDashboardRoute><InvoicesPage /></ProtectedDashboardRoute>} />
               <Route path="/admin" element={<ProtectedDashboardRoute><AdminPanel /></ProtectedDashboardRoute>} />
               <Route path="/reset-password" element={<ResetPassword />} />
               {/* Legal */}

@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useAuth, type UserProfile } from '@/hooks/useAuth';
 import type { User } from '@supabase/supabase-js';
+import { paymentService } from '@/services/payment.service';
 
 // ─── Types ────────────────────────────────────────────────
 
@@ -163,8 +164,8 @@ export function generateInvoiceHTML(payment: PaymentRecord, userEmail: string, p
   const currencySymbol = isINR ? '₹' : payment.currency === 'USD' ? '$' : payment.currency || '₹';
   const totalAmount = Number(payment.amount);
   
-  let subtotal = totalAmount;
-  let taxDetailsHTML = `
+  const subtotal = totalAmount;
+  const taxDetailsHTML = `
     <div class="summary-row">
       <span>Subtotal</span>
       <span>${currencySymbol}${subtotal.toFixed(2)}</span>
@@ -672,40 +673,46 @@ export default function RecruiterPaymentsPanel({
       const loaded = await loadRazorpayScript();
       if (!loaded) { toast({ title: 'Error', description: 'Razorpay SDK failed to load.', variant: 'destructive' }); return; }
 
-      const apiResponse = await fetch(
-        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-          ? 'https://www.userninjas.in/api/create-razorpay-order' : '/api/create-razorpay-order',
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount }) }
-      );
-      if (!apiResponse.ok) { const e = await apiResponse.json(); throw new Error(e.error || 'Failed to initialize payment'); }
-      const order = await apiResponse.json();
+      // Secure order creation on Express backend
+      const order = await paymentService.createOrder(amount);
 
       const options = {
-        key: 'rzp_live_Sx5YIPbX0SGPU4', amount: (amount * 100).toString(), currency: 'INR',
-        name: 'User Ninjas', description: 'Wallet Credit Top-up', image: 'https://userninjas.in/logo.png',
-        order_id: order.id,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_Sx5YIPbX0SGPU4',
+        amount: (amount * 100).toString(),
+        currency: 'INR',
+        name: 'User Ninjas',
+        description: 'Wallet Credit Top-up',
+        image: 'https://userninjas.in/logo.png',
+        order_id: order.razorpayOrderId,
         handler: async function (response: any) {
           try {
-            await supabase.from('payments').insert({ user_id: user.id, gateway: 'razorpay', amount, currency: 'INR', status: 'successful', plan_type: null, description: `Wallet top-up – ₹${amount.toLocaleString('en-IN')}` });
-            await supabase.rpc('increment_wallet_balance', { p_user_id: user.id, p_amount: amount }).then(async ({ error }) => {
-              if (error) {
-                const { data: prof } = await supabase.from('profiles').select('wallet_balance').eq('user_id', user.id).single();
-                const current = (prof as any)?.wallet_balance || 0;
-                await supabase.from('profiles').update({ wallet_balance: current + amount }).eq('user_id', user.id);
-              }
+            // Verify payment signature securely on Express backend
+            await paymentService.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
             });
-            await fetchWallet(); await fetchPayments();
+
+            await fetchWallet();
+            await fetchPayments();
             toast({ title: `₹${amount.toLocaleString('en-IN')} added!`, description: 'Your wallet has been credited.' });
-            setCustomAmount(''); setSelectedPreset(1000);
-          } catch (err: any) { toast({ title: 'Error', description: 'Payment succeeded but wallet update failed.', variant: 'destructive' }); }
+            setCustomAmount('');
+            setSelectedPreset(1000);
+          } catch (err: any) {
+            toast({ title: 'Verification Error', description: err.message || 'Payment signature check failed.', variant: 'destructive' });
+          }
         },
-        prefill: { email: user.email }, theme: { color: '#4f46e5' },
+        prefill: { email: user.email },
+        theme: { color: '#4f46e5' },
       };
       const rzp = new window.Razorpay(options);
       rzp.on('payment.failed', (r: any) => toast({ title: 'Payment Failed', description: r.error.description, variant: 'destructive' }));
       rzp.open();
-    } catch (err: any) { toast({ title: 'Error', description: err.message || 'Could not open payment window.', variant: 'destructive' }); }
-    finally { setProcessingPayment(false); }
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Could not open payment window.', variant: 'destructive' });
+    } finally {
+      setProcessingPayment(false);
+    }
   };
 
   const processRazorpayPayment = async () => {
@@ -720,41 +727,50 @@ export default function RecruiterPaymentsPanel({
       const loaded = await loadRazorpayScript();
       if (!loaded) { toast({ title: 'Error', description: 'Razorpay SDK failed to load.', variant: 'destructive' }); setProcessingPayment(false); return; }
 
-      const apiResponse = await fetch(
-        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-          ? 'https://www.userninjas.in/api/create-razorpay-order' : '/api/create-razorpay-order',
-        { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ amount: planDetails.priceINR }) }
-      );
-      if (!apiResponse.ok) { const e = await apiResponse.json(); throw new Error(e.error || 'Failed to initialize payment'); }
-      const order = await apiResponse.json();
+      // Generate secure order via Express backend
+      const order = await paymentService.createOrder(selectedCheckoutPlan);
 
       const options = {
-        key: 'rzp_live_Sx5YIPbX0SGPU4', amount: (planDetails.priceINR * 100).toString(), currency: 'INR',
-        name: 'User Ninjas', description: `Upgrade to ${planDetails.name}`, image: 'https://userninjas.in/logo.png',
-        order_id: order.id,
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_Sx5YIPbX0SGPU4',
+        amount: (planDetails.priceINR * 100).toString(),
+        currency: 'INR',
+        name: 'User Ninjas',
+        description: `Upgrade to ${planDetails.name}`,
+        image: 'https://userninjas.in/logo.png',
+        order_id: order.razorpayOrderId,
         handler: async function (response: any) {
           try {
-            const startDate = new Date(); const endDate = new Date();
-            endDate.setDate(startDate.getDate() + planDetails.days);
-            await supabase.from('payments').insert({ user_id: user.id, gateway: 'razorpay', amount: planDetails.priceINR, currency: 'INR', status: 'successful', plan_type: selectedCheckoutPlan, description: `Purchased: ${planDetails.name} (${response.razorpay_payment_id})` });
-            const { error: subErr } = await supabase.from('subscriptions').upsert({ user_id: user.id, plan_type: selectedCheckoutPlan, payment_status: 'success', start_date: startDate.toISOString(), end_date: endDate.toISOString(), is_valid: true, tests_created: 0, invites_sent: 0, active_test_limit: planDetails.testLimit, invite_limit: planDetails.inviteLimit }, { onConflict: 'user_id' });
-            if (subErr) throw subErr;
-            await supabase.from('profiles').update({ plan_type: selectedCheckoutPlan, study_limit: planDetails.testLimit, subscription_status: 'active', subscription_end: endDate.toISOString() }).eq('user_id', user.id);
+            // Verify payment signature securely on backend Express server
+            await paymentService.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
+            });
+
             toast({ title: '🎉 Subscription Activated!', description: `You're now on the ${planDetails.name}.` });
-            await refreshProfile(); if (onProfileRefresh) await onProfileRefresh();
-            await fetchPayments(); setCheckoutOpen(false);
-          } catch (err: any) { toast({ title: 'Update Error', description: err.message || 'Payment recorded but profile update failed.', variant: 'destructive' }); }
-          finally { setProcessingPayment(false); }
+            await refreshProfile();
+            if (onProfileRefresh) await onProfileRefresh();
+            await fetchPayments();
+            setCheckoutOpen(false);
+          } catch (err: any) {
+            toast({ title: 'Verification Error', description: err.message || 'Signature verification failed.', variant: 'destructive' });
+          } finally {
+            setProcessingPayment(false);
+          }
         },
-        prefill: { email: user.email }, theme: { color: '#4f46e5' },
+        prefill: { email: user.email },
+        theme: { color: '#4f46e5' },
       };
       const rzp = new window.Razorpay(options);
-      rzp.on('payment.failed', async function (response: any) {
-        try { await supabase.from('payments').insert({ user_id: user.id, gateway: 'razorpay', amount: planDetails.priceINR, currency: 'INR', status: 'failed', plan_type: selectedCheckoutPlan, description: `Failed: ${planDetails.name} (${response.error.description})` }); } catch (error) { console.error('Error recording payment failure:', error); }
-        toast({ title: 'Payment Failed', description: response.error.description, variant: 'destructive' }); setProcessingPayment(false);
+      rzp.on('payment.failed', function (response: any) {
+        toast({ title: 'Payment Failed', description: response.error.description || 'Transaction cancelled', variant: 'destructive' });
+        setProcessingPayment(false);
       });
       rzp.open();
-    } catch (err: any) { toast({ title: 'Error', description: err.message || 'Failed to start payment.', variant: 'destructive' }); setProcessingPayment(false); }
+    } catch (err: any) {
+      toast({ title: 'Error', description: err.message || 'Failed to start payment.', variant: 'destructive' });
+      setProcessingPayment(false);
+    }
   };
 
   const exportPaymentHistory = () => {

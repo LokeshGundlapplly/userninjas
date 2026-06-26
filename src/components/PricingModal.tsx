@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { paymentService } from '@/services/payment.service';
 
 interface PricingModalProps {
   open: boolean;
@@ -144,82 +145,34 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
         return;
       }
 
-      // Generate Order ID via backend/Vercel serverless function
-      const apiResponse = await fetch(
-        window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-          ? 'https://www.userninjas.in/api/create-razorpay-order' 
-          : '/api/create-razorpay-order', 
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: plan.priceINR })
-        }
-      );
-
-      if (!apiResponse.ok) {
-        const errData = await apiResponse.json();
-        throw new Error(errData.error || 'Failed to initialize payment transaction');
-      }
-
-      const order = await apiResponse.json();
+      // Generate Order ID via backend Express server
+      const order = await paymentService.createOrder(confirmCheckoutPlan as 'per_test' | 'monthly' | 'yearly');
 
       const amount = plan.priceINR * 100; // in paise
       const options = {
-        key: 'rzp_live_Sx5YIPbX0SGPU4',
+        key: import.meta.env.VITE_RAZORPAY_KEY_ID || 'rzp_live_Sx5YIPbX0SGPU4',
         amount: amount.toString(),
         currency: 'INR',
         name: 'User Ninjas',
         description: `Upgrade to ${plan.name} Plan`,
-        image: 'https://userninjas.com/logo.png',
-        order_id: order.id,
+        image: 'https://userninjas.in/logo.png',
+        order_id: order.razorpayOrderId,
         handler: async function (response: any) {
           try {
-            const startDate = new Date();
-            const endDate = new Date();
-            endDate.setDate(startDate.getDate() + planDetails.days);
-
-            // 1. Write payment record
-            await supabase.from('payments').insert({
-              user_id: user.id,
-              gateway: 'razorpay',
-              amount: plan.priceINR,
-              currency: 'INR',
-              status: 'successful',
-              plan_type: confirmCheckoutPlan,
-              description: `Purchased: ${plan.name} (Payment ID: ${response.razorpay_payment_id})`
+            // Verify signature securely on Express backend
+            await paymentService.verifyPayment({
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature,
             });
-
-            // 2. Upsert subscription
-            const { error: subErr } = await supabase.from('subscriptions').upsert({
-              user_id: user.id,
-              plan_type: confirmCheckoutPlan,
-              payment_status: 'success',
-              start_date: startDate.toISOString(),
-              end_date: endDate.toISOString(),
-              is_valid: true,
-              tests_created: 0,
-              invites_sent: 0,
-              active_test_limit: planDetails.testLimit,
-              invite_limit: planDetails.inviteLimit,
-            }, { onConflict: 'user_id' });
-
-            if (subErr) throw subErr;
-
-            // 3. Update profile for backward compatibility
-            await supabase.from('profiles').update({
-              plan_type: confirmCheckoutPlan,
-              study_limit: planDetails.testLimit,
-              subscription_status: 'active',
-              subscription_end: endDate.toISOString(),
-            }).eq('user_id', user.id);
 
             toast({ title: 'Upgrade Successful!', description: `You have successfully upgraded to the ${plan.name} plan.` });
             await refreshProfile();
             setConfirmCheckoutPlan(null);
             onOpenChange(false);
           } catch (err: any) {
-            console.error('Error updating profile:', err);
-            toast({ title: 'Setup incomplete', description: 'Payment succeeded but profile update failed. Contact support.', variant: 'destructive' });
+            console.error('Error verifying payment on server:', err);
+            toast({ title: 'Verification Failed', description: err.message || 'Payment verification failed. Contact support.', variant: 'destructive' });
           } finally {
             setLoadingPlan(null);
           }
@@ -233,21 +186,8 @@ export default function PricingModal({ open, onOpenChange, currentPlan = 'free' 
       };
 
       const paymentObject = new window.Razorpay(options);
-      paymentObject.on('payment.failed', async function (response: any) {
-        try {
-          await supabase.from('payments').insert({
-            user_id: user.id,
-            gateway: 'razorpay',
-            amount: plan.priceINR,
-            currency: 'INR',
-            status: 'failed',
-            plan_type: confirmCheckoutPlan,
-            description: `Failed purchase: ${plan.name} (${response.error.description})`
-          });
-        } catch (e) {
-          console.error('Error inserting failed payment record:', e);
-        }
-        toast({ title: 'Payment Failed', description: response.error.description, variant: 'destructive' });
+      paymentObject.on('payment.failed', function (response: any) {
+        toast({ title: 'Payment Failed', description: response.error.description || 'Transaction cancelled', variant: 'destructive' });
         setLoadingPlan(null);
       });
       paymentObject.open();

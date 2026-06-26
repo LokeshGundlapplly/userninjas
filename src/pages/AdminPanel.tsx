@@ -22,10 +22,12 @@ import {
   TrendingUp, DollarSign, CheckCircle, Clock, Zap, BarChart3, Eye, Search, Filter, Download,
   Edit, Trash2, Eye as EyeIcon, Star, Award, Briefcase, Target, PlusCircle, Settings, RefreshCw,
   ArrowUpRight, ArrowDownRight, ExternalLink, Ticket, Mail, Tag, StickyNote,
-  CreditCard, Wallet, Receipt
+  CreditCard, Wallet, Receipt, RotateCcw
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { generateInvoiceHTML, type PaymentRecord } from '@/components/recruiter/RecruiterPaymentsPanel';
+import { paymentService } from '@/services/payment.service';
+import WithdrawalManagementPanel from '@/components/recruiter/WithdrawalManagementPanel';
 
 interface UserWithRole {
   id: string;
@@ -140,6 +142,10 @@ export default function AdminPanel() {
   const [paymentStatusFilter, setPaymentStatusFilter] = useState<string>('all');
   const [paymentGatewayFilter, setPaymentGatewayFilter] = useState<string>('all');
   const [paymentPlanFilter, setPaymentPlanFilter] = useState<string>('all');
+  const [paymentsActiveTab, setPaymentsActiveTab] = useState<'invoices' | 'webhooks'>('invoices');
+  const [webhookLogs, setWebhookLogs] = useState<any[]>([]);
+  const [loadingWebhookLogs, setLoadingWebhookLogs] = useState(false);
+  const [webhookSearchQuery, setWebhookSearchQuery] = useState('');
 
   // Manual Invoice dialog form states
   const [manualInvoiceOpen, setManualInvoiceOpen] = useState(false);
@@ -208,6 +214,24 @@ export default function AdminPanel() {
     } else {
       console.log('✓ Loaded conversations:', data?.length || 0);
       setConversations(data as ChatConversation[] || []);
+    }
+  }, []);
+
+  const fetchWebhookLogs = useCallback(async () => {
+    setLoadingWebhookLogs(true);
+    try {
+      const { data, error } = await supabase
+        .from('webhook_logs')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      setWebhookLogs(data || []);
+      console.log('✓ Loaded webhook logs:', data?.length || 0);
+    } catch (err: any) {
+      console.error('❌ Error fetching webhook logs:', err);
+    } finally {
+      setLoadingWebhookLogs(false);
     }
   }, []);
 
@@ -296,22 +320,31 @@ export default function AdminPanel() {
         setTickets(ticketsData as SupportTicket[] || []);
       }
 
-      // Fetch payments
+      // Fetch webhook logs
+      await fetchWebhookLogs();
+
+      // Fetch payments via paymentService endpoint
       setLoadingPayments(true);
-      const { data: paymentsData, error: paymentsError } = await supabase
-        .from('payments')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
       let fetchedPayments: PaymentRecord[] = [];
-      if (paymentsError) {
-        console.error('❌ Error fetching payments:', paymentsError);
-      } else {
-        fetchedPayments = (paymentsData as PaymentRecord[]) || [];
+      try {
+        const adminPayments = await paymentService.getAllPaymentsAdmin();
+        fetchedPayments = adminPayments || [];
         setPayments(fetchedPayments);
-        console.log('✓ Loaded payments:', fetchedPayments.length);
+        console.log('✓ Loaded payments via API:', fetchedPayments.length);
+      } catch (paymentsError: any) {
+        console.error('❌ Error fetching payments via API:', paymentsError);
+        // Fallback to direct supabase query
+        const { data: paymentsData, error: directError } = await supabase
+          .from('payments')
+          .select('*')
+          .order('created_at', { ascending: false });
+        if (!directError) {
+          fetchedPayments = (paymentsData as PaymentRecord[]) || [];
+          setPayments(fetchedPayments);
+        }
+      } finally {
+        setLoadingPayments(false);
       }
-      setLoadingPayments(false);
 
       // Calculate stats
       const totalRecruiters = (rolesData || []).filter((r: any) => r.role === 'recruiter').length;
@@ -353,7 +386,7 @@ export default function AdminPanel() {
     } finally {
       setLoading(false);
     }
-  }, [toast, fetchConversations]);
+  }, [toast, fetchConversations, fetchWebhookLogs]);
 
   useEffect(() => {
     if (!authLoading && (!user || (role as string) !== 'admin')) {
@@ -616,6 +649,39 @@ export default function AdminPanel() {
     }
   };
 
+  const handleRefundPayment = async (paymentId: string, fullAmount: number) => {
+    const refundPrompt = prompt(
+      `Specify the refund amount (in currency of transaction). Leave empty or enter "${fullAmount}" for a full refund:`,
+      fullAmount.toString()
+    );
+    
+    if (refundPrompt === null) return; // User cancelled
+    
+    const parsedAmount = parseFloat(refundPrompt);
+    if (isNaN(parsedAmount) || parsedAmount <= 0 || parsedAmount > fullAmount) {
+      toast({ 
+        title: 'Invalid Amount', 
+        description: `Refund amount must be a number between 0.01 and ${fullAmount}`, 
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    try {
+      toast({ title: 'Processing refund', description: 'Sending request to payment gateway...' });
+      const result = await paymentService.refundPaymentAdmin(paymentId, parsedAmount);
+      toast({ title: 'Refund Completed', description: result.message || 'Refund successfully processed.' });
+      fetchAll();
+    } catch (err: any) {
+      console.error('❌ Refund failed:', err);
+      toast({ 
+        title: 'Refund Failed', 
+        description: err.message || 'An error occurred while processing refund.', 
+        variant: 'destructive' 
+      });
+    }
+  };
+
   const handleDeletePayment = async (paymentId: string) => {
     if (!confirm('Are you sure you want to delete this payment record? This will not revert profile subscription or wallet balance changes.')) return;
     try {
@@ -836,6 +902,9 @@ export default function AdminPanel() {
               )}
             </TabsTrigger>
             <TabsTrigger value="payments" className="gap-2"><CreditCard className="h-4 w-4" />Payments & Invoices</TabsTrigger>
+            <TabsTrigger value="withdrawals" className="gap-2">
+              <Wallet className="h-4 w-4" /> Tester Payouts
+            </TabsTrigger>
           </TabsList>
 
           {/* OVERVIEW TAB */}
@@ -1616,178 +1685,307 @@ export default function AdminPanel() {
               </Card>
             </div>
 
-            <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
-              <CardHeader className="pb-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <CreditCard className="h-5 w-5 text-primary" /> Recruiter Invoices & Payments
-                    </CardTitle>
-                    <CardDescription>View transaction histories and record manual payments</CardDescription>
-                  </div>
-                  <Button onClick={handleOpenManualInvoice} className="gap-2 shrink-0">
-                    <PlusCircle className="h-4 w-4" /> Create Manual Invoice
-                  </Button>
-                </div>
+            <Tabs value={paymentsActiveTab} onValueChange={(val) => setPaymentsActiveTab(val as any)} className="w-full">
+              <TabsList className="bg-card/50 border border-border/50 p-1 flex gap-1 mb-6">
+                <TabsTrigger value="invoices" className="gap-2">
+                  <Receipt className="h-4 w-4" /> Transactions & Invoices
+                </TabsTrigger>
+                <TabsTrigger value="webhooks" className="gap-2">
+                  <Activity className="h-4 w-4" /> Webhook Event Logs
+                </TabsTrigger>
+              </TabsList>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4">
-                  <div className="relative col-span-1 sm:col-span-2">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      placeholder="Search by Invoice ID, description, or recruiter..." 
-                      value={paymentSearchQuery}
-                      onChange={(e) => setPaymentSearchQuery(e.target.value)}
-                      className="pl-9"
-                    />
-                  </div>
-
-                  <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
-                    <SelectTrigger><SelectValue placeholder="All Status" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Status</SelectItem>
-                      <SelectItem value="successful">Successful</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="failed">Failed</SelectItem>
-                    </SelectContent>
-                  </Select>
-
-                  <Select value={paymentPlanFilter} onValueChange={setPaymentPlanFilter}>
-                    <SelectTrigger><SelectValue placeholder="All Types" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="credits">Credits Top-up</SelectItem>
-                      <SelectItem value="per_test">Pay-Per-Test</SelectItem>
-                      <SelectItem value="monthly">Standard (Monthly)</SelectItem>
-                      <SelectItem value="yearly">Enterprise (Yearly)</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardHeader>
-
-              <CardContent>
-                <ScrollArea className="h-[600px]">
-                  {filteredPayments.length === 0 ? (
-                    <div className="text-center py-20 text-muted-foreground">
-                      <Receipt className="h-12 w-12 mx-auto mb-3 opacity-20" />
-                      <p className="font-semibold text-lg">No payments found</p>
-                      <p className="text-sm mt-1">Try resetting the filters or record a manual transaction.</p>
+              <TabsContent value="invoices" className="space-y-6">
+                <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+                  <CardHeader className="pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <CreditCard className="h-5 w-5 text-primary" /> Recruiter Invoices & Payments
+                        </CardTitle>
+                        <CardDescription>View transaction histories and record manual payments</CardDescription>
+                      </div>
+                      <Button onClick={handleOpenManualInvoice} className="gap-2 shrink-0">
+                        <PlusCircle className="h-4 w-4" /> Create Manual Invoice
+                      </Button>
                     </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Invoice ID / Date</TableHead>
-                          <TableHead>Recruiter</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Gateway</TableHead>
-                          <TableHead style={{ textAlign: 'right' }}>Amount</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead style={{ textAlign: 'right' }}>Actions</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredPayments.map(p => {
-                          const recruiter = users.find(u => u.user_id === p.user_id);
-                          const isINR = p.currency === 'INR';
-                          const symbol = isINR ? '₹' : '$';
-                          
-                          let displayDesc = p.description || '';
-                          let displayName = recruiter?.profile?.full_name || 'Unknown Recruiter';
-                          let displayEmail = recruiter?.profile?.email || 'N/A';
-                          let invoiceNumber = `INV-${p.id.slice(0, 8).toUpperCase()}`;
 
-                          if (displayDesc && displayDesc.includes('|')) {
-                            const parts = displayDesc.split('|');
-                            displayDesc = parts[0].trim();
-                            for (let i = 1; i < parts.length; i++) {
-                              const part = parts[i].trim();
-                              if (part.startsWith('Name:')) {
-                                displayName = part.substring(5).trim();
-                              } else if (part.startsWith('Email:')) {
-                                displayEmail = part.substring(6).trim();
-                              } else if (part.startsWith('Request ID:')) {
-                                invoiceNumber = part.substring(11).trim();
-                              }
-                            }
-                          }
-                          
-                          return (
-                            <TableRow key={p.id} className="hover:bg-secondary/30">
-                              <TableCell>
-                                <div className="font-mono text-xs font-semibold text-white">{invoiceNumber}</div>
-                                <div className="text-xs text-muted-foreground mt-1">
-                                  {format(new Date(p.created_at), 'MMM d, yyyy HH:mm')}
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="font-medium text-sm">{displayName}</div>
-                                <div className="text-xs text-muted-foreground mt-0.5">{displayEmail}</div>
-                              </TableCell>
-                              <TableCell>
-                                <div className="flex flex-col gap-1 items-start">
-                                  <Badge variant="outline" className={`text-[10px] uppercase font-bold ${
-                                    p.plan_type === 'monthly' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' :
-                                    p.plan_type === 'yearly' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
-                                    p.plan_type === 'per_test' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
-                                    'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
-                                  }`}>
-                                    {p.plan_type ? p.plan_type.replace('_', ' ') : 'Credits'}
-                                  </Badge>
-                                  <span className="text-xs text-muted-foreground max-w-[180px] truncate" title={displayDesc || ''}>
-                                    {displayDesc || 'Wallet Credit Top-up'}
-                                  </span>
-                                </div>
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="capitalize text-xs font-medium bg-slate-500/5 text-slate-300 border-slate-800">
-                                  {p.gateway}
-                                </Badge>
-                              </TableCell>
-                              <TableCell style={{ textAlign: 'right' }} className="font-semibold text-white">
-                                {symbol}{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                              </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className={`capitalize font-semibold text-xs py-0.5 px-2 rounded-full border ${
-                                  p.status === 'successful' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
-                                  p.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
-                                  'bg-red-500/10 text-red-400 border-red-500/20'
-                                }`}>
-                                  {p.status}
-                                </Badge>
-                              </TableCell>
-                              <TableCell style={{ textAlign: 'right' }}>
-                                <div className="flex gap-1.5 justify-end">
-                                  {p.status === 'successful' && (
-                                    <Button 
-                                      size="sm" 
-                                      variant="ghost" 
-                                      onClick={() => handleDownloadInvoice(p)}
-                                      title="Print/Download Invoice"
-                                      className="h-8 w-8 p-0"
-                                    >
-                                      <Download className="h-3.5 w-3.5 text-slate-400 hover:text-white" />
-                                    </Button>
-                                  )}
-                                  <Button 
-                                    size="sm" 
-                                    variant="ghost" 
-                                    onClick={() => handleDeletePayment(p.id)}
-                                    title="Delete Transaction"
-                                    className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
-                                  >
-                                    <Trash2 className="h-3.5 w-3.5" />
-                                  </Button>
-                                </div>
-                              </TableCell>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 mt-4">
+                      <div className="relative col-span-1 sm:col-span-2">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input 
+                          placeholder="Search by Invoice ID, description, or recruiter..." 
+                          value={paymentSearchQuery}
+                          onChange={(e) => setPaymentSearchQuery(e.target.value)}
+                          className="pl-9"
+                        />
+                      </div>
+
+                      <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
+                        <SelectTrigger><SelectValue placeholder="All Status" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Status</SelectItem>
+                          <SelectItem value="successful">Successful</SelectItem>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="failed">Failed</SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      <Select value={paymentPlanFilter} onValueChange={setPaymentPlanFilter}>
+                        <SelectTrigger><SelectValue placeholder="All Types" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="all">All Types</SelectItem>
+                          <SelectItem value="credits">Credits Top-up</SelectItem>
+                          <SelectItem value="per_test">Pay-Per-Test</SelectItem>
+                          <SelectItem value="monthly">Standard (Monthly)</SelectItem>
+                          <SelectItem value="yearly">Enterprise (Yearly)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </CardHeader>
+
+                  <CardContent>
+                    <ScrollArea className="h-[600px]">
+                      {filteredPayments.length === 0 ? (
+                        <div className="text-center py-20 text-muted-foreground">
+                          <Receipt className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                          <p className="font-semibold text-lg">No payments found</p>
+                          <p className="text-sm mt-1">Try resetting the filters or record a manual transaction.</p>
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Invoice ID / Date</TableHead>
+                              <TableHead>Recruiter</TableHead>
+                              <TableHead>Type</TableHead>
+                              <TableHead>Gateway</TableHead>
+                              <TableHead style={{ textAlign: 'right' }}>Amount</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead style={{ textAlign: 'right' }}>Actions</TableHead>
                             </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  )}
-                </ScrollArea>
-              </CardContent>
-            </Card>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredPayments.map(p => {
+                              const recruiter = users.find(u => u.user_id === p.user_id);
+                              const isINR = p.currency === 'INR';
+                              const symbol = isINR ? '₹' : '$';
+                              
+                              let displayDesc = p.description || '';
+                              let displayName = recruiter?.profile?.full_name || 'Unknown Recruiter';
+                              let displayEmail = recruiter?.profile?.email || 'N/A';
+                              let invoiceNumber = `INV-${p.id.slice(0, 8).toUpperCase()}`;
+
+                              if (displayDesc && displayDesc.includes('|')) {
+                                const parts = displayDesc.split('|');
+                                displayDesc = parts[0].trim();
+                                for (let i = 1; i < parts.length; i++) {
+                                  const part = parts[i].trim();
+                                  if (part.startsWith('Name:')) {
+                                    displayName = part.substring(5).trim();
+                                  } else if (part.startsWith('Email:')) {
+                                    displayEmail = part.substring(6).trim();
+                                  } else if (part.startsWith('Request ID:')) {
+                                    invoiceNumber = part.substring(11).trim();
+                                  }
+                                }
+                              }
+                              
+                              return (
+                                <TableRow key={p.id} className="hover:bg-secondary/30">
+                                  <TableCell>
+                                    <div className="font-mono text-xs font-semibold text-white">{invoiceNumber}</div>
+                                    <div className="text-xs text-muted-foreground mt-1">
+                                      {format(new Date(p.created_at), 'MMM d, yyyy HH:mm')}
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="font-medium text-sm">{displayName}</div>
+                                    <div className="text-xs text-muted-foreground mt-0.5">{displayEmail}</div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="flex flex-col gap-1 items-start">
+                                      <Badge variant="outline" className={`text-[10px] uppercase font-bold ${
+                                        p.plan_type === 'monthly' ? 'bg-violet-500/10 text-violet-400 border-violet-500/20' :
+                                        p.plan_type === 'yearly' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                        p.plan_type === 'per_test' ? 'bg-orange-500/10 text-orange-400 border-orange-500/20' :
+                                        'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                      }`}>
+                                        {p.plan_type ? p.plan_type.replace('_', ' ') : 'Credits'}
+                                      </Badge>
+                                      <span className="text-xs text-muted-foreground max-w-[180px] truncate" title={displayDesc || ''}>
+                                        {displayDesc || 'Wallet Credit Top-up'}
+                                      </span>
+                                    </div>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className="capitalize text-xs font-medium bg-slate-500/5 text-slate-300 border-slate-800">
+                                      {p.gateway}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell style={{ textAlign: 'right' }} className="font-semibold text-white">
+                                    {symbol}{Number(p.amount).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className={`capitalize font-semibold text-xs py-0.5 px-2 rounded-full border ${
+                                      p.status === 'successful' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' :
+                                      p.status === 'pending' ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20' :
+                                      p.status === 'refunded' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' :
+                                      'bg-red-500/10 text-red-400 border-red-500/20'
+                                    }`}>
+                                      {p.status}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell style={{ textAlign: 'right' }}>
+                                    <div className="flex gap-1.5 justify-end">
+                                      {p.status === 'successful' && (
+                                        <>
+                                          <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            onClick={() => handleDownloadInvoice(p)}
+                                            title="Print/Download Invoice"
+                                            className="h-8 w-8 p-0"
+                                          >
+                                            <Download className="h-3.5 w-3.5 text-slate-400 hover:text-white" />
+                                          </Button>
+                                          <Button 
+                                            size="sm" 
+                                            variant="ghost" 
+                                            onClick={() => handleRefundPayment(p.id, Number(p.amount))}
+                                            title="Refund Transaction"
+                                            className="h-8 w-8 p-0 text-amber-500 hover:bg-amber-500/10"
+                                          >
+                                            <RotateCcw className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </>
+                                      )}
+                                      <Button 
+                                        size="sm" 
+                                        variant="ghost" 
+                                        onClick={() => handleDeletePayment(p.id)}
+                                        title="Delete Transaction"
+                                        className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10"
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      )}
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="webhooks" className="space-y-6">
+                <Card className="border-border/50 bg-card/80 backdrop-blur-sm">
+                  <CardHeader className="pb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Activity className="h-5 w-5 text-primary" /> Razorpay Webhook Event Logs
+                        </CardTitle>
+                        <CardDescription>Monitor asynchronous payment callback statuses and payload payloads</CardDescription>
+                      </div>
+                      <Button onClick={fetchWebhookLogs} variant="outline" className="gap-2 shrink-0">
+                        <RefreshCw className={`h-4 w-4 ${loadingWebhookLogs ? 'animate-spin' : ''}`} /> Refresh Logs
+                      </Button>
+                    </div>
+
+                    <div className="relative mt-4">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input 
+                        placeholder="Search by Event ID or Event Name..." 
+                        value={webhookSearchQuery}
+                        onChange={(e) => setWebhookSearchQuery(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                  </CardHeader>
+
+                  <CardContent>
+                    <ScrollArea className="h-[600px]">
+                      {loadingWebhookLogs ? (
+                        <div className="text-center py-20 text-muted-foreground animate-pulse">Loading webhook logs...</div>
+                      ) : webhookLogs.length === 0 ? (
+                        <div className="text-center py-20 text-muted-foreground">
+                          <Activity className="h-12 w-12 mx-auto mb-3 opacity-20" />
+                          <p className="font-semibold text-lg">No webhook logs found</p>
+                          <p className="text-sm mt-1">Webhook logs will appear here when Razorpay triggers events.</p>
+                        </div>
+                      ) : (
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Event ID</TableHead>
+                              <TableHead>Event Name</TableHead>
+                              <TableHead>Status</TableHead>
+                              <TableHead>Created At</TableHead>
+                              <TableHead style={{ textAlign: 'right' }}>Payload</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {webhookLogs
+                              .filter(log => 
+                                !webhookSearchQuery || 
+                                log.event_id.toLowerCase().includes(webhookSearchQuery.toLowerCase()) ||
+                                log.event_name.toLowerCase().includes(webhookSearchQuery.toLowerCase())
+                              )
+                              .map(log => (
+                                <TableRow key={log.id} className="hover:bg-secondary/30">
+                                  <TableCell className="font-mono text-xs text-white">{log.event_id}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className="font-semibold text-xs py-0.5 px-2 bg-slate-500/5 text-slate-300 border-slate-800">
+                                      {log.event_name}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline" className={`font-semibold text-xs py-0.5 px-2 rounded-full border ${
+                                      log.processed ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                                    }`}>
+                                      {log.processed ? 'Processed' : 'Pending'}
+                                    </Badge>
+                                  </TableCell>
+                                  <TableCell className="text-xs text-muted-foreground">
+                                    {format(new Date(log.created_at), 'MMM d, yyyy HH:mm:ss')}
+                                  </TableCell>
+                                  <TableCell style={{ textAlign: 'right' }}>
+                                    <Dialog>
+                                      <DialogTrigger asChild>
+                                        <Button size="sm" variant="ghost" className="h-8 px-2 text-xs">View Payload</Button>
+                                      </DialogTrigger>
+                                      <DialogContent className="max-w-2xl bg-card border border-border/50 max-h-[80vh] flex flex-col">
+                                        <DialogHeader>
+                                          <DialogTitle>Webhook Event Details</DialogTitle>
+                                          <DialogDescription>Full JSON payload received from Razorpay for event {log.event_name}</DialogDescription>
+                                        </DialogHeader>
+                                        <div className="flex-1 overflow-y-auto mt-4 p-4 rounded bg-slate-950 font-mono text-xs text-slate-300 select-all whitespace-pre-wrap">
+                                          {JSON.stringify(log.payload, null, 2)}
+                                        </div>
+                                      </DialogContent>
+                                    </Dialog>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            }
+                          </TableBody>
+                        </Table>
+                      )}
+                    </ScrollArea>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+
+          {/* TESTER PAYOUTS TAB */}
+          <TabsContent value="withdrawals" className="space-y-6">
+            <WithdrawalManagementPanel />
           </TabsContent>
         </Tabs>
       </div>

@@ -43,7 +43,7 @@ interface TicketForm {
 // ── Constants ─────────────────────────────────────────────────────────────────
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-widget`;
 const TICKET_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-support-ticket`;
-const ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const SUGGESTIONS = [
   'How does pricing work?',

@@ -43,7 +43,7 @@ echo ""
 
 # 2. Check migration file exists
 echo -e "${YELLOW}[2/5] Checking database migrations...${NC}"
-if [ -f "supabase/migrations/20260412_add_login_otps_table.sql" ]; then
+if [ -f "supabase/migrations/20260412000000_add_login_otps_table.sql" ]; then
     echo -e "${GREEN}✓ login_otps migration exists${NC}"
 else
     echo -e "${RED}✗ login_otps migration not found${NC}"
